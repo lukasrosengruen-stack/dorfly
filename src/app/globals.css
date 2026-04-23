@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+:root {
+  --background: #F4F6F9;
+  --foreground: #1A1A1A;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Ehningen Primärblau */
+  --color-primary-50:  #E8F1FA;
+  --color-primary-100: #C5D9F2;
+  --color-primary-200: #8BB4E5;
+  --color-primary-300: #508FD8;
+  --color-primary-400: #1A6ECC;
+  --color-primary-500: #0066CC;
+  --color-primary-600: #0058B3;
+  --color-primary-700: #004A99;
+  --color-primary-800: #003A7A;
+  --color-primary-900: #002B5C;
+
+  /* Akzentrot */
+  --color-accent-50:  #FAE8E8;
+  --color-accent-100: #F5CCCC;
+  --color-accent-500: #CC0000;
+  --color-accent-600: #B30000;
+  --color-accent-700: #990000;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Verhindert Farb-Inversion im Dark Mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #F4F6F9;
+    --foreground: #1A1A1A;
+  }
+}
