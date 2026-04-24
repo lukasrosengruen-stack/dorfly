@@ -110,7 +110,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
       if (error) throw error
       setPosts(prev => [data as Post, ...prev])
       closeForm()
-    } catch { alert('Fehler beim Einreichen') }
+    } catch (e: unknown) { alert('Fehler beim Einreichen: ' + (e instanceof Error ? e.message : JSON.stringify(e))) }
     finally { setLoading(false) }
   }
 
@@ -130,7 +130,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
       if (error) throw error
       setPosts(prev => prev.map(p => p.id === editingId ? { ...p, ...form, status: 'pending' } : p))
       closeForm()
-    } catch { alert('Fehler beim Speichern') }
+    } catch (e: unknown) { alert('Fehler beim Speichern: ' + (e instanceof Error ? e.message : JSON.stringify(e))) }
     finally { setLoading(false) }
   }
 
