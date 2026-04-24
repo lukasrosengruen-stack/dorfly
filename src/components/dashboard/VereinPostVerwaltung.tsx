@@ -110,11 +110,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
       if (error) throw error
       setPosts(prev => [data as Post, ...prev])
       closeForm()
-    } catch (e: unknown) {
-      console.error('submitNew error:', e)
-      const err = e as Record<string, unknown>
-      alert('FEHLER: ' + JSON.stringify(err, null, 2))
-    }
+    } catch { alert('Fehler beim Einreichen') }
     finally { setLoading(false) }
   }
 

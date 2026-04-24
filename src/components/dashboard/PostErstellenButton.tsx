@@ -18,7 +18,7 @@ export default function PostErstellenButton({ gemeindeId, profileId }: Props) {
   const [loading, setLoading] = useState(false)
   const [bildFile, setBildFile] = useState<File | null>(null)
   const [bildPreview, setBildPreview] = useState<string | null>(null)
-  const [form, setForm] = useState({ titel: '', inhalt: '', tag: 'nachricht' as typeof TAGS[number], channel: 'gemeinde' as 'gemeinde' | 'verein' | 'gewerbe', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', pinned: false })
+  const [form, setForm] = useState({ titel: '', inhalt: '', tag: 'nachricht' as typeof TAGS[number], channel: 'gemeinde' as 'gemeinde' | 'verein' | 'gewerbe', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', pinned: false, push: false })
   const supabase = createClient()
 
   function handleBild(e: React.ChangeEvent<HTMLInputElement>) {
@@ -48,8 +48,15 @@ export default function PostErstellenButton({ gemeindeId, profileId }: Props) {
         veranstaltung_ort: form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null,
       })
       if (error) throw error
+      if (form.push) {
+        await fetch('/api/notifications/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: form.titel, message: form.inhalt.slice(0, 150) }),
+        })
+      }
       setShowForm(false)
-      setForm({ titel: '', inhalt: '', tag: 'nachricht', channel: 'gemeinde', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', pinned: false })
+      setForm({ titel: '', inhalt: '', tag: 'nachricht', channel: 'gemeinde', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', pinned: false, push: false })
       setBildFile(null); setBildPreview(null)
       window.location.reload()
     } catch {
@@ -131,6 +138,11 @@ export default function PostErstellenButton({ gemeindeId, profileId }: Props) {
                 <input type="checkbox" checked={form.pinned} onChange={e => setForm(f => ({ ...f, pinned: e.target.checked }))}
                   className="rounded" />
                 Beitrag anpinnen
+              </label>
+              <label className="flex items-center gap-2 text-sm font-bold text-red-700 cursor-pointer bg-red-50 px-3 py-2.5 rounded-xl border border-red-200">
+                <input type="checkbox" checked={form.push} onChange={e => setForm(f => ({ ...f, push: e.target.checked }))}
+                  className="rounded accent-red-600" />
+                🔔 Push-Benachrichtigung senden (alle Nutzer)
               </label>
               <button onClick={submit} disabled={loading || !form.titel || !form.inhalt}
                 className="w-full bg-primary-500 text-white font-bold py-3 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2">
