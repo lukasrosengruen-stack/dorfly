@@ -2,10 +2,10 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Newspaper, AlertTriangle, ShoppingBag, BarChart2, MessageCircleQuestion } from 'lucide-react'
+import { Newspaper, AlertTriangle, ShoppingBag, BarChart2, MessageCircleQuestion, LayoutDashboard } from 'lucide-react'
 import { clsx } from 'clsx'
 
-const items = [
+const defaultItems = [
   { href: '/feed',           label: 'Newsfeed',    icon: Newspaper },
   { href: '/maengel',        label: 'Mängel',       icon: AlertTriangle },
   { href: '/marktplatz',     label: 'Marktplatz',   icon: ShoppingBag },
@@ -13,8 +13,14 @@ const items = [
   { href: '/buergermeister', label: 'Frag den BM',  icon: MessageCircleQuestion },
 ]
 
-export default function BottomNav() {
+const vereinItems = [
+  { href: '/feed',      label: 'Newsfeed',   icon: Newspaper },
+  { href: '/dashboard', label: 'Dashboard',  icon: LayoutDashboard },
+]
+
+export default function BottomNav({ role }: { role?: string }) {
   const pathname = usePathname()
+  const items = role === 'verein' ? vereinItems : defaultItems
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-100 z-50 safe-area-inset-bottom">

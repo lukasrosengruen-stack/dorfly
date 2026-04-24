@@ -8,12 +8,18 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   if (!user) redirect('/login')
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
   return (
     <div className="min-h-screen bg-[#F4F6F9]">
       <main className="max-w-lg mx-auto pb-20">
         {children}
       </main>
-      <BottomNav />
+      <BottomNav role={profile?.role} />
     </div>
   )
 }
