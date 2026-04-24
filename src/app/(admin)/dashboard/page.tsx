@@ -1,4 +1,4 @@
-﻿import { createClient } from '@/lib/supabase/server'
+﻿import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { AlertTriangle, MessageCircleQuestion, Newspaper, CheckCircle2, Clock, BarChart2, Star, Users, Home, TrendingUp } from 'lucide-react'
@@ -26,13 +26,15 @@ export default async function DashboardPage() {
     einwohner: number | null; haushalte: number | null; plz: string | null
   } | null
 
+  const service = await createServiceClient()
+
   const [maengelResult, fragenResult, postsResult, pendingPostsResult, umfragenResult, nutzerResult] = await Promise.all([
     supabase.from('maengel').select('id, titel, status, created_at, profiles(display_name)').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }),
     supabase.from('fragen').select('id, frage, status, created_at').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }),
     supabase.from('posts').select('id, titel, tag, published_at, channel').eq('gemeinde_id', gemeindeId!).eq('status', 'published').order('published_at', { ascending: false }).limit(10),
-    supabase.from('posts').select('id, titel, inhalt, channel, tag, created_at, profiles(display_name, verein_name)').eq('gemeinde_id', gemeindeId!).eq('status', 'pending').order('created_at', { ascending: false }),
+    service.from('posts').select('id, titel, inhalt, channel, tag, created_at, profiles(display_name, verein_name)').eq('gemeinde_id', gemeindeId!).eq('status', 'pending').order('created_at', { ascending: false }),
     supabase.from('umfragen').select('*, umfrage_fragen(*, umfrage_optionen(*))').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }),
-    supabase.from('profiles').select('id, role', { count: 'exact' }).eq('gemeinde_id', gemeindeId!),
+    service.from('profiles').select('id, role', { count: 'exact' }).eq('gemeinde_id', gemeindeId!),
   ])
 
   const maengel = maengelResult.data ?? []
