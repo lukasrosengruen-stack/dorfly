@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Clock, CheckCircle2, XCircle, Loader2, X, ImagePlus, Pencil } from 'lucide-react'
+import { Plus, Clock, CheckCircle2, XCircle, Loader2, X, ImagePlus, Pencil, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { clsx } from 'clsx'
 
@@ -39,6 +39,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showNewForm, setShowNewForm] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [deleting, setDeleting] = useState<string | null>(null)
   const [bildFile, setBildFile] = useState<File | null>(null)
   const [bildPreview, setBildPreview] = useState<string | null>(null)
   const [form, setForm] = useState<FormState>(emptyForm)
@@ -80,6 +81,17 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
     const { error } = await supabase.storage.from('dorfly-media').upload(path, bildFile)
     if (error) return null
     return supabase.storage.from('dorfly-media').getPublicUrl(path).data.publicUrl
+  }
+
+  async function deletePost(id: string, titel: string) {
+    if (!confirm(`"${titel}" wirklich löschen?`)) return
+    setDeleting(id)
+    try {
+      const { error } = await supabase.from('posts').delete().eq('id', id)
+      if (error) throw error
+      setPosts(prev => prev.filter(p => p.id !== id))
+    } catch { alert('Fehler beim Löschen') }
+    finally { setDeleting(null) }
   }
 
   async function submitNew() {
@@ -234,6 +246,11 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
                       <Pencil className="w-3.5 h-3.5 text-gray-500" />
                     </button>
                   )}
+                  <button onClick={() => deletePost(post.id, post.titel)}
+                    disabled={deleting === post.id}
+                    className="p-1.5 rounded-lg bg-gray-100 hover:bg-red-100 transition-colors disabled:opacity-50">
+                    {deleting === post.id ? <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" /> : <Trash2 className="w-3.5 h-3.5 text-gray-500 hover:text-red-500" />}
+                  </button>
                 </div>
               </div>
             )
