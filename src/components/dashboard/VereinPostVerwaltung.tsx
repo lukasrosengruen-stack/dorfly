@@ -111,8 +111,9 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
       setPosts(prev => [data as Post, ...prev])
       closeForm()
     } catch (e: unknown) {
-      const err = e as { message?: string; code?: string; details?: string; hint?: string }
-      alert(`Fehler: ${err?.message ?? ''} | code: ${err?.code ?? ''} | details: ${err?.details ?? ''} | hint: ${err?.hint ?? ''}`)
+      console.error('submitNew error:', e)
+      const err = e as Record<string, unknown>
+      alert('FEHLER: ' + JSON.stringify(err, null, 2))
     }
     finally { setLoading(false) }
   }
