@@ -123,7 +123,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Beiträge zur Freigabe */}
-        <PostFreigabe pendingPosts={pendingPosts as Parameters<typeof PostFreigabe>[0]['pendingPosts']} />
+        <PostFreigabe pendingPosts={pendingPosts as unknown as Parameters<typeof PostFreigabe>[0]['pendingPosts']} />
 
         {/* Hauptinhalt: 3 Spalten auf großen Screens */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
