@@ -57,6 +57,7 @@ export interface Post {
   pinned: boolean
   tag: string | null
   veranstaltung_datum: string | null
+  veranstaltung_ort: string | null
   published_at: string
   created_at: string
   // Joins

@@ -30,9 +30,9 @@ const STATUS_META = {
 
 const TAGS = ['nachricht', 'veranstaltung', 'bekanntmachung'] as const
 
-type FormState = { titel: string; inhalt: string; tag: string; veranstaltung_datum: string; veranstaltung_uhrzeit: string }
+type FormState = { titel: string; inhalt: string; tag: string; veranstaltung_datum: string; veranstaltung_uhrzeit: string; veranstaltung_ort: string }
 
-const emptyForm: FormState = { titel: '', inhalt: '', tag: 'nachricht', veranstaltung_datum: '', veranstaltung_uhrzeit: '' }
+const emptyForm: FormState = { titel: '', inhalt: '', tag: 'nachricht', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '' }
 
 export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, profileId, vereinName }: Props) {
   const [posts, setPosts] = useState(initialPosts)
@@ -55,7 +55,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
   function openEdit(post: Post) {
     setShowNewForm(false)
     setEditingId(post.id)
-    setForm({ titel: post.titel, inhalt: post.inhalt, tag: post.tag ?? 'nachricht', veranstaltung_datum: '', veranstaltung_uhrzeit: '' })
+    setForm({ titel: post.titel, inhalt: post.inhalt, tag: post.tag ?? 'nachricht', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '' })
     setBildFile(null)
     setBildPreview(post.bild_url ?? null)
   }
@@ -105,6 +105,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
         tag: form.tag, status: 'pending', bild_url,
         veranstaltung_datum: form.tag === 'veranstaltung' && form.veranstaltung_datum
           ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null,
+        veranstaltung_ort: form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null,
       }).select('id, titel, inhalt, status, created_at, tag, bild_url').single()
       if (error) throw error
       setPosts(prev => [data as Post, ...prev])
@@ -124,6 +125,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
         status: 'pending', bild_url,
         veranstaltung_datum: form.tag === 'veranstaltung' && form.veranstaltung_datum
           ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null,
+        veranstaltung_ort: form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null,
       }).eq('id', editingId)
       if (error) throw error
       setPosts(prev => prev.map(p => p.id === editingId ? { ...p, ...form, status: 'pending' } : p))
@@ -191,13 +193,18 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
                 </div>
               )}
               {form.tag === 'veranstaltung' && (
-                <div className="grid grid-cols-2 gap-3">
-                  <input type="date" value={form.veranstaltung_datum}
-                    onChange={e => setForm(f => ({ ...f, veranstaltung_datum: e.target.value }))}
-                    className="border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
-                  <input type="time" value={form.veranstaltung_uhrzeit}
-                    onChange={e => setForm(f => ({ ...f, veranstaltung_uhrzeit: e.target.value }))}
-                    className="border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <input type="date" value={form.veranstaltung_datum}
+                      onChange={e => setForm(f => ({ ...f, veranstaltung_datum: e.target.value }))}
+                      className="border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                    <input type="time" value={form.veranstaltung_uhrzeit}
+                      onChange={e => setForm(f => ({ ...f, veranstaltung_uhrzeit: e.target.value }))}
+                      className="border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                  </div>
+                  <input type="text" placeholder="Ort (z.B. Gemeindehaus, Hauptstraße 1)" value={form.veranstaltung_ort}
+                    onChange={e => setForm(f => ({ ...f, veranstaltung_ort: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
                 </div>
               )}
               {isEditing && (

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Post, PostChannel, Profile } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
-import { X, Pin, SlidersHorizontal, Check, Calendar, User, LayoutDashboard } from 'lucide-react'
+import { X, Pin, SlidersHorizontal, Check, Calendar, MapPin, User, LayoutDashboard } from 'lucide-react'
 import { clsx } from 'clsx'
 import { formatDistanceToNow, format } from 'date-fns'
 import { de } from 'date-fns/locale'
@@ -214,11 +214,19 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
                 </h2>
 
                 {post.veranstaltung_datum && (
-                  <div className="flex items-center gap-1.5 mt-2 px-3 py-2 bg-purple-50 rounded-xl">
-                    <Calendar className="w-4 h-4 text-purple-600 shrink-0" />
-                    <span className="text-sm text-purple-700 font-bold">
-                      {format(new Date(post.veranstaltung_datum), 'EEEE, d. MMMM yyyy · HH:mm', { locale: de })} Uhr
-                    </span>
+                  <div className="mt-2 px-3 py-2 bg-purple-50 rounded-xl space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="w-4 h-4 text-purple-600 shrink-0" />
+                      <span className="text-sm text-purple-700 font-bold">
+                        {format(new Date(post.veranstaltung_datum), 'EEEE, d. MMMM yyyy · HH:mm', { locale: de })} Uhr
+                      </span>
+                    </div>
+                    {post.veranstaltung_ort && (
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="w-4 h-4 text-purple-600 shrink-0" />
+                        <span className="text-sm text-purple-700">{post.veranstaltung_ort}</span>
+                      </div>
+                    )}
                   </div>
                 )}
 

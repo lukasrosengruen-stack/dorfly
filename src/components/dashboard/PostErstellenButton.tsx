@@ -18,7 +18,7 @@ export default function PostErstellenButton({ gemeindeId, profileId }: Props) {
   const [loading, setLoading] = useState(false)
   const [bildFile, setBildFile] = useState<File | null>(null)
   const [bildPreview, setBildPreview] = useState<string | null>(null)
-  const [form, setForm] = useState({ titel: '', inhalt: '', tag: 'nachricht' as typeof TAGS[number], channel: 'gemeinde' as 'gemeinde' | 'verein' | 'gewerbe', veranstaltung_datum: '', veranstaltung_uhrzeit: '', pinned: false })
+  const [form, setForm] = useState({ titel: '', inhalt: '', tag: 'nachricht' as typeof TAGS[number], channel: 'gemeinde' as 'gemeinde' | 'verein' | 'gewerbe', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', pinned: false })
   const supabase = createClient()
 
   function handleBild(e: React.ChangeEvent<HTMLInputElement>) {
@@ -45,10 +45,11 @@ export default function PostErstellenButton({ gemeindeId, profileId }: Props) {
         tag: form.tag, status: 'published', pinned: form.pinned, bild_url,
         veranstaltung_datum: form.tag === 'veranstaltung' && form.veranstaltung_datum
           ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null,
+        veranstaltung_ort: form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null,
       })
       if (error) throw error
       setShowForm(false)
-      setForm({ titel: '', inhalt: '', tag: 'nachricht', channel: 'gemeinde', veranstaltung_datum: '', veranstaltung_uhrzeit: '', pinned: false })
+      setForm({ titel: '', inhalt: '', tag: 'nachricht', channel: 'gemeinde', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', pinned: false })
       setBildFile(null); setBildPreview(null)
       window.location.reload()
     } catch {
@@ -112,13 +113,18 @@ export default function PostErstellenButton({ gemeindeId, profileId }: Props) {
               </button>
               {bildPreview && <img src={bildPreview} className="w-full h-40 object-cover rounded-xl" alt="" />}
               {form.tag === 'veranstaltung' && (
-                <div className="grid grid-cols-2 gap-3">
-                  <input type="date" value={form.veranstaltung_datum}
-                    onChange={e => setForm(f => ({ ...f, veranstaltung_datum: e.target.value }))}
-                    className="border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
-                  <input type="time" value={form.veranstaltung_uhrzeit}
-                    onChange={e => setForm(f => ({ ...f, veranstaltung_uhrzeit: e.target.value }))}
-                    className="border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <input type="date" value={form.veranstaltung_datum}
+                      onChange={e => setForm(f => ({ ...f, veranstaltung_datum: e.target.value }))}
+                      className="border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                    <input type="time" value={form.veranstaltung_uhrzeit}
+                      onChange={e => setForm(f => ({ ...f, veranstaltung_uhrzeit: e.target.value }))}
+                      className="border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                  </div>
+                  <input type="text" placeholder="Ort (z.B. Gemeindehaus, Hauptstraße 1)" value={form.veranstaltung_ort}
+                    onChange={e => setForm(f => ({ ...f, veranstaltung_ort: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
                 </div>
               )}
               <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">

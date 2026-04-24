@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import { format, isToday, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addMonths, isWithinInterval, parseISO } from 'date-fns'
 import { de } from 'date-fns/locale'
-import { Calendar, Clock, ChevronLeft } from 'lucide-react'
+import { Calendar, Clock, MapPin, ChevronLeft } from 'lucide-react'
 import { clsx } from 'clsx'
 import Link from 'next/link'
 
@@ -22,6 +22,7 @@ interface Veranstaltung {
   inhalt: string
   bild_url: string | null
   veranstaltung_datum: string
+  veranstaltung_ort?: string | null
   channel: string
   tag: string | null
   profiles?: { display_name?: string | null; verein_name?: string | null } | null
@@ -154,11 +155,17 @@ export default function KalenderClient({ veranstaltungen, gemeindeName }: Props)
                         <img src={v.bild_url} alt={v.titel} className="w-full h-40 object-cover" />
                       )}
                       <div className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
                           <span className="flex items-center gap-1 text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full">
                             <Clock className="w-3 h-3" />
                             {uhrzeit} Uhr
                           </span>
+                          {v.veranstaltung_ort && (
+                            <span className="flex items-center gap-1 text-xs font-bold text-gray-600 bg-gray-100 px-2.5 py-1 rounded-full">
+                              <MapPin className="w-3 h-3" />
+                              {v.veranstaltung_ort}
+                            </span>
+                          )}
                           <span className="text-xs text-gray-400 ml-auto truncate">{autorName}</span>
                         </div>
                         <h3 className="font-black text-gray-900 text-base leading-snug uppercase tracking-wide">
