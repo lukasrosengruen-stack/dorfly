@@ -31,5 +31,6 @@ export default async function VeranstaltungenPage() {
         .order('veranstaltung_datum', { ascending: true })
     : { data: [] }
 
-  return <KalenderClient veranstaltungen={veranstaltungen ?? []} gemeindeName={gemeindeName} />
+  type V = Parameters<typeof KalenderClient>[0]['veranstaltungen'][number]
+  return <KalenderClient veranstaltungen={(veranstaltungen ?? []) as unknown as V[]} gemeindeName={gemeindeName} />
 }
