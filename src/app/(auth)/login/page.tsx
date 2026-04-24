@@ -40,7 +40,7 @@ export default function LoginPage() {
           })
         }
       }
-      router.push('/feed')
+      router.push('/home')
       router.refresh()
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Fehler'
