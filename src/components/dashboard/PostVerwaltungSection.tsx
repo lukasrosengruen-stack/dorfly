@@ -100,19 +100,20 @@ export default function PostVerwaltungSection({ posts: initialPosts }: Props) {
     try {
       const uploadedUrl = await uploadBild()
       const bild_url = uploadedUrl ?? (bildPreview ? posts.find(p => p.id === editingId)?.bild_url ?? null : null)
-      const { error } = await supabase.from('posts').update({
-        titel: form.titel,
-        inhalt: form.inhalt,
-        tag: form.tag,
-        channel: form.channel,
-        pinned: form.pinned,
-        bild_url,
-        veranstaltung_datum: form.tag === 'veranstaltung' && form.veranstaltung_datum
-          ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null,
-        veranstaltung_ort: form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null,
-      }).eq('id', editingId)
-      if (error) throw error
-      setPosts(prev => prev.map(p => p.id === editingId ? { ...p, ...form, bild_url, veranstaltung_datum: form.tag === 'veranstaltung' && form.veranstaltung_datum ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null } : p))
+      const veranstaltung_datum = form.tag === 'veranstaltung' && form.veranstaltung_datum
+        ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null
+      const res = await fetch('/api/posts/update', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingId,
+          titel: form.titel, inhalt: form.inhalt, tag: form.tag, channel: form.channel,
+          pinned: form.pinned, bild_url, veranstaltung_datum,
+          veranstaltung_ort: form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null,
+        }),
+      })
+      if (!res.ok) throw new Error()
+      setPosts(prev => prev.map(p => p.id === editingId ? { ...p, ...form, bild_url, veranstaltung_datum } : p))
       closeEdit()
     } catch { alert('Fehler beim Speichern') }
     finally { setLoading(false) }
@@ -122,8 +123,12 @@ export default function PostVerwaltungSection({ posts: initialPosts }: Props) {
     if (!confirm(`"${titel}" wirklich löschen?`)) return
     setDeleting(id)
     try {
-      const { error } = await supabase.from('posts').delete().eq('id', id)
-      if (error) throw error
+      const res = await fetch('/api/posts/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      if (!res.ok) throw new Error()
       setPosts(prev => prev.filter(p => p.id !== id))
     } catch { alert('Fehler beim Löschen') }
     finally { setDeleting(null) }
