@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { MessageCircleQuestion, ChevronDown, ChevronUp, Loader2, CheckCircle2 } from 'lucide-react'
+import { MessageCircleQuestion, ChevronDown, ChevronUp, Loader2, CheckCircle2, Pencil } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 
@@ -17,6 +17,7 @@ export default function BuergerfrageSection({ fragen: initialFragen }: { fragen:
   const [fragen, setFragen] = useState(initialFragen)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [antworten, setAntworten] = useState<Record<string, string>>({})
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState<string | null>(null)
   const supabase = createClient()
 
@@ -30,6 +31,7 @@ export default function BuergerfrageSection({ fragen: initialFragen }: { fragen:
       }).eq('id', frageId)
       if (error) throw error
       setFragen(prev => prev.map(f => f.id === frageId ? { ...f, antwort: text, status: 'beantwortet' } : f))
+      setEditingId(null)
       setExpandedId(null)
     } catch {
       alert('Fehler beim Speichern')
@@ -77,9 +79,15 @@ export default function BuergerfrageSection({ fragen: initialFragen }: { fragen:
               {expanded && (
                 <div className="px-5 pb-4 space-y-2 bg-gray-50">
                   <p className="text-sm text-gray-700 pt-2">{f.frage}</p>
-                  {f.antwort ? (
+                  {f.antwort && editingId !== f.id ? (
                     <div className="bg-primary-50 rounded-xl p-3 border border-primary-100">
-                      <p className="text-xs font-semibold text-primary-600 mb-1">Ihre Antwort</p>
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-xs font-semibold text-primary-600">Ihre Antwort</p>
+                        <button onClick={() => { setEditingId(f.id); setAntworten(prev => ({ ...prev, [f.id]: f.antwort ?? '' })) }}
+                          className="p-1 rounded-lg hover:bg-primary-100 transition-colors">
+                          <Pencil className="w-3.5 h-3.5 text-primary-500" />
+                        </button>
+                      </div>
                       <p className="text-sm text-gray-700">{f.antwort}</p>
                     </div>
                   ) : (
@@ -91,12 +99,20 @@ export default function BuergerfrageSection({ fragen: initialFragen }: { fragen:
                         rows={3}
                         className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                       />
-                      <button onClick={() => antworten_absenden(f.id)}
-                        disabled={loading === f.id || !antworten[f.id]?.trim()}
-                        className="bg-primary-500 text-white text-sm font-bold px-4 py-2 rounded-xl disabled:opacity-50 flex items-center gap-2">
-                        {loading === f.id && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                        Antwort veröffentlichen
-                      </button>
+                      <div className="flex gap-2">
+                        <button onClick={() => antworten_absenden(f.id)}
+                          disabled={loading === f.id || !antworten[f.id]?.trim()}
+                          className="bg-primary-500 text-white text-sm font-bold px-4 py-2 rounded-xl disabled:opacity-50 flex items-center gap-2">
+                          {loading === f.id && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                          {editingId === f.id ? 'Änderung speichern' : 'Antwort veröffentlichen'}
+                        </button>
+                        {editingId === f.id && (
+                          <button onClick={() => setEditingId(null)}
+                            className="text-sm text-gray-500 px-3 py-2 rounded-xl border border-gray-200 hover:bg-gray-50">
+                            Abbrechen
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
