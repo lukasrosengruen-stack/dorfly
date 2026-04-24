@@ -57,6 +57,7 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
 
   const supabase = createClient()
   const isVerwaltung = profile?.role === 'verwaltung' || profile?.role === 'super_admin'
+  const hasDashboard = isVerwaltung || profile?.role === 'verein'
 
   const filtered = initialPosts.filter(p => {
     if (activeTag !== 'alle' && p.tag !== activeTag) return false
@@ -87,7 +88,7 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
             <h1 className="text-white font-black text-xl tracking-wide uppercase leading-none">Neuigkeiten</h1>
           </div>
           <div className="flex items-center gap-2">
-            {isVerwaltung && (
+            {hasDashboard && (
               <Link href="/dashboard" className="flex items-center gap-1 bg-white/20 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg">
                 <LayoutDashboard className="w-3.5 h-3.5" />
                 Dashboard
