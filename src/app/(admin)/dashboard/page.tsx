@@ -1,11 +1,11 @@
 ﻿import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
-import { BarChart2, Star, Users, Home, TrendingUp, AlertTriangle, Clock, MessageCircleQuestion, Newspaper } from 'lucide-react'
+import { BarChart2, Star, Users, Home, TrendingUp, AlertTriangle, Clock, MessageCircleQuestion } from 'lucide-react'
 import { FrageErgebnis } from '@/types/umfrage'
 import GemeindeEinstellungen from '@/components/dashboard/GemeindeEinstellungen'
 import PostFreigabe from '@/components/dashboard/PostFreigabe'
 import PostErstellenButton from '@/components/dashboard/PostErstellenButton'
+import PostVerwaltungSection from '@/components/dashboard/PostVerwaltungSection'
 import BuergerfrageSection from '@/components/dashboard/BuergerfrageSection'
 import MaengelSection from '@/components/dashboard/MaengelSection'
 import UmfrageErstellenButton from '@/components/dashboard/UmfrageErstellenButton'
@@ -54,7 +54,7 @@ export default async function DashboardPage() {
   const [maengelResult, fragenResult, postsResult, pendingPostsResult, umfragenResult, nutzerResult] = await Promise.all([
     supabase.from('maengel').select('id, titel, status, created_at, profiles(display_name)').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }),
     supabase.from('fragen').select('id, frage, status, created_at').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }),
-    supabase.from('posts').select('id, titel, tag, published_at, channel').eq('gemeinde_id', gemeindeId!).eq('status', 'published').order('published_at', { ascending: false }).limit(10),
+    supabase.from('posts').select('id, titel, inhalt, tag, channel, pinned, bild_url, veranstaltung_datum, veranstaltung_ort, published_at').eq('gemeinde_id', gemeindeId!).eq('status', 'published').order('published_at', { ascending: false }).limit(50),
     service.from('posts').select('id, titel, inhalt, channel, tag, created_at, profiles(display_name, verein_name)').eq('gemeinde_id', gemeindeId!).eq('status', 'pending').order('created_at', { ascending: false }),
     supabase.from('umfragen').select('*, umfrage_fragen(*, umfrage_optionen(*))').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }),
     service.from('profiles').select('id, role', { count: 'exact' }).eq('gemeinde_id', gemeindeId!),
@@ -170,34 +170,7 @@ export default async function DashboardPage() {
 
             <BuergerfrageSection fragen={fragen as unknown as Parameters<typeof BuergerfrageSection>[0]['fragen']} />
 
-            {/* Letzte Beiträge */}
-            <section className="bg-white rounded-2xl shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                <h2 className="font-bold text-gray-900 flex items-center gap-2">
-                  <Newspaper className="w-4 h-4 text-primary-500" />
-                  Neueste Beiträge
-                </h2>
-                <Link href="/feed" className="text-sm text-primary-500 font-medium">Alle →</Link>
-              </div>
-              <div className="divide-y divide-gray-50">
-                {posts.map(p => (
-                  <div key={p.id} className="px-5 py-3 flex items-center gap-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 font-medium ${
-                      p.channel === 'gemeinde' ? 'bg-primary-100 text-primary-600' :
-                      p.channel === 'verein' ? 'bg-violet-100 text-violet-700' :
-                      'bg-orange-100 text-orange-700'
-                    }`}>
-                      {p.channel === 'gemeinde' ? 'Gemeinde' : p.channel === 'verein' ? 'Verein' : 'Gewerbe'}
-                    </span>
-                    <span className="text-sm text-gray-800 truncate flex-1">{p.titel}</span>
-                    <span className="text-xs text-gray-400 shrink-0">
-                      {new Date(p.published_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
-                    </span>
-                  </div>
-                ))}
-                {posts.length === 0 && <p className="px-5 py-6 text-center text-gray-400 text-sm">Noch keine Beiträge</p>}
-              </div>
-            </section>
+            <PostVerwaltungSection posts={posts as unknown as Parameters<typeof PostVerwaltungSection>[0]['posts']} />
           </div>
 
           {/* Rechte Spalte: Umfragen */}
