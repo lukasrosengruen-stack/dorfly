@@ -209,11 +209,6 @@ export default function BuergermeisterClient({ fragen: initialFragen, profile }:
                 </div>
               )}
 
-              {expanded && !f.antwort && canAnswer && (
-                <AnswerForm frageId={f.id} onAnswer={(antwort) => {
-                  setFragen(prev => prev.map(q => q.id === f.id ? { ...q, antwort, status: 'beantwortet', beantwortet_at: new Date().toISOString() } : q))
-                }} />
-              )}
             </div>
           )
         })}

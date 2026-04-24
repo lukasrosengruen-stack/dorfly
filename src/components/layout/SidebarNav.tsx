@@ -1,11 +1,11 @@
-﻿'use client'
+'use client'
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Newspaper, AlertTriangle, MessageCircleQuestion, LayoutDashboard, User } from 'lucide-react'
 import { clsx } from 'clsx'
 
-const items = [
+const verwaltungItems = [
   { href: '/feed',           label: 'News',         icon: Newspaper },
   { href: '/maengel',        label: 'Mängel',        icon: AlertTriangle },
   { href: '/buergermeister', label: 'Bürgerfragen',  icon: MessageCircleQuestion },
@@ -13,8 +13,14 @@ const items = [
   { href: '/profil',         label: 'Profil',        icon: User },
 ]
 
-export default function SidebarNav({ gemeindeName }: { gemeindeName?: string }) {
+const vereinItems = [
+  { href: '/dashboard',      label: 'Meine Beiträge', icon: Newspaper },
+  { href: '/profil',         label: 'Profil',          icon: User },
+]
+
+export default function SidebarNav({ gemeindeName, role }: { gemeindeName?: string; role?: string }) {
   const pathname = usePathname()
+  const items = role === 'verein' ? vereinItems : verwaltungItems
 
   return (
     <aside className="w-56 min-h-screen bg-white border-r border-gray-200 flex flex-col shrink-0">
@@ -45,9 +51,10 @@ export default function SidebarNav({ gemeindeName }: { gemeindeName?: string }) 
       </nav>
 
       <div className="p-3 border-t border-gray-100">
-        <p className="text-xs text-gray-400 px-3 py-2">Verwaltungsansicht</p>
+        <p className="text-xs text-gray-400 px-3 py-2">
+          {role === 'verein' ? 'Vereinsansicht' : 'Verwaltungsansicht'}
+        </p>
       </div>
     </aside>
   )
 }
-

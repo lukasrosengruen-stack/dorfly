@@ -127,23 +127,6 @@ export default function UmfrageCard({ umfrage: initialUmfrage, hatAbgestimmt: in
             </button>
             <div className="flex items-center gap-2 shrink-0">
               <span className="text-xs text-gray-400">{teilnehmer} Teilnehmer</span>
-              {isVerwaltung && (
-                <>
-                  <button
-                    onClick={() => setShowEditForm(true)}
-                    className="text-gray-400 hover:text-primary-500 transition-colors"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    disabled={deleting}
-                    className="text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </>
-              )}
               <button onClick={() => setIsExpanded(v => !v)}>
                 {isExpanded
                   ? <ChevronUp className="w-4 h-4 text-gray-400" />

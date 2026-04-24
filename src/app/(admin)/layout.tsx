@@ -14,7 +14,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     .eq('id', user.id)
     .single()
 
-  if (!profile || !['verwaltung', 'super_admin'].includes(profile.role)) {
+  if (!profile || !['verwaltung', 'super_admin', 'verein'].includes(profile.role)) {
     redirect('/feed')
   }
 
@@ -22,7 +22,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      <SidebarNav gemeindeName={gemeindeName} />
+      <SidebarNav gemeindeName={gemeindeName} role={profile.role} />
       <main className="flex-1 overflow-auto">
         {children}
       </main>

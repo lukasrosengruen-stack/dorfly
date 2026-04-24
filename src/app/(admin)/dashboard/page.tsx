@@ -12,12 +12,31 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('*, gemeinden(*)')
+    .select('*, gemeinden(*), verein_name, gemeinde_id')
     .eq('id', user?.id ?? '')
     .single()
 
-  if (!profile || !['verwaltung', 'super_admin'].includes(profile.role)) {
+  if (!profile || !['verwaltung', 'super_admin', 'verein'].includes(profile.role)) {
     redirect('/feed')
+  }
+
+  // Verein sieht nur seine eigenen Beiträge
+  if (profile.role === 'verein') {
+    const { data: vereinPosts } = await supabase
+      .from('posts')
+      .select('id, titel, inhalt, status, created_at, tag')
+      .eq('author_id', user!.id)
+      .order('created_at', { ascending: false })
+
+    const VereinPostVerwaltung = (await import('@/components/dashboard/VereinPostVerwaltung')).default
+    return (
+      <VereinPostVerwaltung
+        posts={(vereinPosts ?? []) as Parameters<typeof VereinPostVerwaltung>[0]['posts']}
+        gemeindeId={profile.gemeinde_id!}
+        profileId={user!.id}
+        vereinName={profile.verein_name}
+      />
+    )
   }
 
   const gemeindeId = profile.gemeinde_id
