@@ -74,7 +74,8 @@ export default function ProfilClient({ profile }: { profile: FullProfile | null 
       await supabase.auth.signOut()
       router.push('/login')
     } else {
-      alert('Fehler beim Löschen des Kontos')
+      const body = await res.json().catch(() => ({}))
+      alert('Fehler: ' + (body.error ?? res.status))
     }
   }
 
