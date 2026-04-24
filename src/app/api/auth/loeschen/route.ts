@@ -9,12 +9,14 @@ export async function DELETE() {
 
   const service = await createServiceClient()
 
-  // Alle Nutzerdaten löschen bevor der Auth-User entfernt werden kann
+  // Alle Nutzerdaten löschen (Reihenfolge wichtig wegen FK-Constraints)
+  await service.from('umfrage_antworten').delete().eq('user_id', user.id)
+  await service.from('umfrage_teilnahmen').delete().eq('user_id', user.id)
+  await service.from('umfragen').delete().eq('erstellt_von', user.id)
   await service.from('posts').delete().eq('author_id', user.id)
   await service.from('maengel').delete().eq('melder_id', user.id)
-  await service.from('buergerfragen').delete().eq('author_id', user.id)
-  await service.from('abstimmungen').delete().eq('user_id', user.id)
-  await service.from('umfragen').delete().eq('erstellt_von', user.id)
+  await service.from('fragen').delete().eq('author_id', user.id)
+  await service.from('sms_verifications').delete().eq('user_id', user.id)
   await service.from('profiles').delete().eq('id', user.id)
 
   const { error } = await service.auth.admin.deleteUser(user.id)
