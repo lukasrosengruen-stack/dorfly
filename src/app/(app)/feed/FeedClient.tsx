@@ -3,11 +3,12 @@
 import { useState } from 'react'
 import { Post, PostChannel, Profile } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
-import { X, Pin, SlidersHorizontal, Check, Calendar, MapPin, User, LayoutDashboard } from 'lucide-react'
+import { X, Pin, SlidersHorizontal, Check, Calendar, MapPin, User, LayoutDashboard, Images } from 'lucide-react'
 import { clsx } from 'clsx'
 import { formatDistanceToNow, format } from 'date-fns'
 import { de } from 'date-fns/locale'
 import Link from 'next/link'
+import GalleryLightbox from '@/components/GalleryLightbox'
 import { Umfrage } from '@/types/umfrage'
 import UmfrageCard from '@/components/umfrage/UmfrageCard'
 
@@ -49,6 +50,7 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
   const [umfragen, setUmfragen] = useState(initialUmfragen)
   const [activeTag, setActiveTag] = useState<PostTag | 'alle'>('alle')
   const [showFilter, setShowFilter] = useState(false)
+  const [gallery, setGallery] = useState<{ bilder: string[]; index: number } | null>(null)
 
   const gespeicherteEinstellungen = (profile?.feed_einstellungen as { vereine_ausgeblendet?: string[] }) ?? {}
   const [ausgeblendet, setAusgeblendet] = useState<string[]>(
@@ -182,21 +184,40 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
           const autor = (post.profiles as { display_name?: string; verein_name?: string } | null)
           const autorName = autor?.verein_name ?? autor?.display_name ?? 'Gemeinde Ehningen'
 
+          const bilder = (post.bilder_urls && (post.bilder_urls as string[]).length > 0)
+            ? post.bilder_urls as string[]
+            : post.bild_url ? [post.bild_url] : []
+
           return (
             <article key={post.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
               <div className={clsx('px-4 py-2 flex items-center justify-between', CHANNEL_COLORS[post.channel])}>
                 <span className="text-xs font-black uppercase tracking-widest">
                   {CHANNEL_LABELS[post.channel]}
                 </span>
-                {post.pinned && (
-                  <span className="flex items-center gap-1 text-xs font-bold opacity-90">
-                    <Pin className="w-3 h-3" /> Angepinnt
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  {bilder.length > 1 && (
+                    <button onClick={() => setGallery({ bilder, index: 0 })}
+                      className="flex items-center gap-1 text-xs font-bold opacity-90 bg-white/20 px-2 py-0.5 rounded-full">
+                      <Images className="w-3 h-3" /> {bilder.length} Fotos
+                    </button>
+                  )}
+                  {post.pinned && (
+                    <span className="flex items-center gap-1 text-xs font-bold opacity-90">
+                      <Pin className="w-3 h-3" /> Angepinnt
+                    </span>
+                  )}
+                </div>
               </div>
 
-              {post.bild_url && (
-                <img src={post.bild_url} alt={post.titel} className="w-full h-48 object-cover" />
+              {bilder.length > 0 && (
+                <div className="relative cursor-pointer" onClick={() => setGallery({ bilder, index: 0 })}>
+                  <img src={bilder[0]} alt={post.titel} className="w-full h-48 object-cover" />
+                  {bilder.length > 1 && (
+                    <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                      <Images className="w-3 h-3" /> {bilder.length}
+                    </div>
+                  )}
+                </div>
               )}
 
               <div className="p-4">
@@ -243,6 +264,14 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
           )
         })}
       </div>
+
+      {gallery && (
+        <GalleryLightbox
+          bilder={gallery.bilder}
+          startIndex={gallery.index}
+          onClose={() => setGallery(null)}
+        />
+      )}
     </div>
   )
 }

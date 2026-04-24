@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Clock, CheckCircle2, XCircle, Loader2, X, ImagePlus, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Clock, CheckCircle2, XCircle, Loader2, X, Pencil, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { clsx } from 'clsx'
+import BilderUpload from './BilderUpload'
 
 interface Post {
   id: string
@@ -40,15 +41,35 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
   const [showNewForm, setShowNewForm] = useState(false)
   const [loading, setLoading] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
-  const [bildFile, setBildFile] = useState<File | null>(null)
-  const [bildPreview, setBildPreview] = useState<string | null>(null)
+  const [bildFiles, setBildFiles] = useState<File[]>([])
+  const [bildPreviews, setBildPreviews] = useState<string[]>([])
   const [form, setForm] = useState<FormState>(emptyForm)
   const supabase = createClient()
+
+  function addBilder(files: File[]) {
+    setBildFiles(prev => [...prev, ...files])
+    setBildPreviews(prev => [...prev, ...files.map(f => URL.createObjectURL(f))])
+  }
+
+  function removeBild(index: number) {
+    setBildFiles(prev => prev.filter((_, i) => i !== index))
+    setBildPreviews(prev => prev.filter((_, i) => i !== index))
+  }
+
+  async function uploadBilder(): Promise<string[]> {
+    return Promise.all(bildFiles.map(async file => {
+      const ext = file.name.split('.').pop()
+      const path = `posts/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+      const { error } = await supabase.storage.from('dorfly-media').upload(path, file)
+      if (error) return null
+      return supabase.storage.from('dorfly-media').getPublicUrl(path).data.publicUrl
+    })).then(urls => urls.filter(Boolean) as string[])
+  }
 
   function openNew() {
     setEditingId(null)
     setForm(emptyForm)
-    setBildFile(null); setBildPreview(null)
+    setBildFiles([]); setBildPreviews([])
     setShowNewForm(true)
   }
 
@@ -56,31 +77,15 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
     setShowNewForm(false)
     setEditingId(post.id)
     setForm({ titel: post.titel, inhalt: post.inhalt, tag: post.tag ?? 'nachricht', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '' })
-    setBildFile(null)
-    setBildPreview(post.bild_url ?? null)
+    setBildFiles([])
+    setBildPreviews(post.bild_url ? [post.bild_url] : [])
   }
 
   function closeForm() {
     setShowNewForm(false)
     setEditingId(null)
     setForm(emptyForm)
-    setBildFile(null); setBildPreview(null)
-  }
-
-  function handleBild(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setBildFile(file)
-    setBildPreview(URL.createObjectURL(file))
-  }
-
-  async function uploadBild(): Promise<string | null> {
-    if (!bildFile) return null
-    const ext = bildFile.name.split('.').pop()
-    const path = `posts/${Date.now()}.${ext}`
-    const { error } = await supabase.storage.from('dorfly-media').upload(path, bildFile)
-    if (error) return null
-    return supabase.storage.from('dorfly-media').getPublicUrl(path).data.publicUrl
+    setBildFiles([]); setBildPreviews([])
   }
 
   async function deletePost(id: string, titel: string) {
@@ -98,11 +103,12 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
     if (!form.titel || !form.inhalt) return
     setLoading(true)
     try {
-      const bild_url = await uploadBild()
+      const bilder_urls = await uploadBilder()
+      const bild_url = bilder_urls[0] ?? null
       const { data, error } = await supabase.from('posts').insert({
         gemeinde_id: gemeindeId, author_id: profileId,
         channel: 'verein', titel: form.titel, inhalt: form.inhalt,
-        tag: form.tag, status: 'pending', bild_url,
+        tag: form.tag, status: 'pending', bild_url, bilder_urls,
         veranstaltung_datum: form.tag === 'veranstaltung' && form.veranstaltung_datum
           ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null,
         veranstaltung_ort: form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null,
@@ -118,11 +124,11 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
     if (!form.titel || !form.inhalt || !editingId) return
     setLoading(true)
     try {
-      const uploadedUrl = await uploadBild()
-      const bild_url = uploadedUrl ?? (bildPreview ? posts.find(p => p.id === editingId)?.bild_url ?? null : null)
+      const bilder_urls = await uploadBilder()
+      const bild_url = bilder_urls.length > 0 ? bilder_urls[0] : (bildPreviews.length > 0 ? posts.find(p => p.id === editingId)?.bild_url ?? null : null)
       const { error } = await supabase.from('posts').update({
         titel: form.titel, inhalt: form.inhalt, tag: form.tag,
-        status: 'pending', bild_url,
+        status: 'pending', bild_url, bilder_urls: bilder_urls.length > 0 ? bilder_urls : undefined,
         veranstaltung_datum: form.tag === 'veranstaltung' && form.veranstaltung_datum
           ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null,
         veranstaltung_ort: form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null,
@@ -176,22 +182,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
               <textarea placeholder="Inhalt" value={form.inhalt} rows={4}
                 onChange={e => setForm(f => ({ ...f, inhalt: e.target.value }))}
                 className="w-full border border-gray-300 rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500" />
-              <input type="file" accept="image/*" id="verein-bild" className="hidden" onChange={handleBild} />
-              <button onClick={() => document.getElementById('verein-bild')?.click()}
-                className={clsx('w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 text-sm font-bold',
-                  bildFile ? 'border-primary-500 text-primary-600 bg-primary-50' : 'border-gray-300 text-gray-500')}>
-                <ImagePlus className="w-4 h-4" />
-                {bildFile ? bildFile.name : 'Bild hinzufügen'}
-              </button>
-              {bildPreview && (
-                <div className="relative">
-                  <img src={bildPreview} className="w-full h-40 object-cover rounded-xl" alt="" />
-                  <button onClick={() => { setBildFile(null); setBildPreview(null) }}
-                    className="absolute top-2 right-2 bg-black/60 rounded-full p-1">
-                    <X className="w-4 h-4 text-white" />
-                  </button>
-                </div>
-              )}
+              <BilderUpload id="verein-bilder" previews={bildPreviews} onAdd={addBilder} onRemove={removeBild} />
               {form.tag === 'veranstaltung' && (
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">

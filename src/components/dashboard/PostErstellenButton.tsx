@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, X, Loader2, ImagePlus } from 'lucide-react'
+import { Plus, X, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { clsx } from 'clsx'
+import BilderUpload from './BilderUpload'
 
 const TAGS = ['nachricht', 'veranstaltung', 'bekanntmachung'] as const
 const TAG_LABELS = { nachricht: 'Nachricht', veranstaltung: 'Veranstaltung', bekanntmachung: 'Bekanntmachung' }
@@ -16,33 +17,48 @@ interface Props {
 export default function PostErstellenButton({ gemeindeId, profileId }: Props) {
   const [showForm, setShowForm] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [bildFile, setBildFile] = useState<File | null>(null)
-  const [bildPreview, setBildPreview] = useState<string | null>(null)
+  const [bildFiles, setBildFiles] = useState<File[]>([])
+  const [bildPreviews, setBildPreviews] = useState<string[]>([])
   const [form, setForm] = useState({ titel: '', inhalt: '', tag: 'nachricht' as typeof TAGS[number], channel: 'gemeinde' as 'gemeinde' | 'verein' | 'gewerbe', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', pinned: false, push: false })
   const supabase = createClient()
 
-  function handleBild(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setBildFile(file)
-    setBildPreview(URL.createObjectURL(file))
+  function addBilder(files: File[]) {
+    setBildFiles(prev => [...prev, ...files])
+    setBildPreviews(prev => [...prev, ...files.map(f => URL.createObjectURL(f))])
+  }
+
+  function removeBild(index: number) {
+    setBildFiles(prev => prev.filter((_, i) => i !== index))
+    setBildPreviews(prev => prev.filter((_, i) => i !== index))
+  }
+
+  async function uploadBilder(): Promise<string[]> {
+    return Promise.all(bildFiles.map(async file => {
+      const ext = file.name.split('.').pop()
+      const path = `posts/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+      const { error } = await supabase.storage.from('dorfly-media').upload(path, file)
+      if (error) return null
+      return supabase.storage.from('dorfly-media').getPublicUrl(path).data.publicUrl
+    })).then(urls => urls.filter(Boolean) as string[])
+  }
+
+  function reset() {
+    setShowForm(false)
+    setForm({ titel: '', inhalt: '', tag: 'nachricht', channel: 'gemeinde', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', pinned: false, push: false })
+    setBildFiles([]); setBildPreviews([])
   }
 
   async function submit() {
     if (!form.titel || !form.inhalt) return
     setLoading(true)
     try {
-      let bild_url: string | null = null
-      if (bildFile) {
-        const ext = bildFile.name.split('.').pop()
-        const path = `posts/${Date.now()}.${ext}`
-        const { error } = await supabase.storage.from('dorfly-media').upload(path, bildFile)
-        if (!error) bild_url = supabase.storage.from('dorfly-media').getPublicUrl(path).data.publicUrl
-      }
+      const bilder_urls = await uploadBilder()
+      const bild_url = bilder_urls[0] ?? null
       const { error } = await supabase.from('posts').insert({
         gemeinde_id: gemeindeId, author_id: profileId,
         channel: form.channel, titel: form.titel, inhalt: form.inhalt,
-        tag: form.tag, status: 'published', pinned: form.pinned, bild_url,
+        tag: form.tag, status: 'published', pinned: form.pinned,
+        bild_url, bilder_urls,
         veranstaltung_datum: form.tag === 'veranstaltung' && form.veranstaltung_datum
           ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null,
         veranstaltung_ort: form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null,
@@ -55,9 +71,7 @@ export default function PostErstellenButton({ gemeindeId, profileId }: Props) {
           body: JSON.stringify({ title: form.titel, message: form.inhalt.slice(0, 150) }),
         })
       }
-      setShowForm(false)
-      setForm({ titel: '', inhalt: '', tag: 'nachricht', channel: 'gemeinde', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', pinned: false, push: false })
-      setBildFile(null); setBildPreview(null)
+      reset()
       window.location.reload()
     } catch {
       alert('Fehler beim Erstellen')
@@ -78,7 +92,7 @@ export default function PostErstellenButton({ gemeindeId, profileId }: Props) {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 bg-white">
               <h2 className="font-bold text-gray-900 text-lg">Neuer Beitrag</h2>
-              <button onClick={() => setShowForm(false)}><X className="w-5 h-5 text-gray-400" /></button>
+              <button onClick={reset}><X className="w-5 h-5 text-gray-400" /></button>
             </div>
             <div className="p-6 space-y-4">
               <div>
@@ -111,14 +125,7 @@ export default function PostErstellenButton({ gemeindeId, profileId }: Props) {
               <textarea placeholder="Inhalt" value={form.inhalt} rows={5}
                 onChange={e => setForm(f => ({ ...f, inhalt: e.target.value }))}
                 className="w-full border border-gray-300 rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500" />
-              <input type="file" accept="image/*" id="post-bild" className="hidden" onChange={handleBild} />
-              <button onClick={() => document.getElementById('post-bild')?.click()}
-                className={clsx('w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 text-sm font-bold',
-                  bildFile ? 'border-primary-500 text-primary-600 bg-primary-50' : 'border-gray-300 text-gray-500')}>
-                <ImagePlus className="w-4 h-4" />
-                {bildFile ? bildFile.name : 'Bild hinzufügen'}
-              </button>
-              {bildPreview && <img src={bildPreview} className="w-full h-40 object-cover rounded-xl" alt="" />}
+              <BilderUpload id="post-bilder" previews={bildPreviews} onAdd={addBilder} onRemove={removeBild} />
               {form.tag === 'veranstaltung' && (
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
@@ -135,13 +142,11 @@ export default function PostErstellenButton({ gemeindeId, profileId }: Props) {
                 </div>
               )}
               <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                <input type="checkbox" checked={form.pinned} onChange={e => setForm(f => ({ ...f, pinned: e.target.checked }))}
-                  className="rounded" />
+                <input type="checkbox" checked={form.pinned} onChange={e => setForm(f => ({ ...f, pinned: e.target.checked }))} className="rounded" />
                 Beitrag anpinnen
               </label>
               <label className="flex items-center gap-2 text-sm font-bold text-red-700 cursor-pointer bg-red-50 px-3 py-2.5 rounded-xl border border-red-200">
-                <input type="checkbox" checked={form.push} onChange={e => setForm(f => ({ ...f, push: e.target.checked }))}
-                  className="rounded accent-red-600" />
+                <input type="checkbox" checked={form.push} onChange={e => setForm(f => ({ ...f, push: e.target.checked }))} className="rounded accent-red-600" />
                 🔔 Push-Benachrichtigung senden (alle Nutzer)
               </label>
               <button onClick={submit} disabled={loading || !form.titel || !form.inhalt}

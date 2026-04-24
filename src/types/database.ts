@@ -58,6 +58,7 @@ export interface Post {
   tag: string | null
   veranstaltung_datum: string | null
   veranstaltung_ort: string | null
+  bilder_urls: string[] | null
   published_at: string
   created_at: string
   // Joins
