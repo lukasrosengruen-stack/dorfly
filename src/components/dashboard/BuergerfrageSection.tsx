@@ -1,8 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { MessageCircleQuestion, ChevronDown, ChevronUp, Loader2, CheckCircle2, Pencil } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { MessageCircleQuestion, ChevronDown, ChevronUp, Loader2, CheckCircle2, Pencil, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 
 interface Frage {
@@ -19,25 +18,39 @@ export default function BuergerfrageSection({ fragen: initialFragen }: { fragen:
   const [antworten, setAntworten] = useState<Record<string, string>>({})
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState<string | null>(null)
-  const supabase = createClient()
+  const [deleting, setDeleting] = useState<string | null>(null)
 
-  async function antworten_absenden(frageId: string) {
+  async function antwort_speichern(frageId: string) {
     const text = antworten[frageId]?.trim()
     if (!text) return
     setLoading(frageId)
     try {
-      const { error } = await supabase.from('fragen').update({
-        antwort: text, status: 'beantwortet', beantwortet_at: new Date().toISOString()
-      }).eq('id', frageId)
-      if (error) throw error
+      const res = await fetch('/api/fragen/update', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: frageId, antwort: text }),
+      })
+      if (!res.ok) throw new Error()
       setFragen(prev => prev.map(f => f.id === frageId ? { ...f, antwort: text, status: 'beantwortet' } : f))
       setEditingId(null)
       setExpandedId(null)
-    } catch {
-      alert('Fehler beim Speichern')
-    } finally {
-      setLoading(null)
-    }
+    } catch { alert('Fehler beim Speichern') }
+    finally { setLoading(null) }
+  }
+
+  async function frage_loeschen(id: string) {
+    if (!confirm('Frage wirklich löschen?')) return
+    setDeleting(id)
+    try {
+      const res = await fetch('/api/fragen/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      if (!res.ok) throw new Error()
+      setFragen(prev => prev.filter(f => f.id !== id))
+    } catch { alert('Fehler beim Löschen') }
+    finally { setDeleting(null) }
   }
 
   const offene = fragen.filter(f => f.status === 'offen')
@@ -53,33 +66,46 @@ export default function BuergerfrageSection({ fragen: initialFragen }: { fragen:
         <Link href="/buergermeister" className="text-sm text-primary-500 font-medium">Alle →</Link>
       </div>
       <div className="divide-y divide-gray-50">
-        {offene.length === 0 && (
+        {fragen.length === 0 && (
           <div className="px-5 py-6 text-center text-gray-400 text-sm flex items-center justify-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-primary-400" /> Alle Fragen beantwortet
+            <CheckCircle2 className="w-4 h-4 text-primary-400" /> Keine Fragen vorhanden
           </div>
         )}
-        {[...offene, ...beantwortet].slice(0, 8).map(f => {
+        {offene.length === 0 && beantwortet.length > 0 && (
+          <div className="px-5 py-3 text-center text-gray-400 text-xs flex items-center justify-center gap-2">
+            <CheckCircle2 className="w-3.5 h-3.5 text-primary-400" /> Alle Fragen beantwortet
+          </div>
+        )}
+        {[...offene, ...beantwortet].slice(0, 10).map(f => {
           const expanded = expandedId === f.id
+          const isEditing = editingId === f.id
           return (
             <div key={f.id}>
-              <button onClick={() => setExpandedId(expanded ? null : f.id)}
-                className="w-full px-5 py-3 flex items-center justify-between gap-3 text-left hover:bg-gray-50 transition-colors">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-800 truncate">{f.frage}</p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+              <div className="px-5 py-3 flex items-center gap-3">
+                <button onClick={() => setExpandedId(expanded ? null : f.id)}
+                  className="flex-1 flex items-center gap-3 text-left min-w-0">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-800 truncate">{f.frage}</p>
+                  </div>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${
                     f.status === 'offen' ? 'bg-blue-50 text-blue-600' : 'bg-primary-50 text-primary-500'
                   }`}>
                     {f.status === 'offen' ? 'Offen' : 'Beantwortet'}
                   </span>
-                  {expanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
-                </div>
-              </button>
+                  {expanded ? <ChevronUp className="w-4 h-4 text-gray-400 shrink-0" /> : <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />}
+                </button>
+                <button onClick={() => frage_loeschen(f.id)} disabled={deleting === f.id}
+                  className="p-1.5 rounded-lg bg-gray-100 hover:bg-red-100 transition-colors shrink-0 disabled:opacity-50">
+                  {deleting === f.id
+                    ? <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
+                    : <Trash2 className="w-3.5 h-3.5 text-gray-500" />}
+                </button>
+              </div>
+
               {expanded && (
                 <div className="px-5 pb-4 space-y-2 bg-gray-50">
-                  <p className="text-sm text-gray-700 pt-2">{f.frage}</p>
-                  {f.antwort && editingId !== f.id ? (
+                  <p className="text-sm text-gray-700 pt-2 italic">„{f.frage}"</p>
+                  {f.antwort && !isEditing ? (
                     <div className="bg-primary-50 rounded-xl p-3 border border-primary-100">
                       <div className="flex items-center justify-between mb-1">
                         <p className="text-xs font-semibold text-primary-600">Ihre Antwort</p>
@@ -100,13 +126,13 @@ export default function BuergerfrageSection({ fragen: initialFragen }: { fragen:
                         className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
                       />
                       <div className="flex gap-2">
-                        <button onClick={() => antworten_absenden(f.id)}
+                        <button onClick={() => antwort_speichern(f.id)}
                           disabled={loading === f.id || !antworten[f.id]?.trim()}
                           className="bg-primary-500 text-white text-sm font-bold px-4 py-2 rounded-xl disabled:opacity-50 flex items-center gap-2">
                           {loading === f.id && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                          {editingId === f.id ? 'Änderung speichern' : 'Antwort veröffentlichen'}
+                          {isEditing ? 'Änderung speichern' : 'Antwort veröffentlichen'}
                         </button>
-                        {editingId === f.id && (
+                        {isEditing && (
                           <button onClick={() => setEditingId(null)}
                             className="text-sm text-gray-500 px-3 py-2 rounded-xl border border-gray-200 hover:bg-gray-50">
                             Abbrechen
