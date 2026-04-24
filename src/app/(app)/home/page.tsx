@@ -21,7 +21,7 @@ export default async function HomePage() {
     .single()
 
   const hasDashboard = profile?.role === 'verwaltung' || profile?.role === 'super_admin' || profile?.role === 'verein'
-  const gemeindeName = (profile?.gemeinden as { name: string } | null)?.name ?? 'Ehningen'
+  const gemeindeName = (profile?.gemeinden as unknown as { name: string } | null)?.name ?? 'Ehningen'
   const vorname = profile?.display_name?.split(' ')[0] ?? 'Hallo'
 
   return (
