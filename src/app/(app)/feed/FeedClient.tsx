@@ -32,7 +32,7 @@ const CHANNEL_COLORS: Record<PostChannel, string> = {
   gewerbe:  'bg-orange-500 text-white',
 }
 
-const CAN_POST: UserRole[] = ['organisation', 'verwaltung', 'super_admin', 'verein']
+const CAN_POST: UserRole[] = ['organisation', 'verein']
 
 function defaultChannel(role?: UserRole): PostChannel {
   if (role === 'verein') return 'verein'
@@ -62,6 +62,7 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
   const [bildFile, setBildFile] = useState<File | null>(null)
   const [bildPreview, setBildPreview] = useState<string | null>(null)
   const [editPost, setEditPost] = useState<Post | null>(null)
+  const [eingereicht, setEingereicht] = useState(false)
   const [form, setForm] = useState({
     titel: '',
     inhalt: '',
@@ -168,19 +169,20 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
         if (!uploadErr) bild_url = supabase.storage.from('dorfly-media').getPublicUrl(path).data.publicUrl
       }
 
-      const { data, error } = await supabase.from('posts')
+      const isVerein = profile.role === 'verein'
+      const { error } = await supabase.from('posts')
         .insert({
           gemeinde_id: profile.gemeinde_id!, author_id: profile.id,
           channel: form.channel, titel: form.titel, inhalt: form.inhalt, tag: form.tag,
+          status: isVerein ? 'pending' : 'published',
           veranstaltung_datum: form.tag === 'veranstaltung' && form.veranstaltung_datum
             ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null,
           bild_url,
         })
-        .select('*, profiles(display_name, avatar_url, role, verein_name)').single()
 
       if (error) throw error
-      setPosts([data as Post, ...posts])
       closeForm()
+      if (isVerein) setEingereicht(true)
     } catch { alert('Fehler beim Speichern') }
     finally { setLoading(false) }
   }
@@ -237,6 +239,14 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
           ))}
         </div>
       </div>
+
+      {/* Eingereicht-Banner */}
+      {eingereicht && (
+        <div className="mx-4 mt-4 bg-primary-50 border border-primary-200 rounded-2xl p-4 flex items-center justify-between gap-3">
+          <p className="text-sm text-primary-700 font-medium">Dein Beitrag wurde eingereicht und wird geprüft.</p>
+          <button onClick={() => setEingereicht(false)} className="text-primary-400 hover:text-primary-600"><X className="w-4 h-4" /></button>
+        </div>
+      )}
 
       {/* FAB */}
       {canPost && !showForm && (
@@ -339,7 +349,7 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
                 className="w-full bg-primary-500 text-white font-black py-3.5 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2 uppercase tracking-wide text-sm"
               >
                 {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                {editPost ? 'Änderungen speichern' : 'Veröffentlichen'}
+                {editPost ? 'Änderungen speichern' : profile?.role === 'verein' ? 'Zur Prüfung einreichen' : 'Veröffentlichen'}
               </button>
             </div>
           </div>

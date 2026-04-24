@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { AlertTriangle, MessageCircleQuestion, Newspaper, CheckCircle2, Clock, BarChart2, Star, Users, Home, TrendingUp } from 'lucide-react'
 import { FrageErgebnis } from '@/types/umfrage'
 import GemeindeEinstellungen from '@/components/dashboard/GemeindeEinstellungen'
+import PostFreigabe from '@/components/dashboard/PostFreigabe'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -25,10 +26,11 @@ export default async function DashboardPage() {
     einwohner: number | null; haushalte: number | null; plz: string | null
   } | null
 
-  const [maengelResult, fragenResult, postsResult, umfragenResult, nutzerResult] = await Promise.all([
+  const [maengelResult, fragenResult, postsResult, pendingPostsResult, umfragenResult, nutzerResult] = await Promise.all([
     supabase.from('maengel').select('id, titel, status, created_at, profiles(display_name)').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }),
     supabase.from('fragen').select('id, frage, status, created_at').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }),
-    supabase.from('posts').select('id, titel, tag, published_at, channel').eq('gemeinde_id', gemeindeId!).order('published_at', { ascending: false }).limit(10),
+    supabase.from('posts').select('id, titel, tag, published_at, channel').eq('gemeinde_id', gemeindeId!).eq('status', 'published').order('published_at', { ascending: false }).limit(10),
+    supabase.from('posts').select('id, titel, inhalt, channel, tag, created_at, profiles(display_name, verein_name)').eq('gemeinde_id', gemeindeId!).eq('status', 'pending').order('created_at', { ascending: false }),
     supabase.from('umfragen').select('*, umfrage_fragen(*, umfrage_optionen(*))').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }),
     supabase.from('profiles').select('id, role', { count: 'exact' }).eq('gemeinde_id', gemeindeId!),
   ])
@@ -36,6 +38,7 @@ export default async function DashboardPage() {
   const maengel = maengelResult.data ?? []
   const fragen = fragenResult.data ?? []
   const posts = postsResult.data ?? []
+  const pendingPosts = pendingPostsResult.data ?? []
   const umfragen = umfragenResult.data ?? []
   const nutzerAnzahl = nutzerResult.count ?? 0
 
@@ -118,6 +121,9 @@ export default async function DashboardPage() {
           <KpiCard icon={<Clock className="w-5 h-5 text-amber-500" />} value={inBearbeitung} label="In Bearbeitung" color="amber" />
           <KpiCard icon={<MessageCircleQuestion className="w-5 h-5 text-blue-500" />} value={offeneFragen} label="Offene Fragen" color="blue" />
         </div>
+
+        {/* Beiträge zur Freigabe */}
+        <PostFreigabe pendingPosts={pendingPosts as Parameters<typeof PostFreigabe>[0]['pendingPosts']} />
 
         {/* Hauptinhalt: 3 Spalten auf großen Screens */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

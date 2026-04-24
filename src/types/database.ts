@@ -1,6 +1,7 @@
 export type UserRole = 'buerger' | 'verein' | 'organisation' | 'verwaltung' | 'super_admin'
 export type OrgType = 'verein' | 'gewerbe' | 'institution'
 export type PostChannel = 'gemeinde' | 'verein' | 'gewerbe'
+export type PostStatus = 'pending' | 'published' | 'rejected'
 export type MaengelStatus = 'offen' | 'in_bearbeitung' | 'erledigt'
 export type FrageStatus = 'offen' | 'beantwortet' | 'archiviert'
 
@@ -49,6 +50,7 @@ export interface Post {
   author_id: string
   org_id: string | null
   channel: PostChannel
+  status: PostStatus
   titel: string
   inhalt: string
   bild_url: string | null
