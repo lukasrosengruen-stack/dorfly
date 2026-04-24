@@ -11,13 +11,19 @@ export default async function MaengelPage() {
     .eq('id', user?.id ?? '')
     .single()
 
-  const { data: maengel } = profile?.gemeinde_id
-    ? await supabase
+  const isAdmin = profile?.role === 'verwaltung' || profile?.role === 'super_admin'
+
+  const query = profile?.gemeinde_id
+    ? supabase
         .from('maengel')
         .select('*, profiles(display_name)')
         .eq('gemeinde_id', profile.gemeinde_id)
         .order('created_at', { ascending: false })
         .limit(100)
+    : null
+
+  const { data: maengel } = query
+    ? isAdmin ? await query : await query.eq('melder_id', user!.id)
     : { data: [] }
 
   return <MaengelClient maengel={maengel ?? []} profile={profile} />
