@@ -1,10 +1,14 @@
 ﻿import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { AlertTriangle, MessageCircleQuestion, Newspaper, CheckCircle2, Clock, BarChart2, Star, Users, Home, TrendingUp } from 'lucide-react'
+import { BarChart2, Star, Users, Home, TrendingUp } from 'lucide-react'
 import { FrageErgebnis } from '@/types/umfrage'
 import GemeindeEinstellungen from '@/components/dashboard/GemeindeEinstellungen'
 import PostFreigabe from '@/components/dashboard/PostFreigabe'
+import PostErstellenButton from '@/components/dashboard/PostErstellenButton'
+import BuergerfrageSection from '@/components/dashboard/BuergerfrageSection'
+import MaengelSection from '@/components/dashboard/MaengelSection'
+import UmfrageErstellenButton from '@/components/dashboard/UmfrageErstellenButton'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -121,13 +125,18 @@ export default async function DashboardPage() {
             </p>
             <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
           </div>
-          {gemeindeId && (
-            <GemeindeEinstellungen
-              gemeindeId={gemeindeId}
-              initialEinwohner={gemeinde?.einwohner ?? null}
-              initialHaushalte={gemeinde?.haushalte ?? null}
-            />
-          )}
+          <div className="flex items-center gap-3">
+            {gemeindeId && (
+              <GemeindeEinstellungen
+                gemeindeId={gemeindeId}
+                initialEinwohner={gemeinde?.einwohner ?? null}
+                initialHaushalte={gemeinde?.haushalte ?? null}
+              />
+            )}
+            {gemeindeId && user && (
+              <PostErstellenButton gemeindeId={gemeindeId} profileId={user.id} />
+            )}
+          </div>
         </div>
       </div>
 
@@ -152,86 +161,14 @@ export default async function DashboardPage() {
           {/* Linke 2 Spalten: Mängel + Fragen + Beiträge */}
           <div className="lg:col-span-2 space-y-6">
 
-            {/* Mängel-Tabelle */}
-            <section className="bg-white rounded-2xl shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                <h2 className="font-bold text-gray-900 flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-red-500" />
-                  Meldungen
-                </h2>
-                <div className="flex items-center gap-3 text-xs text-gray-400">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400 inline-block" />{offeneMaengel} offen</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />{inBearbeitung} in Bearb.</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary-400 inline-block" />{erledigteMaengel} erledigt</span>
-                  <Link href="/maengel" className="text-primary-500 font-medium ml-1">Alle →</Link>
-                </div>
-              </div>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-50 text-xs text-gray-400">
-                    <th className="text-left px-5 py-2.5 font-medium">Titel</th>
-                    <th className="text-left px-3 py-2.5 font-medium">Melder</th>
-                    <th className="text-left px-3 py-2.5 font-medium">Status</th>
-                    <th className="text-right px-5 py-2.5 font-medium">Datum</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {maengel.slice(0, 8).map(m => (
-                    <tr key={m.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                      <td className="px-5 py-3 text-gray-800 max-w-[180px] truncate">{m.titel}</td>
-                      <td className="px-3 py-3 text-gray-500 text-xs">
-                        {(m.profiles as unknown as {display_name: string|null}|null)?.display_name ?? '–'}
-                      </td>
-                      <td className="px-3 py-3">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                          m.status === 'offen' ? 'bg-red-50 text-red-600' :
-                          m.status === 'in_bearbeitung' ? 'bg-amber-50 text-amber-600' :
-                          'bg-primary-50 text-primary-500'
-                        }`}>
-                          {m.status === 'offen' ? 'Offen' : m.status === 'in_bearbeitung' ? 'In Bearb.' : 'Erledigt'}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3 text-gray-400 text-xs text-right whitespace-nowrap">
-                        {new Date(m.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}
-                      </td>
-                    </tr>
-                  ))}
-                  {maengel.length === 0 && (
-                    <tr><td colSpan={4} className="px-5 py-6 text-center text-gray-400 text-sm">Keine Meldungen</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </section>
+            <MaengelSection
+              maengel={maengel as unknown as Parameters<typeof MaengelSection>[0]['maengel']}
+              offeneMaengel={offeneMaengel}
+              inBearbeitung={inBearbeitung}
+              erledigteMaengel={erledigteMaengel}
+            />
 
-            {/* Bürgerfragen */}
-            <section className="bg-white rounded-2xl shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                <h2 className="font-bold text-gray-900 flex items-center gap-2">
-                  <MessageCircleQuestion className="w-4 h-4 text-blue-500" />
-                  Bürgerfragen
-                </h2>
-                <Link href="/buergermeister" className="text-sm text-primary-500 font-medium">Alle →</Link>
-              </div>
-              <div className="divide-y divide-gray-50">
-                {fragen.slice(0, 6).map(f => (
-                  <div key={f.id} className="px-5 py-3 flex items-center justify-between gap-3">
-                    <p className="text-sm text-gray-800 truncate flex-1">{f.frage}</p>
-                    <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 font-medium ${
-                      f.status === 'offen' ? 'bg-blue-50 text-blue-600' :
-                      f.status === 'beantwortet' ? 'bg-primary-50 text-primary-500' :
-                      'bg-gray-100 text-gray-500'
-                    }`}>
-                      {f.status === 'offen' ? 'Offen' : f.status === 'beantwortet' ? 'Beantwortet' : 'Archiviert'}
-                    </span>
-                  </div>
-                ))}
-                {fragen.length === 0 && (
-                  <div className="px-5 py-6 text-center text-gray-400 text-sm flex items-center justify-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-primary-400" /> Alle Fragen beantwortet
-                  </div>
-                )}
-              </div>
-            </section>
+            <BuergerfrageSection fragen={fragen as unknown as Parameters<typeof BuergerfrageSection>[0]['fragen']} />
 
             {/* Letzte Beiträge */}
             <section className="bg-white rounded-2xl shadow-sm overflow-hidden">
@@ -266,10 +203,13 @@ export default async function DashboardPage() {
           {/* Rechte Spalte: Umfragen */}
           <div className="space-y-6">
             <section>
-              <h2 className="font-bold text-gray-900 flex items-center gap-2 mb-4">
-                <BarChart2 className="w-4 h-4 text-primary-500" />
-                Umfragen-Auswertung
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-bold text-gray-900 flex items-center gap-2">
+                  <BarChart2 className="w-4 h-4 text-primary-500" />
+                  Umfragen
+                </h2>
+                {gemeindeId && <UmfrageErstellenButton gemeindeId={gemeindeId} />}
+              </div>
 
               {umfragenMitErgebnissen.length === 0 && (
                 <div className="bg-white rounded-2xl shadow-sm px-5 py-8 text-center text-gray-400 text-sm">
