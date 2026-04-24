@@ -94,6 +94,10 @@ export default function BuergerfrageSection({ fragen: initialFragen }: { fragen:
                   </span>
                   {expanded ? <ChevronUp className="w-4 h-4 text-gray-400 shrink-0" /> : <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />}
                 </button>
+                <button onClick={() => { setEditingId(f.id); setAntworten(prev => ({ ...prev, [f.id]: f.antwort ?? '' })); setExpandedId(f.id) }}
+                  className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors shrink-0">
+                  <Pencil className="w-3.5 h-3.5 text-gray-500" />
+                </button>
                 <button onClick={() => frage_loeschen(f.id)} disabled={deleting === f.id}
                   className="p-1.5 rounded-lg bg-gray-100 hover:bg-red-100 transition-colors shrink-0 disabled:opacity-50">
                   {deleting === f.id
