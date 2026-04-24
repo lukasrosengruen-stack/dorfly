@@ -9,10 +9,14 @@ export async function DELETE() {
 
   const service = await createServiceClient()
 
-  // Profil-Daten zuerst löschen (falls kein CASCADE)
+  // Alle Nutzerdaten löschen bevor der Auth-User entfernt werden kann
+  await service.from('posts').delete().eq('author_id', user.id)
+  await service.from('maengel').delete().eq('melder_id', user.id)
+  await service.from('buergerfragen').delete().eq('author_id', user.id)
+  await service.from('abstimmungen').delete().eq('user_id', user.id)
+  await service.from('umfragen').delete().eq('erstellt_von', user.id)
   await service.from('profiles').delete().eq('id', user.id)
 
-  // Auth-User löschen
   const { error } = await service.auth.admin.deleteUser(user.id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
