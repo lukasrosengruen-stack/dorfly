@@ -28,7 +28,7 @@ export default async function DashboardPage() {
   if (profile.role === 'verein') {
     const { data: vereinPosts } = await supabase
       .from('posts')
-      .select('id, titel, inhalt, status, created_at, tag')
+      .select('id, titel, inhalt, status, created_at, tag, bild_url')
       .eq('author_id', user!.id)
       .order('created_at', { ascending: false })
 
