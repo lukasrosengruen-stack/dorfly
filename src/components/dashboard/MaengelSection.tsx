@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { AlertTriangle, Loader2 } from 'lucide-react'
+import { AlertTriangle, Loader2, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 
 type Status = 'offen' | 'in_bearbeitung' | 'erledigt'
@@ -22,6 +22,22 @@ export default function MaengelSection({ maengel: initialMaengel, offeneMaengel,
 }) {
   const [maengel, setMaengel] = useState(initialMaengel)
   const [updating, setUpdating] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<string | null>(null)
+
+  async function deleteMangel(id: string) {
+    if (!confirm('Meldung wirklich löschen?')) return
+    setDeleting(id)
+    try {
+      const res = await fetch('/api/maengel/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      if (!res.ok) throw new Error()
+      setMaengel(prev => prev.filter(m => m.id !== id))
+    } catch { alert('Fehler beim Löschen') }
+    finally { setDeleting(null) }
+  }
 
   async function updateStatus(id: string, status: Status) {
     setUpdating(id)
@@ -61,6 +77,7 @@ export default function MaengelSection({ maengel: initialMaengel, offeneMaengel,
             <th className="text-left px-3 py-2.5 font-medium">Melder</th>
             <th className="text-left px-3 py-2.5 font-medium">Status ändern</th>
             <th className="text-right px-5 py-2.5 font-medium">Datum</th>
+            <th className="px-3 py-2.5" />
           </tr>
         </thead>
         <tbody>
@@ -89,6 +106,14 @@ export default function MaengelSection({ maengel: initialMaengel, offeneMaengel,
               </td>
               <td className="px-5 py-3 text-gray-400 text-xs text-right whitespace-nowrap">
                 {new Date(m.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+              </td>
+              <td className="px-3 py-3">
+                <button onClick={() => deleteMangel(m.id)} disabled={deleting === m.id}
+                  className="p-1.5 rounded-lg bg-gray-100 hover:bg-red-100 transition-colors disabled:opacity-50">
+                  {deleting === m.id
+                    ? <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
+                    : <Trash2 className="w-3.5 h-3.5 text-gray-500" />}
+                </button>
               </td>
             </tr>
           ))}
