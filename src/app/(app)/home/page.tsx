@@ -1,13 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
-import { Newspaper, AlertTriangle, ShoppingBag, BarChart2, MessageCircleQuestion, LayoutDashboard } from 'lucide-react'
+import { Newspaper, AlertTriangle, ShoppingBag, BarChart2, MessageCircleQuestion, LayoutDashboard, CalendarDays } from 'lucide-react'
 import Link from 'next/link'
 
 const tiles = [
-  { href: '/feed',           label: 'Newsfeed',       icon: Newspaper,            color: 'bg-primary-500',  desc: 'Aktuelles aus der Gemeinde' },
-  { href: '/maengel',        label: 'Mängel melden',  icon: AlertTriangle,         color: 'bg-red-500',      desc: 'Schäden und Probleme melden' },
-  { href: '/umfragen',       label: 'Umfragen',       icon: BarChart2,             color: 'bg-violet-500',   desc: 'Ihre Meinung zählt' },
-  { href: '/marktplatz',     label: 'Marktplatz',     icon: ShoppingBag,           color: 'bg-orange-500',   desc: 'Lokale Angebote & Gesuche' },
-  { href: '/buergermeister', label: 'Frag den BM',    icon: MessageCircleQuestion, color: 'bg-sky-500',      desc: 'Direkt an die Verwaltung' },
+  { href: '/feed',             label: 'Newsfeed',         icon: Newspaper,            color: 'bg-primary-500',  desc: 'Aktuelles aus der Gemeinde' },
+  { href: '/veranstaltungen',  label: 'Veranstaltungen',  icon: CalendarDays,          color: 'bg-purple-500',   desc: 'Events & Termine' },
+  { href: '/maengel',          label: 'Mängel melden',    icon: AlertTriangle,         color: 'bg-red-500',      desc: 'Schäden und Probleme melden' },
+  { href: '/umfragen',         label: 'Umfragen',         icon: BarChart2,             color: 'bg-violet-500',   desc: 'Ihre Meinung zählt' },
+  { href: '/marktplatz',       label: 'Marktplatz',       icon: ShoppingBag,           color: 'bg-orange-500',   desc: 'Lokale Angebote & Gesuche' },
+  { href: '/buergermeister',   label: 'Frag den BM',      icon: MessageCircleQuestion, color: 'bg-sky-500',      desc: 'Direkt an die Verwaltung' },
 ]
 
 export default async function HomePage() {
