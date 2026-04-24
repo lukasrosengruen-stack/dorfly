@@ -33,23 +33,10 @@ export default function LoginPage() {
         if (error) throw error
 
         if (data.user) {
-          const { data: gemeinde } = await supabase
-            .from('gemeinden')
-            .select('id')
-            .eq('slug', 'ehningen')
-            .single()
-
-          await supabase.from('profiles').insert({
-            id: data.user.id,
-            phone: null,
-            phone_verified: false,
-            role: 'buerger',
-            gemeinde_id: gemeinde?.id ?? null,
-            vorname: vorname || null,
-            nachname: nachname || null,
-            display_name: [vorname, nachname].filter(Boolean).join(' ') || null,
-            adresse: adresse || null,
-            geburtsdatum: geburtsdatum || null,
+          await fetch('/api/auth/registrieren', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: data.user.id, vorname, nachname, adresse, geburtsdatum }),
           })
         }
       }
