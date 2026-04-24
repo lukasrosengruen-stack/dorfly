@@ -1,7 +1,7 @@
 ﻿import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { BarChart2, Star, Users, Home, TrendingUp, AlertTriangle, Clock, MessageCircleQuestion } from 'lucide-react'
+import { BarChart2, Star, Users, Home, TrendingUp, AlertTriangle, Clock, MessageCircleQuestion, Newspaper } from 'lucide-react'
 import { FrageErgebnis } from '@/types/umfrage'
 import GemeindeEinstellungen from '@/components/dashboard/GemeindeEinstellungen'
 import PostFreigabe from '@/components/dashboard/PostFreigabe'
