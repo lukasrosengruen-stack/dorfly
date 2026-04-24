@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { MessageSquare, ArrowRight, Loader2, ChevronDown } from 'lucide-react'
+import { MessageSquare, ArrowRight, Loader2, ChevronDown, Mail } from 'lucide-react'
 
 type Mode = 'login' | 'register'
 
@@ -19,6 +19,7 @@ export default function LoginPage() {
   const [showOptional, setShowOptional] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [registered, setRegistered] = useState(false)
   const supabase = createClient()
 
   async function submit() {
@@ -39,6 +40,8 @@ export default function LoginPage() {
             body: JSON.stringify({ userId: data.user.id, vorname, nachname, adresse, geburtsdatum }),
           })
         }
+        setRegistered(true)
+        return
       }
       router.push('/home')
       router.refresh()
@@ -50,6 +53,29 @@ export default function LoginPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (registered) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-primary-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-500 mb-4">
+            <Mail className="text-white w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Fast geschafft!</h2>
+          <p className="text-gray-500 text-sm leading-relaxed mb-6">
+            Wir haben dir eine Bestätigungs-E-Mail geschickt.<br />
+            Bitte öffne die Mail und klicke auf den Link, um dein Konto zu aktivieren.
+          </p>
+          <button
+            onClick={() => setRegistered(false)}
+            className="text-primary-500 text-sm font-medium"
+          >
+            Zurück zur Anmeldung
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (

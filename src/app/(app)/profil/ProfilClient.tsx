@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Profile } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { LogOut, Phone, MapPin, Shield, Pencil, X, Check, Loader2, User, Calendar } from 'lucide-react'
+import { LogOut, Phone, MapPin, Shield, Pencil, X, Check, Loader2, User, Calendar, Trash2 } from 'lucide-react'
 
 const ROLE_LABELS: Record<string, string> = {
   buerger:      'Bürger',
@@ -65,6 +65,17 @@ export default function ProfilClient({ profile }: { profile: FullProfile | null 
   async function signOut() {
     await supabase.auth.signOut()
     router.push('/login')
+  }
+
+  async function deleteAccount() {
+    if (!confirm('Konto wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.')) return
+    const res = await fetch('/api/auth/loeschen', { method: 'DELETE' })
+    if (res.ok) {
+      await supabase.auth.signOut()
+      router.push('/login')
+    } else {
+      alert('Fehler beim Löschen des Kontos')
+    }
   }
 
   return (
@@ -181,6 +192,14 @@ export default function ProfilClient({ profile }: { profile: FullProfile | null 
         >
           <LogOut className="w-4 h-4" />
           Abmelden
+        </button>
+
+        <button
+          onClick={deleteAccount}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-red-400 text-sm font-medium hover:text-red-600 transition-colors"
+        >
+          <Trash2 className="w-4 h-4" />
+          Konto löschen
         </button>
       </div>
     </div>
