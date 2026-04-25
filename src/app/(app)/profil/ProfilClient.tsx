@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Profile } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { LogOut, Phone, MapPin, Shield, Pencil, X, Check, Loader2, User, Calendar, Trash2 } from 'lucide-react'
+import { LogOut, Phone, MapPin, Shield, Pencil, X, Check, Loader2, User, Calendar, Trash2, KeyRound, Eye, EyeOff } from 'lucide-react'
 
 const ROLE_LABELS: Record<string, string> = {
   buerger:      'Bürger',
@@ -28,6 +28,12 @@ export default function ProfilClient({ profile }: { profile: FullProfile | null 
   const supabase = createClient()
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [showPwForm, setShowPwForm] = useState(false)
+  const [pwForm, setPwForm] = useState({ neu: '', confirm: '' })
+  const [pwLoading, setPwLoading] = useState(false)
+  const [pwError, setPwError] = useState('')
+  const [pwDone, setPwDone] = useState(false)
+  const [showPw, setShowPw] = useState(false)
   const [form, setForm] = useState({
     vorname:      profile?.vorname ?? '',
     nachname:     profile?.nachname ?? '',
@@ -65,6 +71,19 @@ export default function ProfilClient({ profile }: { profile: FullProfile | null 
   async function signOut() {
     await supabase.auth.signOut()
     router.push('/login')
+  }
+
+  async function changePassword() {
+    if (pwForm.neu !== pwForm.confirm) { setPwError('Passwörter stimmen nicht überein'); return }
+    if (pwForm.neu.length < 6) { setPwError('Mindestens 6 Zeichen'); return }
+    setPwLoading(true)
+    setPwError('')
+    const { error } = await supabase.auth.updateUser({ password: pwForm.neu })
+    setPwLoading(false)
+    if (error) { setPwError(error.message); return }
+    setPwDone(true)
+    setPwForm({ neu: '', confirm: '' })
+    setTimeout(() => { setPwDone(false); setShowPwForm(false) }, 2000)
   }
 
   async function deleteAccount() {
@@ -185,6 +204,57 @@ export default function ProfilClient({ profile }: { profile: FullProfile | null 
             <InfoRow icon={Shield} label="Rolle" value={ROLE_LABELS[profile?.role ?? 'buerger']} />
             <InfoRow icon={MapPin} label="Gemeinde" value={profile?.gemeinden?.name ?? null} placeholder="Keine Gemeinde" />
           </div>
+        </div>
+
+        {/* Passwort ändern */}
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <button
+            onClick={() => { setShowPwForm(v => !v); setPwError(''); setPwDone(false) }}
+            className="w-full flex items-center gap-3 px-4 py-3.5 text-left"
+          >
+            <KeyRound className="w-4 h-4 text-gray-400" />
+            <span className="text-sm font-medium text-gray-700 flex-1">Passwort ändern</span>
+            <span className="text-xs text-primary-500">{showPwForm ? 'Schließen' : 'Ändern'}</span>
+          </button>
+          {showPwForm && (
+            <div className="px-4 pb-4 space-y-3 border-t border-gray-50">
+              {pwDone ? (
+                <p className="text-primary-600 text-sm font-medium pt-3">Passwort erfolgreich geändert!</p>
+              ) : (
+                <>
+                  <div className="relative mt-3">
+                    <input
+                      type={showPw ? 'text' : 'password'}
+                      value={pwForm.neu}
+                      onChange={e => setPwForm(f => ({ ...f, neu: e.target.value }))}
+                      placeholder="Neues Passwort"
+                      className="w-full border border-gray-300 rounded-xl px-3 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    />
+                    <button type="button" onClick={() => setShowPw(v => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                      {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <input
+                    type="password"
+                    value={pwForm.confirm}
+                    onChange={e => setPwForm(f => ({ ...f, confirm: e.target.value }))}
+                    placeholder="Passwort bestätigen"
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                  {pwError && <p className="text-red-500 text-xs">{pwError}</p>}
+                  <button
+                    onClick={changePassword}
+                    disabled={pwLoading || !pwForm.neu || !pwForm.confirm}
+                    className="w-full bg-primary-500 text-white font-medium py-2.5 rounded-xl text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {pwLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                    Speichern
+                  </button>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         <button

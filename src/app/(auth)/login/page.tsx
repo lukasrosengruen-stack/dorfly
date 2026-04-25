@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { MessageSquare, ArrowRight, Loader2, ChevronDown, Mail } from 'lucide-react'
 
-type Mode = 'login' | 'register'
+type Mode = 'login' | 'register' | 'forgot'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -20,7 +20,20 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [registered, setRegistered] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
   const supabase = createClient()
+
+  async function sendReset() {
+    if (!email) { setError('Bitte E-Mail eingeben'); return }
+    setLoading(true)
+    setError('')
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/passwort-zuruecksetzen`,
+    })
+    setLoading(false)
+    if (error) setError(error.message)
+    else setResetSent(true)
+  }
 
   async function submit() {
     setError('')
@@ -183,7 +196,49 @@ export default function LoginPage() {
             {loading ? <Loader2 className="animate-spin w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
             {mode === 'login' ? 'Anmelden' : 'Konto erstellen'}
           </button>
+
+          {mode === 'login' && (
+            <button
+              type="button"
+              onClick={() => { setMode('forgot'); setError('') }}
+              className="w-full text-center text-sm text-gray-400 hover:text-primary-500 transition-colors pt-1"
+            >
+              Passwort vergessen?
+            </button>
+          )}
         </div>
+
+        {/* Passwort vergessen */}
+        {mode === 'forgot' && (
+          <div className="mt-6 pt-6 border-t border-gray-100">
+            {resetSent ? (
+              <div className="text-center">
+                <p className="text-primary-600 font-medium text-sm">E-Mail gesendet!</p>
+                <p className="text-gray-400 text-xs mt-1">Prüfe dein Postfach und klicke den Link.</p>
+                <button onClick={() => { setMode('login'); setResetSent(false) }}
+                  className="mt-3 text-sm text-primary-500 font-medium">
+                  Zurück zur Anmeldung
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-500">Gib deine E-Mail ein – wir schicken dir einen Link zum Zurücksetzen.</p>
+                <button
+                  onClick={sendReset}
+                  disabled={loading || !email}
+                  className="w-full bg-primary-500 hover:bg-primary-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
+                >
+                  {loading ? <Loader2 className="animate-spin w-5 h-5" /> : <Mail className="w-5 h-5" />}
+                  Reset-Link senden
+                </button>
+                <button onClick={() => { setMode('login'); setError('') }}
+                  className="w-full text-center text-sm text-gray-400 hover:text-primary-500 transition-colors">
+                  Zurück
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
