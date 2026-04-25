@@ -10,14 +10,27 @@ function ResetForm() {
   const searchParams = useSearchParams()
   const supabase = createClient()
 
+  const [ready, setReady] = useState(false)
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
   const [showPw, setShowPw] = useState(false)
+
   useEffect(() => {
-    // Session wurde bereits durch /auth/callback gesetzt
+    const code = searchParams.get('code')
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+        if (error) setError('Ungültiger oder abgelaufener Link.')
+        else setReady(true)
+      })
+    } else {
+      // Fallback: check if already in PASSWORD_RECOVERY state
+      supabase.auth.onAuthStateChange((event) => {
+        if (event === 'PASSWORD_RECOVERY') setReady(true)
+      })
+    }
   }, [])
 
   async function submit() {
@@ -43,7 +56,18 @@ function ResetForm() {
           <p className="text-gray-500 text-sm mt-1">Wähle ein neues Passwort für dein Konto</p>
         </div>
 
-        {done ? (
+        {error && !ready ? (
+          <div className="text-center">
+            <p className="text-red-500 text-sm">{error}</p>
+            <button onClick={() => router.push('/login')} className="mt-4 text-primary-500 text-sm font-medium">
+              Zurück zur Anmeldung
+            </button>
+          </div>
+        ) : !ready ? (
+          <div className="flex justify-center">
+            <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
+          </div>
+        ) : done ? (
           <div className="text-center text-primary-600 font-medium">
             Passwort erfolgreich geändert. Du wirst weitergeleitet...
           </div>
