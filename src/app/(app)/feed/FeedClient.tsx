@@ -85,10 +85,10 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
       <div className="bg-primary-500 px-4 pt-10 pb-0 sticky top-0 z-10">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <p className="text-primary-200 text-[10px] font-bold tracking-[0.2em] uppercase">
+            <p className="text-gold-500 text-[10px] font-bold tracking-[3px] uppercase">
               {profile?.gemeinden?.name ?? 'Gemeinde Ehningen'}
             </p>
-            <h1 className="text-white font-black text-xl tracking-wide uppercase leading-none">Neuigkeiten</h1>
+            <h1 className="text-white font-extrabold text-[22px] leading-tight mt-0.5">Neuigkeiten</h1>
           </div>
           <div className="flex items-center gap-2">
             {hasDashboard && (
@@ -120,8 +120,8 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
               key={tag}
               onClick={() => setActiveTag(tag)}
               className={clsx(
-                'shrink-0 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide transition-colors',
-                activeTag === tag ? 'bg-white text-primary-500' : 'bg-white/20 text-white/80'
+                'shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors',
+                activeTag === tag ? 'bg-gold-500 text-white' : 'bg-white/15 text-white/75'
               )}
             >
               {tag === 'alle' ? 'Alle' : TAG_META[tag].label}

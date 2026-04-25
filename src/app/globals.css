@@ -1,32 +1,43 @@
 @import "tailwindcss";
 
 :root {
-  --background: #F4F6F9;
-  --foreground: #1A1A1A;
+  --background: #f5f7fc;
+  --foreground: #0f172a;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-jakarta);
 
-  /* Ehningen Primärblau */
-  --color-primary-50:  #E8F1FA;
-  --color-primary-100: #C5D9F2;
-  --color-primary-200: #8BB4E5;
-  --color-primary-300: #508FD8;
-  --color-primary-400: #1A6ECC;
-  --color-primary-500: #0066CC;
-  --color-primary-600: #0058B3;
-  --color-primary-700: #004A99;
-  --color-primary-800: #003A7A;
-  --color-primary-900: #002B5C;
+  /* Primary – Navy (aus dem Ehninger Wappen) */
+  --color-primary-50:  #e8f0fd;
+  --color-primary-100: #c5d9f2;
+  --color-primary-200: #8baee5;
+  --color-primary-300: #5083d8;
+  --color-primary-400: #1a5cbf;
+  --color-primary-500: #0f2d6b;
+  --color-primary-600: #0c2460;
+  --color-primary-700: #091b55;
+  --color-primary-800: #061240;
+  --color-primary-900: #030a2b;
 
-  /* Akzentrot */
+  /* Gold – Akzentfarbe */
+  --color-gold-50:  #fdf3e0;
+  --color-gold-100: #fbe0a6;
+  --color-gold-200: #f8cc6e;
+  --color-gold-300: #f5b836;
+  --color-gold-400: #f3a800;
+  --color-gold-500: #e8a020;
+  --color-gold-600: #c88018;
+  --color-gold-700: #a86010;
+  --color-gold-800: #884008;
+  --color-gold-900: #682000;
+
+  /* Akzentrot – nur für Warnungen */
   --color-accent-50:  #FAE8E8;
   --color-accent-100: #F5CCCC;
-  --color-accent-500: #CC0000;
+  --color-accent-500: #c41e1e;
   --color-accent-600: #B30000;
   --color-accent-700: #990000;
 }
@@ -34,14 +45,21 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-jakarta), 'Plus Jakarta Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Verhindert Farb-Inversion im Dark Mode */
+/* Kein Dark Mode */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #F4F6F9;
-    --foreground: #1A1A1A;
+    --background: #f5f7fc;
+    --foreground: #0f172a;
   }
 }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(15,45,107,0.2); border-radius: 2px; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
