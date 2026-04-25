@@ -60,7 +60,7 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
 
   const supabase = createClient()
   const isVerwaltung = profile?.role === 'verwaltung' || profile?.role === 'super_admin'
-  const hasDashboard = isVerwaltung || profile?.role === 'verein'
+  const hasDashboard = isVerwaltung || profile?.role === 'verein' || profile?.role === 'organisation'
 
   const filtered = initialPosts.filter(p => {
     if (activeTag !== 'alle' && p.tag !== activeTag) return false

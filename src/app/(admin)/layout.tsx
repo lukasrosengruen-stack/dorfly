@@ -14,7 +14,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     .eq('id', user.id)
     .single()
 
-  if (!profile || !['verwaltung', 'super_admin', 'verein'].includes(profile.role)) {
+  if (!profile || !['verwaltung', 'super_admin', 'verein', 'organisation'].includes(profile.role)) {
     redirect('/feed')
   }
 

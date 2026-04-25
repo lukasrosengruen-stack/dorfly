@@ -20,12 +20,12 @@ export default async function DashboardPage() {
     .eq('id', user?.id ?? '')
     .single()
 
-  if (!profile || !['verwaltung', 'super_admin', 'verein'].includes(profile.role)) {
+  if (!profile || !['verwaltung', 'super_admin', 'verein', 'organisation'].includes(profile.role)) {
     redirect('/feed')
   }
 
   // Verein sieht nur seine eigenen Beiträge
-  if (profile.role === 'verein') {
+  if (profile.role === 'verein' || profile.role === 'organisation') {
     const { data: vereinPosts } = await supabase
       .from('posts')
       .select('id, titel, inhalt, status, created_at, tag, bild_url')

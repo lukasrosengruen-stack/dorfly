@@ -21,7 +21,7 @@ export default async function HomePage() {
     .eq('id', user?.id ?? '')
     .single()
 
-  const hasDashboard = profile?.role === 'verwaltung' || profile?.role === 'super_admin' || profile?.role === 'verein'
+  const hasDashboard = profile?.role === 'verwaltung' || profile?.role === 'super_admin' || profile?.role === 'verein' || profile?.role === 'organisation'
   const gemeindeName = (profile?.gemeinden as unknown as { name: string } | null)?.name ?? 'Ehningen'
   const vorname = profile?.display_name?.split(' ')[0] ?? 'Hallo'
 
