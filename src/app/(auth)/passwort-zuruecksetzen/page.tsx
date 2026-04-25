@@ -1,13 +1,12 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { MessageSquare, Loader2, ArrowRight, Eye, EyeOff } from 'lucide-react'
 
-function ResetForm() {
+export default function PasswortZuruecksetzenPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const supabase = createClient()
 
   const [ready, setReady] = useState(false)
@@ -19,18 +18,20 @@ function ResetForm() {
   const [showPw, setShowPw] = useState(false)
 
   useEffect(() => {
-    const code = searchParams.get('code')
-    if (code) {
-      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
-        if (error) setError('Ungültiger oder abgelaufener Link.')
-        else setReady(true)
-      })
-    } else {
-      // Fallback: check if already in PASSWORD_RECOVERY state
-      supabase.auth.onAuthStateChange((event) => {
-        if (event === 'PASSWORD_RECOVERY') setReady(true)
-      })
-    }
+    // Session wurde bereits durch /auth/callback serverseitig gesetzt
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setReady(true)
+      } else {
+        // Fallback: auf PASSWORD_RECOVERY Event warten
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+          if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') setReady(true)
+        })
+        // Nach 3s ohne Session: Fehler zeigen
+        const timeout = setTimeout(() => setError('Link ungültig oder abgelaufen. Bitte neuen Reset anfordern.'), 3000)
+        return () => { subscription.unsubscribe(); clearTimeout(timeout) }
+      }
+    })
   }, [])
 
   async function submit() {
@@ -46,7 +47,7 @@ function ResetForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-primary-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-500 mb-4">
@@ -56,20 +57,20 @@ function ResetForm() {
           <p className="text-gray-500 text-sm mt-1">Wähle ein neues Passwort für dein Konto</p>
         </div>
 
-        {error && !ready ? (
-          <div className="text-center">
+        {done ? (
+          <div className="text-center text-primary-600 font-medium">
+            Passwort erfolgreich geändert. Du wirst weitergeleitet…
+          </div>
+        ) : error && !ready ? (
+          <div className="text-center space-y-4">
             <p className="text-red-500 text-sm">{error}</p>
-            <button onClick={() => router.push('/login')} className="mt-4 text-primary-500 text-sm font-medium">
+            <button onClick={() => router.push('/login')} className="text-primary-500 text-sm font-medium">
               Zurück zur Anmeldung
             </button>
           </div>
         ) : !ready ? (
           <div className="flex justify-center">
             <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
-          </div>
-        ) : done ? (
-          <div className="text-center text-primary-600 font-medium">
-            Passwort erfolgreich geändert. Du wirst weitergeleitet...
           </div>
         ) : (
           <div className="space-y-3">
@@ -107,13 +108,5 @@ function ResetForm() {
         )}
       </div>
     </div>
-  )
-}
-
-export default function PasswortZuruecksetzenPage() {
-  return (
-    <Suspense>
-      <ResetForm />
-    </Suspense>
   )
 }
