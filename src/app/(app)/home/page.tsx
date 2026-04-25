@@ -1,6 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
-import { Newspaper, AlertTriangle, ShoppingBag, BarChart2, MessageCircleQuestion, LayoutDashboard, CalendarDays } from 'lucide-react'
+import { Newspaper, AlertTriangle, ShoppingBag, BarChart2, MessageCircleQuestion, LayoutDashboard, CalendarDays, ExternalLink, ScrollText } from 'lucide-react'
 import Link from 'next/link'
+
+const externalLinks = [
+  {
+    href: 'https://sitzungsdienst.ehningen.de/buergerinfo/info.asp',
+    label: 'Ratsinformationssystem',
+    icon: ScrollText,
+    color: '#0f2d6b',
+    bg: 'rgba(15,45,107,0.08)',
+    desc: 'Sitzungen & Beschlüsse',
+  },
+]
 
 const tiles = [
   { href: '/feed',            label: 'Newsfeed',         icon: Newspaper,            color: '#1a5cbf', bg: 'rgba(26,92,191,0.1)',  desc: 'Aktuelles' },
@@ -71,6 +82,29 @@ export default async function HomePage() {
               </div>
             </Link>
           ))}
+        </div>
+
+        {/* Externe Links */}
+        <div>
+          <p className="text-[11px] font-bold text-[#64748b] tracking-[1px] uppercase mb-2 px-1">Online-Dienste</p>
+          <div className="grid grid-cols-2 gap-2.5">
+            {externalLinks.map(({ href, label, icon: Icon, color, bg, desc }) => (
+              <a key={href} href={href} target="_blank" rel="noopener noreferrer"
+                className="bg-white rounded-[18px] p-[15px_14px] shadow-[0_2px_14px_rgba(15,45,107,0.08)] flex flex-col gap-3 active:opacity-90">
+                <div className="flex items-start justify-between">
+                  <div className="w-[58px] h-[58px] rounded-[18px] flex items-center justify-center"
+                    style={{ background: bg }}>
+                    <Icon className="w-[30px] h-[30px]" style={{ color }} strokeWidth={1.5} />
+                  </div>
+                  <ExternalLink className="w-3.5 h-3.5 text-[#64748b] mt-1" strokeWidth={1.5} />
+                </div>
+                <div>
+                  <p className="font-bold text-[13px] text-[#0f172a] leading-tight">{label}</p>
+                  <p className="text-[11px] text-[#64748b] mt-0.5 leading-snug">{desc}</p>
+                </div>
+              </a>
+            ))}
+          </div>
         </div>
       </div>
     </div>
