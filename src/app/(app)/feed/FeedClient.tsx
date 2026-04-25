@@ -11,6 +11,7 @@ import Link from 'next/link'
 import GalleryLightbox from '@/components/GalleryLightbox'
 import { Umfrage } from '@/types/umfrage'
 import UmfrageCard from '@/components/umfrage/UmfrageCard'
+import ShareButton from '@/components/ShareButton'
 
 const TAGS = ['nachricht', 'veranstaltung', 'bekanntmachung'] as const
 type PostTag = typeof TAGS[number]
@@ -258,6 +259,12 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
                     {autorName[0]?.toUpperCase()}
                   </div>
                   <span className="text-xs text-gray-500 font-medium flex-1 truncate">{autorName}</span>
+                  <ShareButton
+                    postId={post.id}
+                    titel={post.titel}
+                    inhalt={post.inhalt}
+                    gemeindeName={profile?.gemeinden?.name ?? 'Ehningen'}
+                  />
                 </div>
               </div>
             </article>
