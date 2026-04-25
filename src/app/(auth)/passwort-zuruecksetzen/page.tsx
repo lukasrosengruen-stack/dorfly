@@ -16,14 +16,8 @@ function ResetForm() {
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
   const [showPw, setShowPw] = useState(false)
-  const [sessionReady, setSessionReady] = useState(false)
-
   useEffect(() => {
-    // Supabase setzt die Session automatisch aus dem URL-Hash (access_token)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') setSessionReady(true)
-    })
-    return () => subscription.unsubscribe()
+    // Session wurde bereits durch /auth/callback gesetzt
   }, [])
 
   async function submit() {
