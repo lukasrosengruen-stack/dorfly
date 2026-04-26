@@ -16,7 +16,7 @@ export default async function FeedPage() {
   const [postsResult, vereineResult, umfragenResult] = await Promise.all([
     gemeindeId
       ? supabase.from('posts')
-          .select('*, profiles(display_name, avatar_url, role, verein_name)')
+          .select('*, profiles(display_name, avatar_url, role, verein_name), organisationen(name)')
           .eq('gemeinde_id', gemeindeId)
           .eq('status', 'published')
           .neq('channel', 'gemeinderat')

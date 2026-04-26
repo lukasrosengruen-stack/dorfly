@@ -186,8 +186,9 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
           const tag = (post.tag ?? 'nachricht') as PostTag
           const tagMeta = TAG_META[tag] ?? TAG_META.nachricht
           const autor = (post.profiles as { display_name?: string; verein_name?: string } | null)
-          const orgName = autor?.verein_name
-          const personName = autor?.display_name ?? orgName ?? 'Gemeinde Ehningen'
+          const org = (post as unknown as { organisationen?: { name?: string } | null }).organisationen
+          const orgName = org?.name ?? autor?.verein_name
+          const personName = autor?.display_name ?? orgName ?? 'Unbekannt'
 
           const bilder = (post.bilder_urls && (post.bilder_urls as string[]).length > 0)
             ? post.bilder_urls as string[]
