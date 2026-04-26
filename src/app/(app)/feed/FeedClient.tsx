@@ -53,8 +53,8 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine: 
   const [showFilter, setShowFilter] = useState(false)
   const [gallery, setGallery] = useState<{ bilder: string[]; index: number } | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
-  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set())
   const [selectedSenders, setSelectedSenders] = useState<Set<string>>(new Set())
+  const [selectedDays, setSelectedDays] = useState<number | null>(null)
 
   const isVerwaltung = profile?.role === 'verwaltung' || profile?.role === 'super_admin'
   const hasDashboard = isVerwaltung || profile?.role === 'verein' || profile?.role === 'organisation' || profile?.role === 'gemeinderat'
@@ -70,17 +70,16 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine: 
       .filter((v): v is string => !!v)
   )]
 
-  const activeFilterCount = selectedTags.size + selectedSenders.size
+  const activeFilterCount = selectedSenders.size + (selectedDays ? 1 : 0)
 
-  function toggleTag(tag: string) {
-    setSelectedTags(prev => { const s = new Set(prev); s.has(tag) ? s.delete(tag) : s.add(tag); return s })
-  }
   function toggleSender(sender: string) {
     setSelectedSenders(prev => { const s = new Set(prev); s.has(sender) ? s.delete(sender) : s.add(sender); return s })
   }
 
+  const cutoff = selectedDays ? new Date(Date.now() - selectedDays * 24 * 60 * 60 * 1000) : null
+
   const filtered = initialPosts.filter(p => {
-    if (selectedTags.size > 0 && p.tag && !selectedTags.has(p.tag)) return false
+    if (cutoff && new Date(p.published_at) < cutoff) return false
     if (selectedSenders.size > 0) {
       const autor = (p.profiles as { verein_name?: string | null; role?: string } | null)
       const isVerwaltungPost = autor?.role === 'verwaltung' || autor?.role === 'super_admin'
@@ -133,7 +132,7 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine: 
               <h2 className="font-black text-gray-900 uppercase tracking-wide text-sm">Feed filtern</h2>
               <div className="flex items-center gap-3">
                 {activeFilterCount > 0 && (
-                  <button onClick={() => { setSelectedTags(new Set()); setSelectedSenders(new Set()) }}
+                  <button onClick={() => { setSelectedSenders(new Set()); setSelectedDays(null) }}
                     className="text-xs text-primary-500 font-bold">
                     Zurücksetzen
                   </button>
@@ -144,30 +143,18 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine: 
               </div>
             </div>
 
-            <div className="p-5 space-y-6">
-              {/* Kategorie */}
+            <div className="p-5 space-y-6 pb-8">
+              {/* Zeitraum */}
               <div>
-                <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Kategorie</p>
-                <div className="space-y-2">
-                  {TAGS.map(tag => {
-                    const aktiv = selectedTags.has(tag)
-                    return (
-                      <button key={tag} onClick={() => toggleTag(tag)}
-                        className="w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-colors"
-                        style={{ borderColor: aktiv ? undefined : '#e5e7eb' }}
-                        {...(aktiv ? { 'data-active': true } : {})}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className={clsx('text-xs px-2 py-0.5 rounded-full font-bold uppercase', TAG_META[tag].color)}>
-                            {TAG_META[tag].label}
-                          </span>
-                        </div>
-                        <span className={clsx('w-6 h-6 rounded-full flex items-center justify-center shrink-0', aktiv ? 'bg-primary-500' : 'bg-gray-100')}>
-                          {aktiv && <Check className="w-3.5 h-3.5 text-white" />}
-                        </span>
-                      </button>
-                    )
-                  })}
+                <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Zeitraum</p>
+                <div className="flex gap-2">
+                  {[7, 14, 30].map(days => (
+                    <button key={days} onClick={() => setSelectedDays(selectedDays === days ? null : days)}
+                      className={clsx('flex-1 py-2.5 rounded-xl text-sm font-bold border-2 transition-colors',
+                        selectedDays === days ? 'bg-primary-500 text-white border-primary-500' : 'border-gray-200 text-gray-600')}>
+                      {days} Tage
+                    </button>
+                  ))}
                 </div>
               </div>
 
