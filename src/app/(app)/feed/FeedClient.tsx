@@ -185,9 +185,10 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
         {filtered.map(post => {
           const tag = (post.tag ?? 'nachricht') as PostTag
           const tagMeta = TAG_META[tag] ?? TAG_META.nachricht
-          const autor = (post.profiles as { display_name?: string; verein_name?: string; role?: string } | null)
+          const autorRaw = post.profiles
+          const autor = (Array.isArray(autorRaw) ? autorRaw[0] : autorRaw) as { display_name?: string | null; verein_name?: string | null; role?: string } | null
           const orgName = autor?.verein_name ?? null
-          const personName = autor?.display_name ?? orgName ?? 'Unbekannt'
+          const personName = autor?.display_name ?? autor?.verein_name ?? 'Gemeinde Ehningen'
 
           const bilder = (post.bilder_urls && (post.bilder_urls as string[]).length > 0)
             ? post.bilder_urls as string[]
