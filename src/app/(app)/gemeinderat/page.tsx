@@ -38,7 +38,7 @@ export default async function GemeinderatPage() {
       raete={raeteResult.data ?? []}
       profileId={user.id}
       gemeindeId={gemeindeId}
-      gemeindeName={(profile?.gemeinden as { name: string } | null)?.name ?? 'Ehningen'}
+      gemeindeName={(profile?.gemeinden as unknown as { name: string } | null)?.name ?? 'Ehningen'}
     />
   )
 }
