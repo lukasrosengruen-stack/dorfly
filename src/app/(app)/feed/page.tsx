@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import FeedClient from './FeedClient'
 
 export default async function FeedPage() {
@@ -43,10 +43,11 @@ export default async function FeedPage() {
 
   const posts = postsResult.data ?? []
 
-  // Autoren-Profile manuell laden um FK-Join-Probleme zu umgehen
+  // Autoren-Profile via Service-Client laden (umgeht RLS auf profiles)
   const authorIds = [...new Set(posts.map((p: { author_id: string }) => p.author_id).filter(Boolean))]
+  const service = await createServiceClient()
   const { data: authorProfiles } = authorIds.length > 0
-    ? await supabase.from('profiles').select('id, display_name, verein_name, role, avatar_url').in('id', authorIds)
+    ? await service.from('profiles').select('id, display_name, verein_name, role, avatar_url').in('id', authorIds)
     : { data: [] }
 
   const postsWithProfiles = posts.map((post: Record<string, unknown> & { author_id: string }) => ({
