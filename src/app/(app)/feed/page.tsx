@@ -49,10 +49,10 @@ export default async function FeedPage() {
     ? await supabase.from('profiles').select('id, display_name, verein_name, role, avatar_url').in('id', authorIds)
     : { data: [] }
 
-  const postsWithProfiles = posts.map((post: { author_id: string }) => ({
+  const postsWithProfiles = posts.map((post: Record<string, unknown> & { author_id: string }) => ({
     ...post,
     profiles: (authorProfiles ?? []).find((p: { id: string }) => p.id === post.author_id) ?? null,
-  }))
+  })) as unknown as Parameters<typeof FeedClient>[0]['posts']
 
   const vereine = (vereineResult.data ?? [])
     .map((p: { verein_name: string | null }) => p.verein_name)
