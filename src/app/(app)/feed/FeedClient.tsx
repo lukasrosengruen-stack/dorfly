@@ -54,6 +54,7 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
   const [activeTag, setActiveTag] = useState<PostTag | 'alle'>('alle')
   const [showFilter, setShowFilter] = useState(false)
   const [gallery, setGallery] = useState<{ bilder: string[]; index: number } | null>(null)
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
   const gespeicherteEinstellungen = (profile?.feed_einstellungen as { vereine_ausgeblendet?: string[] }) ?? {}
   const [ausgeblendet, setAusgeblendet] = useState<string[]>(
@@ -233,11 +234,11 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
                   </span>
                 </div>
 
-                <Link href={`/posts/${post.id}`} className="block group">
-                  <h2 className="font-black text-gray-900 text-base leading-snug uppercase tracking-wide group-hover:text-primary-600 transition-colors">
+                <button onClick={() => setExpanded(prev => { const s = new Set(prev); s.has(post.id) ? s.delete(post.id) : s.add(post.id); return s })} className="text-left w-full">
+                  <h2 className="font-black text-gray-900 text-base leading-snug uppercase tracking-wide">
                     {post.titel}
                   </h2>
-                </Link>
+                </button>
 
                 {post.veranstaltung_datum && (
                   <div className="mt-2 px-3 py-2 bg-purple-50 rounded-xl space-y-1">
@@ -256,9 +257,7 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
                   </div>
                 )}
 
-                <Link href={`/posts/${post.id}`} className="block">
-                  <p className="text-gray-600 text-sm mt-2 leading-relaxed line-clamp-3">{post.inhalt}</p>
-                </Link>
+                <p className={clsx('text-gray-600 text-sm mt-2 leading-relaxed', !expanded.has(post.id) && 'line-clamp-3')}>{post.inhalt}</p>
 
                 <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
                   <div className="w-7 h-7 rounded-full bg-primary-100 flex items-center justify-center text-xs font-black text-primary-700 shrink-0">
