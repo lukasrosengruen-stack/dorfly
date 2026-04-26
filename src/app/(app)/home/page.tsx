@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { Newspaper, AlertTriangle, ShoppingBag, BarChart2, MessageCircleQuestion, LayoutDashboard, CalendarDays, ExternalLink, ScrollText, Scale } from 'lucide-react'
+import { Newspaper, AlertTriangle, ShoppingBag, BarChart2, MessageCircleQuestion, LayoutDashboard, CalendarDays, ExternalLink, ScrollText, Scale, UserCircle } from 'lucide-react'
 import Link from 'next/link'
 
 const externalLinks = [
@@ -21,6 +21,7 @@ const tiles = [
   { href: '/marktplatz',      label: 'Marktplatz',       icon: ShoppingBag,           color: '#ea580c', bg: 'rgba(234,88,12,0.1)',  desc: 'Angebote & Gesuche' },
   { href: '/buergermeister',  label: 'Frag den BM',      icon: MessageCircleQuestion, color: '#1a5cbf', bg: 'rgba(26,92,191,0.1)',  desc: 'An die Verwaltung' },
   { href: '/gemeinderat',     label: 'Gemeinderat',      icon: Scale,                 color: '#0f2d6b', bg: 'rgba(15,45,107,0.1)',  desc: 'Politik & Fragen' },
+  { href: '/profil',          label: 'Mein Profil',      icon: UserCircle,            color: '#475569', bg: 'rgba(71,85,105,0.1)',  desc: 'Einstellungen & Konto' },
 ]
 
 export default async function HomePage() {

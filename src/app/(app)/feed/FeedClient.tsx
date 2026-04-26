@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Post, PostChannel, Profile } from '@/types/database'
-import { X, Pin, SlidersHorizontal, Check, Calendar, MapPin, User, LayoutDashboard, Images } from 'lucide-react'
+import { X, Pin, SlidersHorizontal, Check, Calendar, MapPin, User, Images } from 'lucide-react'
 import { clsx } from 'clsx'
 import { formatDistanceToNow, format } from 'date-fns'
 import { de } from 'date-fns/locale'
@@ -56,9 +56,6 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine: 
   const [selectedSenders, setSelectedSenders] = useState<Set<string>>(new Set())
   const [selectedDays, setSelectedDays] = useState<number | null>(null)
 
-  const isVerwaltung = profile?.role === 'verwaltung' || profile?.role === 'super_admin'
-  const hasDashboard = isVerwaltung || profile?.role === 'verein' || profile?.role === 'organisation' || profile?.role === 'gemeinderat'
-
   // Derive available senders from posts
   const hasVerwaltungPosts = initialPosts.some(p => {
     const r = (p.profiles as { role?: string } | null)?.role
@@ -102,12 +99,6 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine: 
             <h1 className="text-white font-extrabold text-[22px] leading-tight mt-0.5">Neuigkeiten</h1>
           </div>
           <div className="flex items-center gap-2">
-            {hasDashboard && (
-              <Link href="/dashboard" className="flex items-center gap-1 bg-white/20 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg">
-                <LayoutDashboard className="w-3.5 h-3.5" />
-                Dashboard
-              </Link>
-            )}
             <button onClick={() => setShowFilter(true)} className="relative flex items-center gap-1.5 bg-white/20 text-white text-xs font-bold px-3 py-1.5 rounded-xl">
               <SlidersHorizontal className="w-3.5 h-3.5" />
               Filtern
