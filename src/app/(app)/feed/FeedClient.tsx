@@ -30,9 +30,10 @@ const CHANNEL_LABELS: Record<PostChannel, string> = {
 }
 
 const CHANNEL_COLORS: Record<PostChannel, string> = {
-  gemeinde: 'bg-primary-500 text-white',
-  verein:   'bg-violet-600 text-white',
-  gewerbe:  'bg-orange-500 text-white',
+  gemeinde:    'bg-primary-500 text-white',
+  verein:      'bg-violet-600 text-white',
+  gewerbe:     'bg-orange-500 text-white',
+  gemeinderat: 'bg-primary-700 text-white',
 }
 
 interface UmfrageMitDaten {
