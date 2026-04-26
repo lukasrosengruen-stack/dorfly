@@ -233,9 +233,11 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
                   </span>
                 </div>
 
-                <h2 className="font-black text-gray-900 text-base leading-snug uppercase tracking-wide">
-                  {post.titel}
-                </h2>
+                <Link href={`/posts/${post.id}`} className="block group">
+                  <h2 className="font-black text-gray-900 text-base leading-snug uppercase tracking-wide group-hover:text-primary-600 transition-colors">
+                    {post.titel}
+                  </h2>
+                </Link>
 
                 {post.veranstaltung_datum && (
                   <div className="mt-2 px-3 py-2 bg-purple-50 rounded-xl space-y-1">
@@ -254,7 +256,9 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
                   </div>
                 )}
 
-                <p className="text-gray-600 text-sm mt-2 leading-relaxed line-clamp-3">{post.inhalt}</p>
+                <Link href={`/posts/${post.id}`} className="block">
+                  <p className="text-gray-600 text-sm mt-2 leading-relaxed line-clamp-3">{post.inhalt}</p>
+                </Link>
 
                 <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
                   <div className="w-7 h-7 rounded-full bg-primary-100 flex items-center justify-center text-xs font-black text-primary-700 shrink-0">
