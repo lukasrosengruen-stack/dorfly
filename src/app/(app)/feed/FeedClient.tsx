@@ -23,9 +23,10 @@ const TAG_META: Record<PostTag, { label: string; color: string }> = {
 }
 
 const CHANNEL_LABELS: Record<PostChannel, string> = {
-  gemeinde: 'Gemeinde',
-  verein:   'Verein',
-  gewerbe:  'Gewerbe',
+  gemeinde:    'Gemeinde',
+  verein:      'Verein',
+  gewerbe:     'Gewerbe',
+  gemeinderat: 'Gemeinderat',
 }
 
 const CHANNEL_COLORS: Record<PostChannel, string> = {
