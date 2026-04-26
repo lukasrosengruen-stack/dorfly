@@ -187,7 +187,7 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
           const tagMeta = TAG_META[tag] ?? TAG_META.nachricht
           const autorRaw = post.profiles
           const autor = (Array.isArray(autorRaw) ? autorRaw[0] : autorRaw) as { display_name?: string | null; verein_name?: string | null; role?: string } | null
-          const orgName = autor?.verein_name ?? null
+          const badgeLabel = autor?.verein_name ?? (autor?.role ? autor.role.charAt(0).toUpperCase() + autor.role.slice(1) : CHANNEL_LABELS[post.channel])
           const personName = autor?.display_name ?? autor?.verein_name ?? 'Gemeinde Ehningen'
 
           const bilder = (post.bilder_urls && (post.bilder_urls as string[]).length > 0)
@@ -198,7 +198,7 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
             <article key={post.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
               <div className={clsx('px-4 py-2 flex items-center justify-between', CHANNEL_COLORS[post.channel])}>
                 <span className="text-xs font-black uppercase tracking-widest">
-                  {orgName ?? CHANNEL_LABELS[post.channel]}
+                  {badgeLabel}
                 </span>
                 <div className="flex items-center gap-2">
                   {bilder.length > 1 && (
