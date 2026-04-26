@@ -16,7 +16,7 @@ export default async function FeedPage() {
   const [postsResult, vereineResult, umfragenResult] = await Promise.all([
     gemeindeId
       ? supabase.from('posts')
-          .select('*, profiles!author_id(display_name, avatar_url, role, verein_name)')
+          .select('id, titel, inhalt, bild_url, bilder_urls, tag, channel, pinned, status, published_at, author_id, veranstaltung_datum, veranstaltung_ort')
           .eq('gemeinde_id', gemeindeId)
           .eq('status', 'published')
           .neq('channel', 'gemeinderat')
@@ -40,6 +40,19 @@ export default async function FeedPage() {
           .order('created_at', { ascending: false })
       : Promise.resolve({ data: [] }),
   ])
+
+  const posts = postsResult.data ?? []
+
+  // Autoren-Profile manuell laden um FK-Join-Probleme zu umgehen
+  const authorIds = [...new Set(posts.map((p: { author_id: string }) => p.author_id).filter(Boolean))]
+  const { data: authorProfiles } = authorIds.length > 0
+    ? await supabase.from('profiles').select('id, display_name, verein_name, role, avatar_url').in('id', authorIds)
+    : { data: [] }
+
+  const postsWithProfiles = posts.map((post: { author_id: string }) => ({
+    ...post,
+    profiles: (authorProfiles ?? []).find((p: { id: string }) => p.id === post.author_id) ?? null,
+  }))
 
   const vereine = (vereineResult.data ?? [])
     .map((p: { verein_name: string | null }) => p.verein_name)
@@ -66,7 +79,7 @@ export default async function FeedPage() {
 
   return (
     <FeedClient
-      posts={postsResult.data ?? []}
+      posts={postsWithProfiles}
       profile={profile}
       alleVereine={vereine}
       umfragen={umfragenMitDaten}
