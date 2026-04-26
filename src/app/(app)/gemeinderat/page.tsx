@@ -34,7 +34,7 @@ export default async function GemeinderatPage() {
 
   return (
     <GemeinderatClient
-      posts={postsResult.data ?? []}
+      posts={(postsResult.data ?? []) as unknown as Parameters<typeof GemeinderatClient>[0]['posts']}
       raete={raeteResult.data ?? []}
       profileId={user.id}
       gemeindeId={gemeindeId}
