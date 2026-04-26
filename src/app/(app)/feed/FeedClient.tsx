@@ -186,7 +186,8 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
           const tag = (post.tag ?? 'nachricht') as PostTag
           const tagMeta = TAG_META[tag] ?? TAG_META.nachricht
           const autor = (post.profiles as { display_name?: string; verein_name?: string } | null)
-          const autorName = autor?.verein_name ?? autor?.display_name ?? 'Gemeinde Ehningen'
+          const orgName = autor?.verein_name
+          const personName = autor?.display_name ?? orgName ?? 'Gemeinde Ehningen'
 
           const bilder = (post.bilder_urls && (post.bilder_urls as string[]).length > 0)
             ? post.bilder_urls as string[]
@@ -196,7 +197,7 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
             <article key={post.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
               <div className={clsx('px-4 py-2 flex items-center justify-between', CHANNEL_COLORS[post.channel])}>
                 <span className="text-xs font-black uppercase tracking-widest">
-                  {CHANNEL_LABELS[post.channel]}
+                  {orgName ?? CHANNEL_LABELS[post.channel]}
                 </span>
                 <div className="flex items-center gap-2">
                   {bilder.length > 1 && (
@@ -267,9 +268,9 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
 
                 <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
                   <div className="w-7 h-7 rounded-full bg-primary-100 flex items-center justify-center text-xs font-black text-primary-700 shrink-0">
-                    {autorName[0]?.toUpperCase()}
+                    {personName[0]?.toUpperCase()}
                   </div>
-                  <span className="text-xs text-gray-500 font-medium flex-1 truncate">{autorName}</span>
+                  <span className="text-xs text-gray-500 font-medium flex-1 truncate">{personName}</span>
                   <ShareButton
                     postId={post.id}
                     titel={post.titel}
