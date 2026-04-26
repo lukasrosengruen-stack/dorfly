@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Mangel, MaengelStatus, Profile } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
+import { compressImage } from '@/lib/compressImage'
 import { Plus, MapPin, Camera, X, Loader2, CheckCircle2, Clock, AlertTriangle } from 'lucide-react'
 import { clsx } from 'clsx'
 import { formatDistanceToNow } from 'date-fns'
@@ -73,9 +74,9 @@ function BuergerView({ maengel, setMaengel, profile }: {
     try {
       let foto_url: string | null = null
       if (fotoFile) {
-        const ext = fotoFile.name.split('.').pop()
-        const path = `maengel/${Date.now()}.${ext}`
-        const { error: uploadErr } = await supabase.storage.from('dorfly-media').upload(path, fotoFile)
+        const compressed = await compressImage(fotoFile)
+        const path = `maengel/${Date.now()}.jpg`
+        const { error: uploadErr } = await supabase.storage.from('dorfly-media').upload(path, compressed)
         if (!uploadErr) {
           const { data } = supabase.storage.from('dorfly-media').getPublicUrl(path)
           foto_url = data.publicUrl

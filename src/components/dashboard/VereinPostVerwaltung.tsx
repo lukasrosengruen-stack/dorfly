@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Plus, Clock, CheckCircle2, XCircle, Loader2, X, Pencil, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { compressImage } from '@/lib/compressImage'
 import { clsx } from 'clsx'
 import BilderUpload from './BilderUpload'
 
@@ -58,9 +59,9 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
 
   async function uploadBilder(): Promise<string[]> {
     return Promise.all(bildFiles.map(async file => {
-      const ext = file.name.split('.').pop()
-      const path = `posts/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-      const { error } = await supabase.storage.from('dorfly-media').upload(path, file)
+      const compressed = await compressImage(file)
+      const path = `posts/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`
+      const { error } = await supabase.storage.from('dorfly-media').upload(path, compressed)
       if (error) return null
       return supabase.storage.from('dorfly-media').getPublicUrl(path).data.publicUrl
     })).then(urls => urls.filter(Boolean) as string[])
