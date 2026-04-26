@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Newspaper, AlertTriangle, MessageCircleQuestion, LayoutDashboard, User } from 'lucide-react'
+import { Newspaper, AlertTriangle, MessageCircleQuestion, LayoutDashboard, User, Scale } from 'lucide-react'
 import { clsx } from 'clsx'
 
 const verwaltungItems = [
@@ -18,9 +18,17 @@ const vereinItems = [
   { href: '/profil',         label: 'Profil',          icon: User },
 ]
 
+const gemeinderatItems = [
+  { href: '/dashboard',      label: 'Dashboard',      icon: LayoutDashboard },
+  { href: '/gemeinderat',    label: 'Gemeinderat',     icon: Scale },
+  { href: '/profil',         label: 'Profil',          icon: User },
+]
+
 export default function SidebarNav({ gemeindeName, role }: { gemeindeName?: string; role?: string }) {
   const pathname = usePathname()
-  const items = role === 'verein' ? vereinItems : verwaltungItems
+  const items = role === 'verein' || role === 'organisation' ? vereinItems
+    : role === 'gemeinderat' ? gemeinderatItems
+    : verwaltungItems
 
   return (
     <aside className="w-56 min-h-screen bg-white border-r border-gray-200 flex flex-col shrink-0">
@@ -52,7 +60,7 @@ export default function SidebarNav({ gemeindeName, role }: { gemeindeName?: stri
 
       <div className="p-3 border-t border-gray-100">
         <p className="text-xs text-gray-400 px-3 py-2">
-          {role === 'verein' ? 'Vereinsansicht' : 'Verwaltungsansicht'}
+          {role === 'verein' || role === 'organisation' ? 'Vereinsansicht' : role === 'gemeinderat' ? 'Gemeinderatsansicht' : 'Verwaltungsansicht'}
         </p>
       </div>
     </aside>

@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { Newspaper, AlertTriangle, ShoppingBag, BarChart2, MessageCircleQuestion, LayoutDashboard, CalendarDays, ExternalLink, ScrollText } from 'lucide-react'
+import { Newspaper, AlertTriangle, ShoppingBag, BarChart2, MessageCircleQuestion, LayoutDashboard, CalendarDays, ExternalLink, ScrollText, Scale } from 'lucide-react'
 import Link from 'next/link'
 
 const externalLinks = [
@@ -20,6 +20,7 @@ const tiles = [
   { href: '/umfragen',        label: 'Umfragen',         icon: BarChart2,             color: '#7c3aed', bg: 'rgba(124,58,237,0.1)', desc: 'Ihre Meinung' },
   { href: '/marktplatz',      label: 'Marktplatz',       icon: ShoppingBag,           color: '#ea580c', bg: 'rgba(234,88,12,0.1)',  desc: 'Angebote & Gesuche' },
   { href: '/buergermeister',  label: 'Frag den BM',      icon: MessageCircleQuestion, color: '#1a5cbf', bg: 'rgba(26,92,191,0.1)',  desc: 'An die Verwaltung' },
+  { href: '/gemeinderat',     label: 'Gemeinderat',      icon: Scale,                 color: '#0f2d6b', bg: 'rgba(15,45,107,0.1)',  desc: 'Politik & Fragen' },
 ]
 
 export default async function HomePage() {
@@ -32,7 +33,7 @@ export default async function HomePage() {
     .eq('id', user?.id ?? '')
     .single()
 
-  const hasDashboard = profile?.role === 'verwaltung' || profile?.role === 'super_admin' || profile?.role === 'verein' || profile?.role === 'organisation'
+  const hasDashboard = profile?.role === 'verwaltung' || profile?.role === 'super_admin' || profile?.role === 'verein' || profile?.role === 'organisation' || profile?.role === 'gemeinderat'
   const gemeindeName = (profile?.gemeinden as unknown as { name: string } | null)?.name ?? 'Ehningen'
   const vorname = profile?.display_name?.split(' ')[0] ?? 'Hallo'
 

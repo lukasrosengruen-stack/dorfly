@@ -20,8 +20,35 @@ export default async function DashboardPage() {
     .eq('id', user?.id ?? '')
     .single()
 
-  if (!profile || !['verwaltung', 'super_admin', 'verein', 'organisation'].includes(profile.role)) {
+  if (!profile || !['verwaltung', 'super_admin', 'verein', 'organisation', 'gemeinderat'].includes(profile.role)) {
     redirect('/feed')
+  }
+
+  // Gemeinderat: eigene Posts + eingehende Fragen
+  if (profile.role === 'gemeinderat') {
+    const [gemeinderatPostsResult, gemeinderatFragenResult] = await Promise.all([
+      supabase
+        .from('posts')
+        .select('id, titel, tag, status, published_at')
+        .eq('author_id', user!.id)
+        .eq('channel', 'gemeinderat')
+        .order('published_at', { ascending: false }),
+      supabase
+        .from('gemeinderat_fragen')
+        .select('id, frage, antwort, status, created_at, fragesteller:profiles!fragesteller_id(display_name)')
+        .eq('gemeinderat_id', user!.id)
+        .order('created_at', { ascending: false }),
+    ])
+
+    const GemeinderatDashboard = (await import('@/components/dashboard/GemeinderatDashboard')).default
+    return (
+      <GemeinderatDashboard
+        posts={(gemeinderatPostsResult.data ?? []) as Parameters<typeof GemeinderatDashboard>[0]['posts']}
+        fragen={(gemeinderatFragenResult.data ?? []) as Parameters<typeof GemeinderatDashboard>[0]['fragen']}
+        gemeindeId={profile.gemeinde_id!}
+        profileId={user!.id}
+      />
+    )
   }
 
   // Verein sieht nur seine eigenen Beiträge

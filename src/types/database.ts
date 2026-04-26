@@ -1,6 +1,6 @@
-export type UserRole = 'buerger' | 'verein' | 'organisation' | 'verwaltung' | 'super_admin'
+export type UserRole = 'buerger' | 'verein' | 'organisation' | 'gemeinderat' | 'verwaltung' | 'super_admin'
 export type OrgType = 'verein' | 'gewerbe' | 'institution'
-export type PostChannel = 'gemeinde' | 'verein' | 'gewerbe'
+export type PostChannel = 'gemeinde' | 'verein' | 'gewerbe' | 'gemeinderat'
 export type PostStatus = 'pending' | 'published' | 'rejected'
 export type MaengelStatus = 'offen' | 'in_bearbeitung' | 'erledigt'
 export type FrageStatus = 'offen' | 'beantwortet' | 'archiviert'

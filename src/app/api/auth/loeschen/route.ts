@@ -16,6 +16,8 @@ export async function DELETE() {
   await service.from('posts').delete().eq('author_id', user.id)
   await service.from('maengel').delete().eq('melder_id', user.id)
   await service.from('fragen').delete().eq('author_id', user.id)
+  await service.from('gemeinderat_fragen').delete().eq('fragesteller_id', user.id)
+  await service.from('gemeinderat_fragen').delete().eq('gemeinderat_id', user.id)
   await service.from('sms_verifications').delete().eq('user_id', user.id)
   await service.from('profiles').delete().eq('id', user.id)
 

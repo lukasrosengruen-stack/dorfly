@@ -12,14 +12,15 @@ const TAG_LABELS = { nachricht: 'Nachricht', veranstaltung: 'Veranstaltung', bek
 interface Props {
   gemeindeId: string
   profileId: string
+  defaultChannel?: 'gemeinde' | 'verein' | 'gewerbe' | 'gemeinderat'
 }
 
-export default function PostErstellenButton({ gemeindeId, profileId }: Props) {
+export default function PostErstellenButton({ gemeindeId, profileId, defaultChannel }: Props) {
   const [showForm, setShowForm] = useState(false)
   const [loading, setLoading] = useState(false)
   const [bildFiles, setBildFiles] = useState<File[]>([])
   const [bildPreviews, setBildPreviews] = useState<string[]>([])
-  const [form, setForm] = useState({ titel: '', inhalt: '', tag: 'nachricht' as typeof TAGS[number], channel: 'gemeinde' as 'gemeinde' | 'verein' | 'gewerbe', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', pinned: false, push: false })
+  const [form, setForm] = useState({ titel: '', inhalt: '', tag: 'nachricht' as typeof TAGS[number], channel: (defaultChannel ?? 'gemeinde') as 'gemeinde' | 'verein' | 'gewerbe' | 'gemeinderat', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', pinned: false, push: false })
   const supabase = createClient()
 
   function addBilder(files: File[]) {
@@ -44,7 +45,7 @@ export default function PostErstellenButton({ gemeindeId, profileId }: Props) {
 
   function reset() {
     setShowForm(false)
-    setForm({ titel: '', inhalt: '', tag: 'nachricht', channel: 'gemeinde', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', pinned: false, push: false })
+    setForm({ titel: '', inhalt: '', tag: 'nachricht', channel: (defaultChannel ?? 'gemeinde') as 'gemeinde' | 'verein' | 'gewerbe' | 'gemeinderat', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', pinned: false, push: false })
     setBildFiles([]); setBildPreviews([])
   }
 
@@ -107,18 +108,20 @@ export default function PostErstellenButton({ gemeindeId, profileId }: Props) {
                   ))}
                 </div>
               </div>
-              <div>
-                <p className="text-xs font-bold text-gray-500 mb-2 uppercase">Kanal</p>
-                <div className="flex gap-2">
-                  {(['gemeinde', 'verein', 'gewerbe'] as const).map(ch => (
-                    <button key={ch} onClick={() => setForm(f => ({ ...f, channel: ch }))}
-                      className={clsx('px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-colors capitalize',
-                        form.channel === ch ? 'border-primary-500 bg-primary-50 text-primary-600' : 'border-gray-200 text-gray-500')}>
-                      {ch.charAt(0).toUpperCase() + ch.slice(1)}
-                    </button>
-                  ))}
+              {!defaultChannel && (
+                <div>
+                  <p className="text-xs font-bold text-gray-500 mb-2 uppercase">Kanal</p>
+                  <div className="flex gap-2">
+                    {(['gemeinde', 'verein', 'gewerbe'] as const).map(ch => (
+                      <button key={ch} onClick={() => setForm(f => ({ ...f, channel: ch }))}
+                        className={clsx('px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-colors capitalize',
+                          form.channel === ch ? 'border-primary-500 bg-primary-50 text-primary-600' : 'border-gray-200 text-gray-500')}>
+                        {ch.charAt(0).toUpperCase() + ch.slice(1)}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
               <input type="text" placeholder="Titel" value={form.titel}
                 onChange={e => setForm(f => ({ ...f, titel: e.target.value }))}
                 className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 font-bold" />
