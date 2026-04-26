@@ -234,11 +234,9 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
                   </span>
                 </div>
 
-                <button onClick={() => setExpanded(prev => { const s = new Set(prev); s.has(post.id) ? s.delete(post.id) : s.add(post.id); return s })} className="text-left w-full">
-                  <h2 className="font-black text-gray-900 text-base leading-snug uppercase tracking-wide">
-                    {post.titel}
-                  </h2>
-                </button>
+                <h2 className="font-black text-gray-900 text-base leading-snug uppercase tracking-wide">
+                  {post.titel}
+                </h2>
 
                 {post.veranstaltung_datum && (
                   <div className="mt-2 px-3 py-2 bg-purple-50 rounded-xl space-y-1">
@@ -257,7 +255,15 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
                   </div>
                 )}
 
-                <p className={clsx('text-gray-600 text-sm mt-2 leading-relaxed', !expanded.has(post.id) && 'line-clamp-3')}>{post.inhalt}</p>
+                <div
+                  onClick={() => setExpanded(prev => { const s = new Set(prev); s.has(post.id) ? s.delete(post.id) : s.add(post.id); return s })}
+                  className="cursor-pointer"
+                >
+                  <p className={clsx('text-gray-600 text-sm mt-2 leading-relaxed', !expanded.has(post.id) && 'line-clamp-3')}>{post.inhalt}</p>
+                  {!expanded.has(post.id) && (
+                    <span className="text-xs text-primary-500 font-semibold mt-1 block">Mehr lesen</span>
+                  )}
+                </div>
 
                 <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
                   <div className="w-7 h-7 rounded-full bg-primary-100 flex items-center justify-center text-xs font-black text-primary-700 shrink-0">
