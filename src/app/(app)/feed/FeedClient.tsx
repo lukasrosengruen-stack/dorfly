@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { Post, PostChannel, Profile } from '@/types/database'
-import { createClient } from '@/lib/supabase/client'
 import { X, Pin, SlidersHorizontal, Check, Calendar, MapPin, User, LayoutDashboard, Images } from 'lucide-react'
 import { clsx } from 'clsx'
 import { formatDistanceToNow, format } from 'date-fns'
@@ -49,44 +48,54 @@ interface Props {
   umfragen: UmfrageMitDaten[]
 }
 
-export default function FeedClient({ posts: initialPosts, profile, alleVereine, umfragen: initialUmfragen }: Props) {
+export default function FeedClient({ posts: initialPosts, profile, alleVereine: _alleVereine, umfragen: initialUmfragen }: Props) {
   const [umfragen, setUmfragen] = useState(initialUmfragen)
-  const [activeTag, setActiveTag] = useState<PostTag | 'alle'>('alle')
   const [showFilter, setShowFilter] = useState(false)
   const [gallery, setGallery] = useState<{ bilder: string[]; index: number } | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set())
+  const [selectedSenders, setSelectedSenders] = useState<Set<string>>(new Set())
 
-  const gespeicherteEinstellungen = (profile?.feed_einstellungen as { vereine_ausgeblendet?: string[] }) ?? {}
-  const [ausgeblendet, setAusgeblendet] = useState<string[]>(
-    gespeicherteEinstellungen.vereine_ausgeblendet ?? []
-  )
-
-  const supabase = createClient()
   const isVerwaltung = profile?.role === 'verwaltung' || profile?.role === 'super_admin'
   const hasDashboard = isVerwaltung || profile?.role === 'verein' || profile?.role === 'organisation' || profile?.role === 'gemeinderat'
 
+  // Derive available senders from posts
+  const hasVerwaltungPosts = initialPosts.some(p => {
+    const r = (p.profiles as { role?: string } | null)?.role
+    return r === 'verwaltung' || r === 'super_admin'
+  })
+  const vereinNames = [...new Set(
+    initialPosts
+      .map(p => (p.profiles as { verein_name?: string | null } | null)?.verein_name)
+      .filter((v): v is string => !!v)
+  )]
+
+  const activeFilterCount = selectedTags.size + selectedSenders.size
+
+  function toggleTag(tag: string) {
+    setSelectedTags(prev => { const s = new Set(prev); s.has(tag) ? s.delete(tag) : s.add(tag); return s })
+  }
+  function toggleSender(sender: string) {
+    setSelectedSenders(prev => { const s = new Set(prev); s.has(sender) ? s.delete(sender) : s.add(sender); return s })
+  }
+
   const filtered = initialPosts.filter(p => {
-    if (activeTag !== 'alle' && p.tag !== activeTag) return false
-    const vereinName = (p.profiles as { verein_name?: string } | null)?.verein_name
-    if (vereinName && ausgeblendet.includes(vereinName)) return false
+    if (selectedTags.size > 0 && p.tag && !selectedTags.has(p.tag)) return false
+    if (selectedSenders.size > 0) {
+      const autor = (p.profiles as { verein_name?: string | null; role?: string } | null)
+      const isVerwaltungPost = autor?.role === 'verwaltung' || autor?.role === 'super_admin'
+      const vereinName = autor?.verein_name
+      if (isVerwaltungPost && !selectedSenders.has('__verwaltung__')) return false
+      if (!isVerwaltungPost && vereinName && !selectedSenders.has(vereinName)) return false
+    }
     return true
   })
-
-  async function saveFilter(neueAusblendungen: string[]) {
-    setAusgeblendet(neueAusblendungen)
-    await supabase.from('profiles').update({ feed_einstellungen: { vereine_ausgeblendet: neueAusblendungen } }).eq('id', profile?.id ?? '')
-  }
-
-  function toggleVerein(name: string) {
-    const neu = ausgeblendet.includes(name) ? ausgeblendet.filter(v => v !== name) : [...ausgeblendet, name]
-    saveFilter(neu)
-  }
 
   return (
     <div>
       {/* Header */}
-      <div className="bg-primary-500 px-4 pt-10 pb-0 sticky top-0 z-10">
-        <div className="flex items-center justify-between mb-3">
+      <div className="bg-primary-500 px-4 pt-10 pb-3 sticky top-0 z-10">
+        <div className="flex items-center justify-between">
           <div>
             <p className="text-gold-500 text-[10px] font-bold tracking-[3px] uppercase">
               {profile?.gemeinden?.name ?? 'Gemeinde Ehningen'}
@@ -100,62 +109,102 @@ export default function FeedClient({ posts: initialPosts, profile, alleVereine, 
                 Dashboard
               </Link>
             )}
-            {alleVereine.length > 0 && (
-              <button onClick={() => setShowFilter(true)} className="relative p-2 rounded-xl bg-white/20 text-white">
-                <SlidersHorizontal className="w-4 h-4" />
-                {ausgeblendet.length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent-500 rounded-full text-white text-xs flex items-center justify-center font-bold">
-                    {ausgeblendet.length}
-                  </span>
-                )}
-              </button>
-            )}
+            <button onClick={() => setShowFilter(true)} className="relative flex items-center gap-1.5 bg-white/20 text-white text-xs font-bold px-3 py-1.5 rounded-xl">
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              Filtern
+              {activeFilterCount > 0 && (
+                <span className="w-4 h-4 bg-gold-500 rounded-full text-white text-[10px] flex items-center justify-center font-black">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
             <Link href="/profil" className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
               <User className="w-4 h-4 text-white" />
             </Link>
           </div>
         </div>
-
-        {/* Tag-Filter */}
-        <div className="flex gap-1.5 overflow-x-auto pb-3 scrollbar-none">
-          {(['alle', ...TAGS] as const).map(tag => (
-            <button
-              key={tag}
-              onClick={() => setActiveTag(tag)}
-              className={clsx(
-                'shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors',
-                activeTag === tag ? 'bg-gold-500 text-white' : 'bg-white/15 text-white/75'
-              )}
-            >
-              {tag === 'alle' ? 'Alle' : TAG_META[tag].label}
-            </button>
-          ))}
-        </div>
       </div>
 
-      {/* Vereins-Filter Modal */}
+      {/* Filter Bottom Sheet */}
       {showFilter && (
-        <div className="fixed inset-0 bg-black/60 z-[60] flex items-end sm:items-center justify-center">
-          <div className="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-4 py-4 border-b sticky top-0 bg-white">
-              <h2 className="font-black text-gray-900 uppercase tracking-wide">Feed anpassen</h2>
-              <button onClick={() => setShowFilter(false)} className="p-1.5 rounded-lg hover:bg-gray-100">
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-            <div className="p-4 space-y-2">
-              {alleVereine.map(verein => {
-                const aktiv = !ausgeblendet.includes(verein)
-                return (
-                  <button key={verein} onClick={() => toggleVerein(verein)}
-                    className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-gray-200 hover:border-primary-300 transition-colors">
-                    <span className="font-bold text-gray-900 text-sm">{verein}</span>
-                    <span className={clsx('w-6 h-6 rounded-full flex items-center justify-center', aktiv ? 'bg-primary-500' : 'bg-gray-200')}>
-                      {aktiv && <Check className="w-3.5 h-3.5 text-white" />}
-                    </span>
+        <div className="fixed inset-0 bg-black/60 z-[60] flex items-end justify-center" onClick={() => setShowFilter(false)}>
+          <div className="bg-white w-full max-w-lg rounded-t-2xl max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-white">
+              <h2 className="font-black text-gray-900 uppercase tracking-wide text-sm">Feed filtern</h2>
+              <div className="flex items-center gap-3">
+                {activeFilterCount > 0 && (
+                  <button onClick={() => { setSelectedTags(new Set()); setSelectedSenders(new Set()) }}
+                    className="text-xs text-primary-500 font-bold">
+                    Zurücksetzen
                   </button>
-                )
-              })}
+                )}
+                <button onClick={() => setShowFilter(false)}>
+                  <X className="w-5 h-5 text-gray-400" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-5 space-y-6">
+              {/* Kategorie */}
+              <div>
+                <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Kategorie</p>
+                <div className="space-y-2">
+                  {TAGS.map(tag => {
+                    const aktiv = selectedTags.has(tag)
+                    return (
+                      <button key={tag} onClick={() => toggleTag(tag)}
+                        className="w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-colors"
+                        style={{ borderColor: aktiv ? undefined : '#e5e7eb' }}
+                        {...(aktiv ? { 'data-active': true } : {})}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className={clsx('text-xs px-2 py-0.5 rounded-full font-bold uppercase', TAG_META[tag].color)}>
+                            {TAG_META[tag].label}
+                          </span>
+                        </div>
+                        <span className={clsx('w-6 h-6 rounded-full flex items-center justify-center shrink-0', aktiv ? 'bg-primary-500' : 'bg-gray-100')}>
+                          {aktiv && <Check className="w-3.5 h-3.5 text-white" />}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Absender */}
+              {(hasVerwaltungPosts || vereinNames.length > 0) && (
+                <div>
+                  <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Absender</p>
+                  <div className="space-y-2">
+                    {hasVerwaltungPosts && (
+                      <button onClick={() => toggleSender('__verwaltung__')}
+                        className="w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 border-gray-200 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-xs font-black text-primary-700">V</div>
+                          <span className="font-bold text-gray-900 text-sm">Verwaltung</span>
+                        </div>
+                        <span className={clsx('w-6 h-6 rounded-full flex items-center justify-center shrink-0', selectedSenders.has('__verwaltung__') ? 'bg-primary-500' : 'bg-gray-100')}>
+                          {selectedSenders.has('__verwaltung__') && <Check className="w-3.5 h-3.5 text-white" />}
+                        </span>
+                      </button>
+                    )}
+                    {vereinNames.map(name => (
+                      <button key={name} onClick={() => toggleSender(name)}
+                        className="w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 border-gray-200 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center text-xs font-black text-violet-700">
+                            {name[0]?.toUpperCase()}
+                          </div>
+                          <span className="font-bold text-gray-900 text-sm">{name}</span>
+                        </div>
+                        <span className={clsx('w-6 h-6 rounded-full flex items-center justify-center shrink-0', selectedSenders.has(name) ? 'bg-primary-500' : 'bg-gray-100')}>
+                          {selectedSenders.has(name) && <Check className="w-3.5 h-3.5 text-white" />}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
