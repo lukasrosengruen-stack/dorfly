@@ -19,6 +19,7 @@ export default async function FeedPage() {
           .select('*, profiles(display_name, avatar_url, role, verein_name)')
           .eq('gemeinde_id', gemeindeId)
           .eq('status', 'published')
+          .neq('channel', 'gemeinderat')
           .order('pinned', { ascending: false })
           .order('published_at', { ascending: false })
           .limit(100)
