@@ -44,7 +44,7 @@ export default async function DashboardPage() {
     return (
       <GemeinderatDashboard
         posts={(gemeinderatPostsResult.data ?? []) as Parameters<typeof GemeinderatDashboard>[0]['posts']}
-        fragen={(gemeinderatFragenResult.data ?? []) as Parameters<typeof GemeinderatDashboard>[0]['fragen']}
+        fragen={(gemeinderatFragenResult.data ?? []) as unknown as Parameters<typeof GemeinderatDashboard>[0]['fragen']}
         gemeindeId={profile.gemeinde_id!}
         profileId={user!.id}
       />
