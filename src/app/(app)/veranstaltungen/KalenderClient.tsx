@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import { format, isToday, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addMonths, isWithinInterval, parseISO } from 'date-fns'
 import { de } from 'date-fns/locale'
-import { Calendar, Clock, MapPin, ChevronLeft } from 'lucide-react'
+import { Calendar, Clock, MapPin, ChevronLeft, User } from 'lucide-react'
 import { clsx } from 'clsx'
 import Link from 'next/link'
 
@@ -78,11 +78,16 @@ export default function KalenderClient({ veranstaltungen, gemeindeName }: Props)
     <div className="min-h-screen bg-[#F4F6F9] pb-28">
       {/* Header */}
       <div className="bg-primary-500 px-4 pt-14 pb-5">
-        <div className="flex items-center gap-3 mb-1">
-          <Link href="/home" className="text-white/80 hover:text-white">
-            <ChevronLeft className="w-5 h-5" />
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-3">
+            <Link href="/home" className="text-white/80 hover:text-white">
+              <ChevronLeft className="w-5 h-5" />
+            </Link>
+            <p className="text-primary-200 text-xs font-bold tracking-[0.2em] uppercase">{gemeindeName}</p>
+          </div>
+          <Link href="/profil" className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+            <User className="w-4 h-4 text-white" />
           </Link>
-          <p className="text-primary-200 text-xs font-bold tracking-[0.2em] uppercase">{gemeindeName}</p>
         </div>
         <h1 className="text-white font-black text-2xl">Veranstaltungen</h1>
       </div>

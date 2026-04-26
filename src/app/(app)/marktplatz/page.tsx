@@ -1,12 +1,20 @@
-import { ShoppingBag, Clock } from 'lucide-react'
+import { ShoppingBag, Clock, User } from 'lucide-react'
+import Link from 'next/link'
 
 export default function MarktplatzPage() {
   return (
     <div>
       <div className="bg-primary-500 px-4 pt-12 pb-5">
-        <p className="text-primary-200 text-xs font-bold tracking-[0.2em] uppercase mb-1">Gemeinde Ehningen</p>
-        <h1 className="text-white font-black text-2xl tracking-wide uppercase">Marktplatz</h1>
-        <p className="text-primary-200 text-sm mt-1">Lokale Angebote & Gesuche</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-primary-200 text-xs font-bold tracking-[0.2em] uppercase mb-1">Gemeinde Ehningen</p>
+            <h1 className="text-white font-black text-2xl tracking-wide uppercase">Marktplatz</h1>
+            <p className="text-primary-200 text-sm mt-1">Lokale Angebote & Gesuche</p>
+          </div>
+          <Link href="/profil" className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-1">
+            <User className="w-4 h-4 text-white" />
+          </Link>
+        </div>
       </div>
 
       <div className="p-4">

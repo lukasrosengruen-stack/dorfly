@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
-import { Scale, Users, Send, X, Loader2, MessageCircle } from 'lucide-react'
+import { Scale, Users, Send, X, Loader2, MessageCircle, User } from 'lucide-react'
+import Link from 'next/link'
 import { clsx } from 'clsx'
 
 interface Post {
@@ -66,9 +67,14 @@ export default function GemeinderatClient({ posts, raete, profileId, gemeindeId,
     <div className="min-h-screen bg-[#f5f7fc]">
       {/* Header */}
       <div className="bg-primary-500 px-4 pt-10 pb-0 sticky top-0 z-10">
-        <div className="mb-3">
-          <p className="text-gold-500 text-[10px] font-bold tracking-[3px] uppercase">{gemeindeName}</p>
-          <h1 className="text-white font-extrabold text-[22px] leading-tight mt-0.5">Gemeinderat</h1>
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <p className="text-gold-500 text-[10px] font-bold tracking-[3px] uppercase">{gemeindeName}</p>
+            <h1 className="text-white font-extrabold text-[22px] leading-tight mt-0.5">Gemeinderat</h1>
+          </div>
+          <Link href="/profil" className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+            <User className="w-4 h-4 text-white" />
+          </Link>
         </div>
         <div className="flex gap-1.5 pb-3">
           {[

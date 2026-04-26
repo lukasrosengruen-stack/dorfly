@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { Mangel, MaengelStatus, Profile } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
 import { compressImage } from '@/lib/compressImage'
-import { Plus, MapPin, Camera, X, Loader2, CheckCircle2, Clock, AlertTriangle } from 'lucide-react'
+import { Plus, MapPin, Camera, X, Loader2, CheckCircle2, Clock, AlertTriangle, User } from 'lucide-react'
+import Link from 'next/link'
 import { clsx } from 'clsx'
 import { formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
@@ -26,8 +27,15 @@ export default function MaengelClient({ maengel: initialMaengel, profile }: Prop
   return (
     <div>
       <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-4 sticky top-0 z-10">
-        <h1 className="text-xl font-bold text-gray-900">Mängelmelder</h1>
-        <p className="text-sm text-gray-500">Schäden und Probleme melden</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Mängelmelder</h1>
+            <p className="text-sm text-gray-500">Schäden und Probleme melden</p>
+          </div>
+          <Link href="/profil" className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+            <User className="w-4 h-4 text-gray-500" />
+          </Link>
+        </div>
       </div>
       <BuergerView maengel={maengel} setMaengel={setMaengel} profile={profile} />
     </div>

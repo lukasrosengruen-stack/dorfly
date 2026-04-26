@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { Frage, FrageStatus, Profile } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
-import { Send, Lock, Globe, ChevronDown, ChevronUp, Loader2, CheckCircle2, Clock, Archive } from 'lucide-react'
+import { Send, Lock, Globe, ChevronDown, ChevronUp, Loader2, CheckCircle2, Clock, Archive, User } from 'lucide-react'
+import Link from 'next/link'
 import { clsx } from 'clsx'
 import { formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
@@ -68,8 +69,15 @@ export default function BuergermeisterClient({ fragen: initialFragen, profile }:
     <div>
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-4 sticky top-0 z-10">
-        <h1 className="text-xl font-bold text-gray-900">Frag den Bürgermeister</h1>
-        <p className="text-sm text-gray-500">Stelle deine Fragen direkt an die Verwaltung</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Frag den Bürgermeister</h1>
+            <p className="text-sm text-gray-500">Stelle deine Fragen direkt an die Verwaltung</p>
+          </div>
+          <Link href="/profil" className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+            <User className="w-4 h-4 text-gray-500" />
+          </Link>
+        </div>
 
         <div className="flex gap-2 mt-3">
           {(['alle', 'meine'] as const).map(tab => (
