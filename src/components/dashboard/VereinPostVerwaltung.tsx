@@ -23,6 +23,7 @@ interface Props {
   gemeindeId: string
   profileId: string
   vereinName: string | null
+  channel: 'verein' | 'gewerbe'
 }
 
 const STATUS_META = {
@@ -37,7 +38,7 @@ type FormState = { titel: string; inhalt: string; tag: string; veranstaltung_dat
 
 const emptyForm: FormState = { titel: '', inhalt: '', tag: 'nachricht', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', geplant: false, scheduled_date: '', scheduled_time: '' }
 
-export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, profileId, vereinName }: Props) {
+export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, profileId, vereinName, channel }: Props) {
   const [posts, setPosts] = useState(initialPosts)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showNewForm, setShowNewForm] = useState(false)
@@ -119,7 +120,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
         : null
       const { data, error } = await supabase.from('posts').insert({
         gemeinde_id: gemeindeId, author_id: profileId,
-        channel: 'verein', titel: form.titel, inhalt: form.inhalt,
+        channel, titel: form.titel, inhalt: form.inhalt,
         tag: form.tag, status: 'pending', bild_url, bilder_urls,
         publish_at: publishAt,
         veranstaltung_datum: form.tag === 'veranstaltung' && form.veranstaltung_datum

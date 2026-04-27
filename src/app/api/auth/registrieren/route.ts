@@ -8,10 +8,11 @@ export async function POST(request: Request) {
 
     const supabase = await createServiceClient()
 
+    const slug = request.headers.get('x-gemeinde-slug') ?? process.env.NEXT_PUBLIC_DEFAULT_GEMEINDE_SLUG ?? 'ehningen'
     const { data: gemeinde } = await supabase
       .from('gemeinden')
       .select('id')
-      .eq('slug', 'ehningen')
+      .eq('slug', slug)
       .single()
 
     const { error } = await supabase.from('profiles').upsert({

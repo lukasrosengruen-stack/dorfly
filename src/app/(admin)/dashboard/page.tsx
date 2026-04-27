@@ -66,6 +66,7 @@ export default async function DashboardPage() {
         gemeindeId={profile.gemeinde_id!}
         profileId={user!.id}
         vereinName={profile.verein_name}
+        channel={profile.role === 'organisation' ? 'gewerbe' : 'verein'}
       />
     )
   }
@@ -161,7 +162,7 @@ export default async function DashboardPage() {
               />
             )}
             {gemeindeId && user && (
-              <PostErstellenButton gemeindeId={gemeindeId} profileId={user.id} />
+              <PostErstellenButton gemeindeId={gemeindeId} profileId={user.id} defaultChannel="gemeinde" />
             )}
           </div>
         </div>
