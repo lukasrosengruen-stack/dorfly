@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, X, Loader2 } from 'lucide-react'
+import { Plus, X, Loader2, Clock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { compressImage } from '@/lib/compressImage'
 import { clsx } from 'clsx'
@@ -21,7 +21,7 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
   const [loading, setLoading] = useState(false)
   const [bildFiles, setBildFiles] = useState<File[]>([])
   const [bildPreviews, setBildPreviews] = useState<string[]>([])
-  const [form, setForm] = useState({ titel: '', inhalt: '', tag: 'nachricht' as typeof TAGS[number], channel: (defaultChannel ?? 'gemeinde') as 'gemeinde' | 'verein' | 'gewerbe' | 'gemeinderat', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', pinned: false, push: false })
+  const [form, setForm] = useState({ titel: '', inhalt: '', tag: 'nachricht' as typeof TAGS[number], channel: (defaultChannel ?? 'gemeinde') as 'gemeinde' | 'verein' | 'gewerbe' | 'gemeinderat', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', pinned: false, push: false, geplant: false, scheduled_date: '', scheduled_time: '' })
   const supabase = createClient()
 
   function addBilder(files: File[]) {
@@ -46,7 +46,7 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
 
   function reset() {
     setShowForm(false)
-    setForm({ titel: '', inhalt: '', tag: 'nachricht', channel: (defaultChannel ?? 'gemeinde') as 'gemeinde' | 'verein' | 'gewerbe' | 'gemeinderat', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', pinned: false, push: false })
+    setForm({ titel: '', inhalt: '', tag: 'nachricht', channel: (defaultChannel ?? 'gemeinde') as 'gemeinde' | 'verein' | 'gewerbe' | 'gemeinderat', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', pinned: false, push: false, geplant: false, scheduled_date: '', scheduled_time: '' })
     setBildFiles([]); setBildPreviews([])
   }
 
@@ -56,11 +56,16 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
     try {
       const bilder_urls = await uploadBilder()
       const bild_url = bilder_urls[0] ?? null
+      const publishAt = form.geplant && form.scheduled_date
+        ? new Date(`${form.scheduled_date}T${form.scheduled_time || '08:00'}`).toISOString()
+        : null
       const { error } = await supabase.from('posts').insert({
         gemeinde_id: gemeindeId, author_id: profileId,
         channel: form.channel, titel: form.titel, inhalt: form.inhalt,
         tag: form.tag, status: 'published', pinned: form.pinned,
         bild_url, bilder_urls,
+        publish_at: publishAt,
+        published_at: publishAt ?? new Date().toISOString(),
         veranstaltung_datum: form.tag === 'veranstaltung' && form.veranstaltung_datum
           ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null,
         veranstaltung_ort: form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null,
@@ -149,11 +154,31 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
                 <input type="checkbox" checked={form.pinned} onChange={e => setForm(f => ({ ...f, pinned: e.target.checked }))} className="rounded" />
                 Beitrag anpinnen
               </label>
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <label className="flex items-center gap-2 px-3 py-2.5 text-sm text-gray-700 cursor-pointer bg-gray-50">
+                  <input type="checkbox" checked={form.geplant}
+                    onChange={e => setForm(f => ({ ...f, geplant: e.target.checked, scheduled_date: '', scheduled_time: '' }))}
+                    className="rounded" />
+                  <Clock className="w-4 h-4 text-gray-400" />
+                  <span className="font-medium">Zeitgesteuert veröffentlichen</span>
+                </label>
+                {form.geplant && (
+                  <div className="grid grid-cols-2 gap-3 p-3 border-t border-gray-200 bg-white">
+                    <input type="date" value={form.scheduled_date}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={e => setForm(f => ({ ...f, scheduled_date: e.target.value }))}
+                      className="border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                    <input type="time" value={form.scheduled_time}
+                      onChange={e => setForm(f => ({ ...f, scheduled_time: e.target.value }))}
+                      className="border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                  </div>
+                )}
+              </div>
               <label className="flex items-center gap-2 text-sm font-bold text-red-700 cursor-pointer bg-red-50 px-3 py-2.5 rounded-xl border border-red-200">
                 <input type="checkbox" checked={form.push} onChange={e => setForm(f => ({ ...f, push: e.target.checked }))} className="rounded accent-red-600" />
                 🔔 Push-Benachrichtigung senden (alle Nutzer)
               </label>
-              <button onClick={submit} disabled={loading || !form.titel || !form.inhalt}
+              <button onClick={submit} disabled={loading || !form.titel || !form.inhalt || (form.geplant && !form.scheduled_date)}
                 className="w-full bg-primary-500 text-white font-bold py-3 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2">
                 {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                 Veröffentlichen

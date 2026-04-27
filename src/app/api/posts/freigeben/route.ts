@@ -18,9 +18,18 @@ export async function POST(request: Request) {
     }
 
     const service = await createServiceClient()
+
+    let publishedAt = new Date().toISOString()
+    if (action === 'publish') {
+      const { data: postData } = await service.from('posts').select('publish_at').eq('id', postId).single()
+      if (postData?.publish_at && new Date(postData.publish_at) > new Date()) {
+        publishedAt = postData.publish_at
+      }
+    }
+
     const { error } = await service.from('posts').update({
       status: action === 'publish' ? 'published' : 'rejected',
-      published_at: action === 'publish' ? new Date().toISOString() : undefined,
+      published_at: action === 'publish' ? publishedAt : undefined,
     }).eq('id', postId)
 
     if (error) throw error

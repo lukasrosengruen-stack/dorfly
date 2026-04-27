@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Pencil, Trash2, Loader2, X, ImagePlus, Newspaper } from 'lucide-react'
+import { Pencil, Trash2, Loader2, X, ImagePlus, Newspaper, CalendarClock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { clsx } from 'clsx'
 
@@ -19,6 +19,7 @@ interface Post {
   veranstaltung_datum: string | null
   veranstaltung_ort: string | null
   published_at: string
+  publish_at?: string | null
 }
 
 interface Props {
@@ -230,9 +231,16 @@ export default function PostVerwaltungSection({ posts: initialPosts }: Props) {
               {CHANNEL_LABELS[p.channel] ?? p.channel}
             </span>
             <span className="text-sm text-gray-800 truncate flex-1">{p.titel}</span>
-            <span className="text-xs text-gray-400 shrink-0">
-              {new Date(p.published_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
-            </span>
+            {p.publish_at && new Date(p.publish_at) > new Date() ? (
+              <span className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full shrink-0">
+                <CalendarClock className="w-3 h-3" />
+                {new Date(p.publish_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+              </span>
+            ) : (
+              <span className="text-xs text-gray-400 shrink-0">
+                {new Date(p.published_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
+              </span>
+            )}
             <button onClick={() => openEdit(p)}
               className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors shrink-0">
               <Pencil className="w-3.5 h-3.5 text-gray-500" />

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Check, X, Loader2 } from 'lucide-react'
+import { Check, X, Loader2, CalendarClock } from 'lucide-react'
 
 interface PendingPost {
   id: string
@@ -10,6 +10,7 @@ interface PendingPost {
   channel: string
   tag: string | null
   created_at: string
+  publish_at?: string | null
   profiles?: { display_name: string | null; verein_name?: string | null } | null
 }
 
@@ -60,6 +61,12 @@ export default function PostFreigabe({ pendingPosts }: { pendingPosts: PendingPo
                 </div>
                 <p className="font-semibold text-gray-900 text-sm">{post.titel}</p>
                 <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{post.inhalt}</p>
+                {post.publish_at && new Date(post.publish_at) > new Date() && (
+                  <div className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-lg mt-1.5 w-fit">
+                    <CalendarClock className="w-3 h-3" />
+                    Geplant: {new Date(post.publish_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} Uhr
+                  </div>
+                )}
               </div>
               <div className="flex gap-2 shrink-0">
                 <button

@@ -55,7 +55,7 @@ export default async function DashboardPage() {
   if (profile.role === 'verein' || profile.role === 'organisation') {
     const { data: vereinPosts } = await supabase
       .from('posts')
-      .select('id, titel, inhalt, status, created_at, tag, bild_url')
+      .select('id, titel, inhalt, status, created_at, tag, bild_url, publish_at')
       .eq('author_id', user!.id)
       .order('created_at', { ascending: false })
 
@@ -81,8 +81,8 @@ export default async function DashboardPage() {
   const [maengelResult, fragenResult, postsResult, pendingPostsResult, umfragenResult, nutzerResult] = await Promise.all([
     supabase.from('maengel').select('id, titel, status, created_at, profiles(display_name)').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }),
     supabase.from('fragen').select('id, frage, antwort, status, created_at').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }),
-    supabase.from('posts').select('id, titel, inhalt, tag, channel, pinned, bild_url, veranstaltung_datum, veranstaltung_ort, published_at').eq('gemeinde_id', gemeindeId!).eq('status', 'published').order('published_at', { ascending: false }).limit(50),
-    service.from('posts').select('id, titel, inhalt, channel, tag, created_at, profiles(display_name, verein_name)').eq('gemeinde_id', gemeindeId!).eq('status', 'pending').order('created_at', { ascending: false }),
+    supabase.from('posts').select('id, titel, inhalt, tag, channel, pinned, bild_url, veranstaltung_datum, veranstaltung_ort, published_at, publish_at').eq('gemeinde_id', gemeindeId!).eq('status', 'published').order('published_at', { ascending: false }).limit(50),
+    service.from('posts').select('id, titel, inhalt, channel, tag, created_at, publish_at, profiles(display_name, verein_name)').eq('gemeinde_id', gemeindeId!).eq('status', 'pending').order('created_at', { ascending: false }),
     supabase.from('umfragen').select('*, umfrage_fragen(*, umfrage_optionen(*))').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }),
     service.from('profiles').select('id, role', { count: 'exact' }).eq('gemeinde_id', gemeindeId!),
   ])

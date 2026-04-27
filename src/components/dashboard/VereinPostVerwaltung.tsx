@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Clock, CheckCircle2, XCircle, Loader2, X, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Clock, CheckCircle2, XCircle, Loader2, X, Pencil, Trash2, CalendarClock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { compressImage } from '@/lib/compressImage'
 import { clsx } from 'clsx'
@@ -15,6 +15,7 @@ interface Post {
   created_at: string
   tag: string | null
   bild_url?: string | null
+  publish_at?: string | null
 }
 
 interface Props {
@@ -32,9 +33,9 @@ const STATUS_META = {
 
 const TAGS = ['nachricht', 'veranstaltung', 'bekanntmachung'] as const
 
-type FormState = { titel: string; inhalt: string; tag: string; veranstaltung_datum: string; veranstaltung_uhrzeit: string; veranstaltung_ort: string }
+type FormState = { titel: string; inhalt: string; tag: string; veranstaltung_datum: string; veranstaltung_uhrzeit: string; veranstaltung_ort: string; geplant: boolean; scheduled_date: string; scheduled_time: string }
 
-const emptyForm: FormState = { titel: '', inhalt: '', tag: 'nachricht', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '' }
+const emptyForm: FormState = { titel: '', inhalt: '', tag: 'nachricht', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', geplant: false, scheduled_date: '', scheduled_time: '' }
 
 export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, profileId, vereinName }: Props) {
   const [posts, setPosts] = useState(initialPosts)
@@ -77,7 +78,14 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
   function openEdit(post: Post) {
     setShowNewForm(false)
     setEditingId(post.id)
-    setForm({ titel: post.titel, inhalt: post.inhalt, tag: post.tag ?? 'nachricht', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '' })
+    const hasFutureSchedule = !!post.publish_at && new Date(post.publish_at) > new Date()
+    setForm({
+      titel: post.titel, inhalt: post.inhalt, tag: post.tag ?? 'nachricht',
+      veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '',
+      geplant: hasFutureSchedule,
+      scheduled_date: hasFutureSchedule ? post.publish_at!.split('T')[0] : '',
+      scheduled_time: hasFutureSchedule ? (post.publish_at!.split('T')[1]?.slice(0, 5) ?? '') : '',
+    })
     setBildFiles([])
     setBildPreviews(post.bild_url ? [post.bild_url] : [])
   }
@@ -106,14 +114,18 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
     try {
       const bilder_urls = await uploadBilder()
       const bild_url = bilder_urls[0] ?? null
+      const publishAt = form.geplant && form.scheduled_date
+        ? new Date(`${form.scheduled_date}T${form.scheduled_time || '08:00'}`).toISOString()
+        : null
       const { data, error } = await supabase.from('posts').insert({
         gemeinde_id: gemeindeId, author_id: profileId,
         channel: 'verein', titel: form.titel, inhalt: form.inhalt,
         tag: form.tag, status: 'pending', bild_url, bilder_urls,
+        publish_at: publishAt,
         veranstaltung_datum: form.tag === 'veranstaltung' && form.veranstaltung_datum
           ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null,
         veranstaltung_ort: form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null,
-      }).select('id, titel, inhalt, status, created_at, tag, bild_url').single()
+      }).select('id, titel, inhalt, status, created_at, tag, bild_url, publish_at').single()
       if (error) throw error
       setPosts(prev => [data as Post, ...prev])
       closeForm()
@@ -127,9 +139,13 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
     try {
       const bilder_urls = await uploadBilder()
       const bild_url = bilder_urls.length > 0 ? bilder_urls[0] : (bildPreviews.length > 0 ? posts.find(p => p.id === editingId)?.bild_url ?? null : null)
+      const publishAt = form.geplant && form.scheduled_date
+        ? new Date(`${form.scheduled_date}T${form.scheduled_time || '08:00'}`).toISOString()
+        : null
       const { error } = await supabase.from('posts').update({
         titel: form.titel, inhalt: form.inhalt, tag: form.tag,
         status: 'pending', bild_url, bilder_urls: bilder_urls.length > 0 ? bilder_urls : undefined,
+        publish_at: publishAt,
         veranstaltung_datum: form.tag === 'veranstaltung' && form.veranstaltung_datum
           ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null,
         veranstaltung_ort: form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null,
@@ -199,13 +215,33 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
                     className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
                 </div>
               )}
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <label className="flex items-center gap-2 px-3 py-2.5 text-sm text-gray-700 cursor-pointer bg-gray-50">
+                  <input type="checkbox" checked={form.geplant}
+                    onChange={e => setForm(f => ({ ...f, geplant: e.target.checked, scheduled_date: '', scheduled_time: '' }))}
+                    className="rounded" />
+                  <CalendarClock className="w-4 h-4 text-gray-400" />
+                  <span className="font-medium">Erscheinungszeitpunkt festlegen</span>
+                </label>
+                {form.geplant && (
+                  <div className="grid grid-cols-2 gap-3 p-3 border-t border-gray-200 bg-white">
+                    <input type="date" value={form.scheduled_date}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={e => setForm(f => ({ ...f, scheduled_date: e.target.value }))}
+                      className="border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                    <input type="time" value={form.scheduled_time}
+                      onChange={e => setForm(f => ({ ...f, scheduled_time: e.target.value }))}
+                      className="border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                  </div>
+                )}
+              </div>
               {isEditing && (
                 <p className="text-xs text-amber-600 bg-amber-50 rounded-xl px-3 py-2">
                   Nach der Bearbeitung wird der Beitrag erneut zur Prüfung eingereicht.
                 </p>
               )}
               <button onClick={isEditing ? submitEdit : submitNew}
-                disabled={loading || !form.titel || !form.inhalt}
+                disabled={loading || !form.titel || !form.inhalt || (form.geplant && !form.scheduled_date)}
                 className="w-full bg-primary-500 text-white font-bold py-3 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2">
                 {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                 {isEditing ? 'Änderungen einreichen' : 'Zur Prüfung einreichen'}
@@ -230,9 +266,17 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-900">{post.titel}</p>
                   <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">{post.inhalt}</p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    {new Date(post.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                  </p>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    <p className="text-xs text-gray-400">
+                      {new Date(post.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                    </p>
+                    {post.publish_at && new Date(post.publish_at) > new Date() && (
+                      <span className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                        <CalendarClock className="w-3 h-3" />
+                        {new Date(post.publish_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} Uhr
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className={clsx('flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full', meta.color)}>
