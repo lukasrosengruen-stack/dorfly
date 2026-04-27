@@ -15,7 +15,6 @@ export default function LoginPage() {
   const [vorname, setVorname] = useState('')
   const [nachname, setNachname] = useState('')
   const [adresse, setAdresse] = useState('')
-  const [geburtsdatum, setGeburtsdatum] = useState('')
   const [showOptional, setShowOptional] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -50,7 +49,7 @@ export default function LoginPage() {
           await fetch('/api/auth/registrieren', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: data.user.id, vorname, nachname, adresse, geburtsdatum }),
+            body: JSON.stringify({ userId: data.user.id, vorname, nachname, adresse }),
           })
         }
         setRegistered(true)
@@ -172,15 +171,6 @@ export default function LoginPage() {
                     placeholder="Adresse"
                     className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
-                  <div>
-                    <label className="text-xs text-gray-400 ml-1">Geburtsdatum</label>
-                    <input
-                      type="date"
-                      value={geburtsdatum}
-                      onChange={e => setGeburtsdatum(e.target.value)}
-                      className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 mt-1"
-                    />
-                  </div>
                 </div>
               )}
             </div>
