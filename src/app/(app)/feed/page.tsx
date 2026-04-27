@@ -38,6 +38,7 @@ export default async function FeedPage() {
       ? supabase.from('umfragen')
           .select('*, umfrage_fragen(*, umfrage_optionen(*))')
           .eq('gemeinde_id', gemeindeId)
+          .gte('enddatum', new Date().toISOString())
           .order('created_at', { ascending: false })
       : Promise.resolve({ data: [] }),
   ])
