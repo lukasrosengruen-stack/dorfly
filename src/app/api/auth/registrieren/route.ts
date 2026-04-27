@@ -16,8 +16,6 @@ export async function POST(request: Request) {
 
     const { error } = await supabase.from('profiles').upsert({
       id: userId,
-      phone: null,
-      phone_verified: false,
       role: 'buerger',
       gemeinde_id: gemeinde?.id ?? null,
       vorname: vorname || null,

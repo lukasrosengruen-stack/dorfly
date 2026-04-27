@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Profile } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { LogOut, Phone, MapPin, Shield, Pencil, X, Check, Loader2, User, Calendar, Trash2, KeyRound, Eye, EyeOff } from 'lucide-react'
+import { LogOut, MapPin, Shield, Pencil, X, Check, Loader2, User, Calendar, Trash2, KeyRound, Eye, EyeOff } from 'lucide-react'
 
 const ROLE_LABELS: Record<string, string> = {
   buerger:      'Bürger',
@@ -39,7 +39,6 @@ export default function ProfilClient({ profile }: { profile: FullProfile | null 
     nachname:     profile?.nachname ?? '',
     adresse:      profile?.adresse ?? '',
     geburtsdatum: profile?.geburtsdatum ?? '',
-    phone:        profile?.phone ?? '',
   })
 
   const initials = profile?.vorname && profile?.nachname
@@ -60,7 +59,6 @@ export default function ProfilClient({ profile }: { profile: FullProfile | null 
         display_name: [form.vorname, form.nachname].filter(Boolean).join(' ') || null,
         adresse:      form.adresse || null,
         geburtsdatum: form.geburtsdatum || null,
-        phone:        form.phone || null,
       })
       .eq('id', profile?.id ?? '')
     setSaving(false)
@@ -175,22 +173,12 @@ export default function ProfilClient({ profile }: { profile: FullProfile | null 
                   className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
-              <div>
-                <label className="text-xs text-gray-400 mb-1 block">Telefon</label>
-                <input
-                  value={form.phone}
-                  onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                  placeholder="+49 151 ..."
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
             </div>
           ) : (
             <div className="divide-y divide-gray-50">
               <InfoRow icon={User} label="Name" value={displayName !== 'Kein Name' ? displayName : null} placeholder="Nicht angegeben" />
               <InfoRow icon={Calendar} label="Geburtsdatum" value={profile?.geburtsdatum ? new Date(profile.geburtsdatum).toLocaleDateString('de-DE') : null} placeholder="Nicht angegeben" />
               <InfoRow icon={MapPin} label="Adresse" value={profile?.adresse ?? null} placeholder="Nicht angegeben" />
-              <InfoRow icon={Phone} label="Telefon" value={profile?.phone || null} placeholder="Nicht angegeben" />
             </div>
           )}
         </div>
