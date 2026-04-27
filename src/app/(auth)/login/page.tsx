@@ -14,7 +14,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [vorname, setVorname] = useState('')
   const [nachname, setNachname] = useState('')
-  const [adresse, setAdresse] = useState('')
   const [showOptional, setShowOptional] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -49,7 +48,7 @@ export default function LoginPage() {
           await fetch('/api/auth/registrieren', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: data.user.id, vorname, nachname, adresse }),
+            body: JSON.stringify({ userId: data.user.id, vorname, nachname }),
           })
         }
         setRegistered(true)
@@ -164,13 +163,6 @@ export default function LoginPage() {
                       className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
-                  <input
-                    type="text"
-                    value={adresse}
-                    onChange={e => setAdresse(e.target.value)}
-                    placeholder="Adresse"
-                    className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
                 </div>
               )}
             </div>

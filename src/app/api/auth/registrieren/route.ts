@@ -3,7 +3,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 
 export async function POST(request: Request) {
   try {
-    const { userId, vorname, nachname, adresse } = await request.json()
+    const { userId, vorname, nachname } = await request.json()
     if (!userId) return NextResponse.json({ error: 'Keine User-ID' }, { status: 400 })
 
     const supabase = await createServiceClient()
@@ -21,7 +21,6 @@ export async function POST(request: Request) {
       vorname: vorname || null,
       nachname: nachname || null,
       display_name: [vorname, nachname].filter(Boolean).join(' ') || null,
-      adresse: adresse || null,
     })
 
     if (error) throw error

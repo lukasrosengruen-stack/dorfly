@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Profile } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { LogOut, MapPin, Shield, Pencil, X, Check, Loader2, User, Trash2, KeyRound, Eye, EyeOff } from 'lucide-react'
+import { LogOut, Shield, Pencil, X, Check, Loader2, User, MapPin, Trash2, KeyRound, Eye, EyeOff } from 'lucide-react'
 
 const ROLE_LABELS: Record<string, string> = {
   buerger:      'Bürger',
@@ -37,7 +37,6 @@ export default function ProfilClient({ profile }: { profile: FullProfile | null 
   const [form, setForm] = useState({
     vorname:      profile?.vorname ?? '',
     nachname:     profile?.nachname ?? '',
-    adresse:      profile?.adresse ?? '',
   })
 
   const initials = profile?.vorname && profile?.nachname
@@ -56,7 +55,6 @@ export default function ProfilClient({ profile }: { profile: FullProfile | null 
         vorname:      form.vorname || null,
         nachname:     form.nachname || null,
         display_name: [form.vorname, form.nachname].filter(Boolean).join(' ') || null,
-        adresse:      form.adresse || null,
       })
       .eq('id', profile?.id ?? '')
     setSaving(false)
@@ -153,20 +151,10 @@ export default function ProfilClient({ profile }: { profile: FullProfile | null 
                   />
                 </div>
               </div>
-              <div>
-                <label className="text-xs text-gray-400 mb-1 block">Adresse</label>
-                <input
-                  value={form.adresse}
-                  onChange={e => setForm(f => ({ ...f, adresse: e.target.value }))}
-                  placeholder="Straße, PLZ Ort"
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
             </div>
           ) : (
             <div className="divide-y divide-gray-50">
               <InfoRow icon={User} label="Name" value={displayName !== 'Kein Name' ? displayName : null} placeholder="Nicht angegeben" />
-              <InfoRow icon={MapPin} label="Adresse" value={profile?.adresse ?? null} placeholder="Nicht angegeben" />
             </div>
           )}
         </div>
