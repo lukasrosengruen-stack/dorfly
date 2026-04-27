@@ -14,9 +14,10 @@ interface Props {
   gemeindeId: string
   profileId: string
   defaultChannel?: 'gemeinde' | 'verein' | 'gewerbe' | 'gemeinderat'
+  canPin?: boolean
 }
 
-export default function PostErstellenButton({ gemeindeId, profileId, defaultChannel }: Props) {
+export default function PostErstellenButton({ gemeindeId, profileId, defaultChannel, canPin = false }: Props) {
   const [showForm, setShowForm] = useState(false)
   const [loading, setLoading] = useState(false)
   const [bildFiles, setBildFiles] = useState<File[]>([])
@@ -136,10 +137,12 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
                     className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
                 </div>
               )}
-              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                <input type="checkbox" checked={form.pinned} onChange={e => setForm(f => ({ ...f, pinned: e.target.checked }))} className="rounded" />
-                Beitrag anpinnen
-              </label>
+              {canPin && (
+                <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                  <input type="checkbox" checked={form.pinned} onChange={e => setForm(f => ({ ...f, pinned: e.target.checked }))} className="rounded" />
+                  Beitrag anpinnen
+                </label>
+              )}
               <div className="border border-gray-200 rounded-xl overflow-hidden">
                 <label className="flex items-center gap-2 px-3 py-2.5 text-sm text-gray-700 cursor-pointer bg-gray-50">
                   <input type="checkbox" checked={form.geplant}
