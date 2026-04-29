@@ -1,22 +1,15 @@
 import { NextResponse } from 'next/server'
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { withAuth } from '@/lib/api'
+import { validate, postFreigebenSchema } from '@/lib/validations'
 
-export async function POST(request: Request) {
-  try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
+export const POST = withAuth(
+  async (req, { profile }) => {
+    const body = await req.json()
+    const v = validate(postFreigebenSchema, body)
+    if (!v.success) return v.error
 
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-    if (!profile || !['verwaltung', 'super_admin'].includes(profile.role)) {
-      return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
-    }
-
-    const { postId, action } = await request.json()
-    if (!postId || !['publish', 'reject'].includes(action)) {
-      return NextResponse.json({ error: 'Ungültige Parameter' }, { status: 400 })
-    }
-
+    const { postId, action } = v.data
     const service = await createServiceClient()
 
     let publishedAt = new Date().toISOString()
@@ -30,11 +23,10 @@ export async function POST(request: Request) {
     const { error } = await service.from('posts').update({
       status: action === 'publish' ? 'published' : 'rejected',
       published_at: action === 'publish' ? publishedAt : undefined,
-    }).eq('id', postId)
+    }).eq('id', postId).eq('gemeinde_id', profile.gemeinde_id!)
 
-    if (error) throw error
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ ok: true })
-  } catch (e: unknown) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : 'Fehler' }, { status: 500 })
-  }
-}
+  },
+  { roles: ['verwaltung', 'super_admin'] },
+)

@@ -1,25 +1,22 @@
 import { NextResponse } from 'next/server'
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { withAuth } from '@/lib/api'
+import { validate, gemeinderatFrageSchema } from '@/lib/validations'
 
-export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Nicht angemeldet' }, { status: 401 })
-
-  const { gemeinderatId, frage, gemeindeId } = await request.json()
-  if (!gemeinderatId || !frage?.trim() || !gemeindeId) {
-    return NextResponse.json({ error: 'Fehlende Felder' }, { status: 400 })
-  }
+export const POST = withAuth(async (req, { user }) => {
+  const body = await req.json()
+  const v = validate(gemeinderatFrageSchema, body)
+  if (!v.success) return v.error
 
   const service = await createServiceClient()
   const { error } = await service.from('gemeinderat_fragen').insert({
-    gemeinde_id: gemeindeId,
+    gemeinde_id: v.data.gemeindeId,
     fragesteller_id: user.id,
-    gemeinderat_id: gemeinderatId,
-    frage: frage.trim(),
+    gemeinderat_id: v.data.gemeinderatId,
+    frage: v.data.frage.trim(),
     status: 'offen',
   })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })
-}
+})

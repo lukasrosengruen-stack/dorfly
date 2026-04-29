@@ -1,20 +1,24 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { withAuth } from '@/lib/api'
+import { validate, postUpdateSchema } from '@/lib/validations'
 
-export async function PATCH(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export const PATCH = withAuth(
+  async (req, { profile }) => {
+    const body = await req.json()
+    const v = validate(postUpdateSchema, body)
+    if (!v.success) return v.error
 
-  const { data: profile } = await supabase.from('profiles').select('role, gemeinde_id').eq('id', user.id).single()
-  if (profile?.role !== 'verwaltung' && profile?.role !== 'super_admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+    const { id, ...fields } = v.data
+    const service = await createServiceClient()
+    const { error } = await service
+      .from('posts')
+      .update(fields)
+      .eq('id', id)
+      .eq('gemeinde_id', profile.gemeinde_id!)
 
-  const { id, ...fields } = await req.json()
-  const service = await createServiceClient()
-  const { error } = await service.from('posts').update(fields).eq('id', id).eq('gemeinde_id', profile.gemeinde_id!)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  return NextResponse.json({ ok: true })
-}
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true })
+  },
+  { roles: ['verwaltung', 'super_admin'] },
+)

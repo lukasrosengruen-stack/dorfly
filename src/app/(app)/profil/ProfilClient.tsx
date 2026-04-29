@@ -1,5 +1,7 @@
-﻿'use client'
+'use client'
 
+
+import { toast } from 'sonner'
 import { useState } from 'react'
 import { Profile } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
@@ -59,7 +61,7 @@ export default function ProfilClient({ profile }: { profile: FullProfile | null 
       .eq('id', profile?.id ?? '')
     setSaving(false)
     if (!error) { setEditing(false); router.refresh() }
-    else alert('Fehler beim Speichern')
+    else toast.error('Fehler beim Speichern')
   }
 
   async function signOut() {
@@ -88,7 +90,7 @@ export default function ProfilClient({ profile }: { profile: FullProfile | null 
       router.push('/login')
     } else {
       const body = await res.json().catch(() => ({}))
-      alert('Fehler: ' + (body.error ?? res.status))
+      toast.error('Fehler: ' + (body.error ?? res.status))
     }
   }
 

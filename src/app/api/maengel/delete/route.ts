@@ -1,20 +1,23 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { withAuth } from '@/lib/api'
+import { validate, maengelDeleteSchema } from '@/lib/validations'
 
-export async function DELETE(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export const DELETE = withAuth(
+  async (req, { profile }) => {
+    const body = await req.json()
+    const v = validate(maengelDeleteSchema, body)
+    if (!v.success) return v.error
 
-  const { data: profile } = await supabase.from('profiles').select('role, gemeinde_id').eq('id', user.id).single()
-  if (profile?.role !== 'verwaltung' && profile?.role !== 'super_admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+    const service = await createServiceClient()
+    const { error } = await service
+      .from('maengel')
+      .delete()
+      .eq('id', v.data.id)
+      .eq('gemeinde_id', profile.gemeinde_id!)
 
-  const { id } = await req.json()
-  const service = await createServiceClient()
-  const { error } = await service.from('maengel').delete().eq('id', id).eq('gemeinde_id', profile.gemeinde_id!)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  return NextResponse.json({ ok: true })
-}
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true })
+  },
+  { roles: ['verwaltung', 'super_admin'] },
+)

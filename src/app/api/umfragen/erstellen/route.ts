@@ -1,38 +1,27 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createServiceClient } from '@/lib/supabase/server'
-import { UmfrageFrage } from '@/types/umfrage'
+import { NextResponse } from 'next/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { withAuth } from '@/lib/api'
+import { validate, umfrageErstellenSchema } from '@/lib/validations'
 
-export async function POST(req: NextRequest) {
-  try {
-    const { titel, beschreibung, enddatum, gemeindeId, fragen } = await req.json() as {
-      titel: string
-      beschreibung: string
-      enddatum: string
-      gemeindeId: string
-      fragen: (Omit<UmfrageFrage, 'id' | 'umfrage_id'> & { umfrage_optionen?: { option_text: string; reihenfolge: number }[] })[]
-    }
+export const POST = withAuth(
+  async (req, { user }) => {
+    const body = await req.json()
+    const v = validate(umfrageErstellenSchema, body)
+    if (!v.success) return v.error
 
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Nicht angemeldet' }, { status: 401 })
-
+    const { titel, beschreibung, enddatum, gemeindeId, fragen } = v.data
     const service = await createServiceClient()
-
-    // Rolle prüfen
-    const { data: profile } = await service.from('profiles').select('role').eq('id', user.id).single()
-    if (!profile || !['verwaltung', 'super_admin'].includes(profile.role)) {
-      return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
-    }
 
     // Umfrage anlegen
     const { data: umfrage, error: umfrageError } = await service
       .from('umfragen')
-      .insert({ titel, beschreibung: beschreibung || null, enddatum, gemeinde_id: gemeindeId, author_id: user.id })
+      .insert({ titel, beschreibung: beschreibung ?? null, enddatum, gemeinde_id: gemeindeId, author_id: user.id })
       .select()
       .single()
 
-    if (umfrageError) throw new Error(umfrageError.message)
-    if (!umfrage) throw new Error('Umfrage konnte nicht erstellt werden')
+    if (umfrageError || !umfrage) {
+      return NextResponse.json({ error: umfrageError?.message ?? 'Fehler beim Erstellen' }, { status: 500 })
+    }
 
     // Fragen anlegen
     for (const frage of fragen) {
@@ -42,10 +31,10 @@ export async function POST(req: NextRequest) {
         .select()
         .single()
 
-      if (frageError) throw new Error(frageError.message)
-      if (!dbFrage) throw new Error('Frage konnte nicht erstellt werden')
+      if (frageError || !dbFrage) {
+        return NextResponse.json({ error: frageError?.message ?? 'Frage konnte nicht erstellt werden' }, { status: 500 })
+      }
 
-      // Optionen anlegen
       if (frage.umfrage_optionen?.length) {
         await service.from('umfrage_optionen').insert(
           frage.umfrage_optionen.map(o => ({ frage_id: dbFrage.id, reihenfolge: o.reihenfolge, option_text: o.option_text }))
@@ -53,7 +42,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Vollständige Umfrage zurückgeben
     const { data: full } = await service
       .from('umfragen')
       .select('*, umfrage_fragen(*, umfrage_optionen(*))')
@@ -61,9 +49,6 @@ export async function POST(req: NextRequest) {
       .single()
 
     return NextResponse.json({ success: true, umfrage: full })
-  } catch (error) {
-    console.error('Umfrage erstellen Fehler:', error)
-    const msg = error instanceof Error ? error.message : (error as { message?: string })?.message ?? 'Fehler beim Erstellen'
-    return NextResponse.json({ error: msg }, { status: 500 })
-  }
-}
+  },
+  { roles: ['verwaltung', 'super_admin'] },
+)

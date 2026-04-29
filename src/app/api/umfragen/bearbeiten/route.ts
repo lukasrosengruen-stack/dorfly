@@ -1,34 +1,28 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createServiceClient } from '@/lib/supabase/server'
-import { UmfrageFrage } from '@/types/umfrage'
+import { NextResponse } from 'next/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { withAuth } from '@/lib/api'
+import { validate, umfrageErstellenSchema, umfrageBearbeitenSchema } from '@/lib/validations'
 
-export async function POST(req: NextRequest) {
-  try {
-    const { umfrageId, titel, beschreibung, enddatum, fragen } = await req.json() as {
-      umfrageId: string
-      titel: string
-      beschreibung: string
-      enddatum: string
-      fragen: (Omit<UmfrageFrage, 'id' | 'umfrage_id'> & { umfrage_optionen?: { option_text: string; reihenfolge: number }[] })[]
-    }
+const bearbeitenSchema = umfrageBearbeitenSchema.extend({
+  fragen: umfrageErstellenSchema.shape.fragen,
+})
 
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Nicht angemeldet' }, { status: 401 })
+export const POST = withAuth(
+  async (req) => {
+    const body = await req.json()
+    const v = validate(bearbeitenSchema, body)
+    if (!v.success) return v.error
 
+    const { id: umfrageId, titel, beschreibung, enddatum, fragen } = v.data
     const service = await createServiceClient()
-
-    const { data: profile } = await service.from('profiles').select('role').eq('id', user.id).single()
-    if (!profile || !['verwaltung', 'super_admin'].includes(profile.role)) {
-      return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
-    }
 
     // Basisdaten aktualisieren
     const { error: updateError } = await service
       .from('umfragen')
-      .update({ titel, beschreibung: beschreibung || null, enddatum })
+      .update({ titel, beschreibung: beschreibung ?? null, enddatum })
       .eq('id', umfrageId)
-    if (updateError) throw new Error(updateError.message)
+
+    if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
 
     // Alte Fragen + Optionen löschen und neu anlegen
     await service.from('umfrage_fragen').delete().eq('umfrage_id', umfrageId)
@@ -39,7 +33,8 @@ export async function POST(req: NextRequest) {
         .insert({ umfrage_id: umfrageId, reihenfolge: frage.reihenfolge, frage_text: frage.frage_text, typ: frage.typ })
         .select()
         .single()
-      if (frageError) throw new Error(frageError.message)
+
+      if (frageError || !dbFrage) return NextResponse.json({ error: frageError?.message ?? 'Fehler' }, { status: 500 })
 
       if (frage.umfrage_optionen?.length) {
         await service.from('umfrage_optionen').insert(
@@ -55,8 +50,6 @@ export async function POST(req: NextRequest) {
       .single()
 
     return NextResponse.json({ success: true, umfrage: full })
-  } catch (error) {
-    console.error('Umfrage bearbeiten:', error)
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Fehler' }, { status: 500 })
-  }
-}
+  },
+  { roles: ['verwaltung', 'super_admin'] },
+)

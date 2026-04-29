@@ -1,32 +1,27 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { withAuth } from '@/lib/api'
+import { validate, gemeindeAktualisierenSchema } from '@/lib/validations'
 
-export async function POST(req: NextRequest) {
-  try {
-    const { gemeindeId, einwohner, haushalte } = await req.json() as {
-      gemeindeId: string
-      einwohner: number | null
-      haushalte: number | null
+export const POST = withAuth(
+  async (req, { profile }) => {
+    const body = await req.json()
+    const v = validate(gemeindeAktualisierenSchema, body)
+    if (!v.success) return v.error
+
+    // Sicherstellen dass nur die eigene Gemeinde aktualisiert wird
+    if (v.data.gemeindeId !== profile.gemeinde_id) {
+      return NextResponse.json({ error: 'Keine Berechtigung für diese Gemeinde' }, { status: 403 })
     }
-
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Nicht angemeldet' }, { status: 401 })
 
     const service = await createServiceClient()
-    const { data: profile } = await service.from('profiles').select('role').eq('id', user.id).single()
-    if (!profile || !['verwaltung', 'super_admin'].includes(profile.role)) {
-      return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
-    }
-
     const { error } = await service
       .from('gemeinden')
-      .update({ einwohner: einwohner ?? null, haushalte: haushalte ?? null })
-      .eq('id', gemeindeId)
+      .update({ einwohner: v.data.einwohner, haushalte: v.data.haushalte })
+      .eq('id', v.data.gemeindeId)
 
-    if (error) throw new Error(error.message)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ success: true })
-  } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Fehler' }, { status: 500 })
-  }
-}
+  },
+  { roles: ['verwaltung', 'super_admin'] },
+)

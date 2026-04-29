@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from 'sonner'
 import { useState } from 'react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
@@ -53,7 +55,7 @@ export default function GemeinderatClient({ posts, raete, profileId, gemeindeId,
       setFrage('')
       setSelectedRat(null)
     } else {
-      alert('Fehler beim Senden der Frage')
+      toast.error('Fehler beim Senden der Frage')
     }
   }
 

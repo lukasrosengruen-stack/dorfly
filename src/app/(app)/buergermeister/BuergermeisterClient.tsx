@@ -1,7 +1,9 @@
-﻿'use client'
+'use client'
 
+
+import { toast } from 'sonner'
 import { useState } from 'react'
-import { Frage, FrageStatus, Profile } from '@/types/database'
+import { FrageMitProfil, FrageStatus, Profile } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
 import { Send, Lock, Globe, ChevronDown, ChevronUp, Loader2, CheckCircle2, Clock, Archive, User } from 'lucide-react'
 import Link from 'next/link'
@@ -16,7 +18,7 @@ const STATUS_META: Record<FrageStatus, { label: string; color: string; icon: Rea
 }
 
 interface Props {
-  fragen: Frage[]
+  fragen: FrageMitProfil[]
   profile: Profile | null
 }
 
@@ -54,7 +56,7 @@ export default function BuergermeisterClient({ fragen: initialFragen, profile }:
       setShowForm(false)
     } catch (e) {
       console.error(e)
-      alert('Fehler beim Speichern')
+      toast.error('Fehler beim Speichern')
     } finally {
       setLoading(false)
     }

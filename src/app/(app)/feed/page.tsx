@@ -64,21 +64,28 @@ export default async function FeedPage() {
 
   const umfragen = umfragenResult.data ?? []
 
-  const umfragenMitDaten = await Promise.all(
-    umfragen.map(async (umfrage) => {
-      const [teilnahmeResult, countResult] = await Promise.all([
-        user
-          ? supabase.from('umfrage_teilnahmen').select('user_id').eq('umfrage_id', umfrage.id).eq('user_id', user.id).single()
-          : Promise.resolve({ data: null }),
-        supabase.from('umfrage_teilnahmen').select('*', { count: 'exact', head: true }).eq('umfrage_id', umfrage.id),
-      ])
-      return {
-        umfrage,
-        hatAbgestimmt: !!teilnahmeResult.data,
-        teilnehmerAnzahl: countResult.count ?? 0,
-      }
-    })
-  )
+  // N+1-Fix: Alle Teilnahmedaten in 2 Bulk-Queries statt n*2 Einzelqueries
+  const umfrageIds = umfragen.map((u) => u.id)
+
+  const [alleTeilnahmenResult, eigenteTeilnahmenResult] = await Promise.all([
+    // Alle Teilnahmen für diese Umfragen (für Zählung)
+    umfrageIds.length > 0
+      ? supabase.from('umfrage_teilnahmen').select('umfrage_id').in('umfrage_id', umfrageIds)
+      : Promise.resolve({ data: [] as { umfrage_id: string }[] }),
+    // Eigene Teilnahmen des eingeloggten Nutzers
+    umfrageIds.length > 0 && user
+      ? supabase.from('umfrage_teilnahmen').select('umfrage_id').in('umfrage_id', umfrageIds).eq('user_id', user.id)
+      : Promise.resolve({ data: [] as { umfrage_id: string }[] }),
+  ])
+
+  const alleTeilnahmen = alleTeilnahmenResult.data ?? []
+  const eigeneTeilnahmen = new Set((eigenteTeilnahmenResult.data ?? []).map(t => t.umfrage_id))
+
+  const umfragenMitDaten = umfragen.map((umfrage) => ({
+    umfrage,
+    hatAbgestimmt: eigeneTeilnahmen.has(umfrage.id),
+    teilnehmerAnzahl: alleTeilnahmen.filter(t => t.umfrage_id === umfrage.id).length,
+  }))
 
   return (
     <FeedClient

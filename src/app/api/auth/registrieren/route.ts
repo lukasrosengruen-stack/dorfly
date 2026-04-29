@@ -1,14 +1,18 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { validate, registrierenSchema } from '@/lib/validations'
+import { getGemeindeSlug } from '@/lib/gemeinde'
 
 export async function POST(request: Request) {
   try {
-    const { userId, vorname, nachname } = await request.json()
-    if (!userId) return NextResponse.json({ error: 'Keine User-ID' }, { status: 400 })
+    const body = await request.json()
+    const v = validate(registrierenSchema, body)
+    if (!v.success) return v.error
 
+    const { userId, vorname, nachname } = v.data
     const supabase = await createServiceClient()
 
-    const slug = request.headers.get('x-gemeinde-slug') ?? process.env.NEXT_PUBLIC_DEFAULT_GEMEINDE_SLUG ?? 'ehningen'
+    const slug = await getGemeindeSlug()
     const { data: gemeinde } = await supabase
       .from('gemeinden')
       .select('id')

@@ -1,5 +1,7 @@
-﻿'use client'
+'use client'
 
+
+import { toast } from 'sonner'
 import { useState } from 'react'
 import { Mangel, MaengelStatus, Profile } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
@@ -71,7 +73,7 @@ function BuergerView({ maengel, setMaengel, profile }: {
     setLocating(true)
     navigator.geolocation.getCurrentPosition(
       pos => { setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setLocating(false) },
-      () => { alert('Standort nicht verfügbar'); setLocating(false) },
+      () => { toast.error('Standort nicht verfügbar'); setLocating(false) },
       { timeout: 10000 }
     )
   }
@@ -112,7 +114,7 @@ function BuergerView({ maengel, setMaengel, profile }: {
       setShowForm(false)
       setForm({ titel: '', beschreibung: '', adresse: '' })
       setCoords(null); setFotoFile(null); setFotoPreview(null)
-    } catch { alert('Fehler beim Speichern') }
+    } catch { toast.error('Fehler beim Speichern') }
     finally { setLoading(false) }
   }
 

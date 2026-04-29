@@ -1,27 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { withAuth } from '@/lib/api'
+import { validate, umfrageLoeschenSchema } from '@/lib/validations'
 
-export async function POST(req: NextRequest) {
-  try {
-    const { umfrageId } = await req.json() as { umfrageId: string }
-
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Nicht angemeldet' }, { status: 401 })
+export const POST = withAuth(
+  async (req) => {
+    const body = await req.json()
+    const v = validate(umfrageLoeschenSchema, body)
+    if (!v.success) return v.error
 
     const service = await createServiceClient()
-
-    const { data: profile } = await service.from('profiles').select('role').eq('id', user.id).single()
-    if (!profile || !['verwaltung', 'super_admin'].includes(profile.role)) {
-      return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
-    }
-
-    const { error } = await service.from('umfragen').delete().eq('id', umfrageId)
-    if (error) throw new Error(error.message)
+    const { error } = await service.from('umfragen').delete().eq('id', v.data.umfrageId)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Umfrage löschen:', error)
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Fehler' }, { status: 500 })
-  }
-}
+  },
+  { roles: ['verwaltung', 'super_admin'] },
+)

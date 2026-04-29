@@ -63,3 +63,43 @@ body {
 ::-webkit-scrollbar-thumb { background: rgba(15,45,107,0.2); border-radius: 2px; }
 .scrollbar-none::-webkit-scrollbar { display: none; }
 .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+
+html { scroll-behavior: smooth; }
+
+/* ── MARKETING PAGE ─────────────────────────────────────────────────────────── */
+.mp {
+  --mp-navy:   #0D1B2A;
+  --mp-blue:   #0057A8;
+  --mp-blue-m: #1A6FC4;
+  --mp-blue-l: #60A5FA;
+  --mp-green:  #00A878;
+  --mp-bg:     #F4F7FB;
+  --mp-muted:  #64748B;
+  --mp-border: #DDE6F0;
+  font-family: var(--font-dm), 'DM Sans', sans-serif;
+  background: var(--mp-bg);
+  color: var(--mp-navy);
+  overflow-x: hidden;
+}
+
+/* Reveal animation */
+.mp-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s cubic-bezier(0.2, 0.8, 0.3, 1),
+              transform 0.7s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+.mp-reveal.visible { opacity: 1; transform: translateY(0); }
+.mp-d1 { transition-delay: 0.1s; }
+.mp-d2 { transition-delay: 0.2s; }
+.mp-d3 { transition-delay: 0.3s; }
+.mp-d4 { transition-delay: 0.4s; }
+.mp-d5 { transition-delay: 0.5s; }
+
+/* Float animation for phone mockup cards */
+@keyframes mpFloat {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-7px); }
+}
+.mp-float { animation: mpFloat 3.5s ease-in-out infinite; }
+.mp-float-delay { animation: mpFloat 3.5s ease-in-out infinite; animation-delay: -1.5s; }

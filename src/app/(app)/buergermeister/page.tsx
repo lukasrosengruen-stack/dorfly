@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import BuergermeisterClient from './BuergermeisterClient'
+import type { FrageMitProfil } from '@/types/database'
 
 export default async function BuergermeisterPage() {
   const supabase = await createClient()
@@ -20,5 +21,5 @@ export default async function BuergermeisterPage() {
         .limit(50)
     : { data: [] }
 
-  return <BuergermeisterClient fragen={fragen ?? []} profile={profile} />
+  return <BuergermeisterClient fragen={(fragen ?? []) as FrageMitProfil[]} profile={profile} />
 }

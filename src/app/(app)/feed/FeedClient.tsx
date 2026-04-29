@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Post, PostChannel, Profile } from '@/types/database'
+import { PostMitProfil, PostChannel, Profile } from '@/types/database'
 import { X, Pin, SlidersHorizontal, Check, Calendar, MapPin, User, Images } from 'lucide-react'
 import { clsx } from 'clsx'
 import { formatDistanceToNow, format } from 'date-fns'
@@ -42,13 +42,13 @@ interface UmfrageMitDaten {
 }
 
 interface Props {
-  posts: Post[]
+  posts: PostMitProfil[]
   profile: (Profile & { gemeinden?: { name: string } | null }) | null
   alleVereine: string[]
   umfragen: UmfrageMitDaten[]
 }
 
-export default function FeedClient({ posts: initialPosts, profile, alleVereine: _alleVereine, umfragen: initialUmfragen }: Props) {
+export default function FeedClient({ posts: initialPosts, profile, umfragen: initialUmfragen }: Omit<Props, 'alleVereine'> & { alleVereine?: string[] }) {
   const [umfragen, setUmfragen] = useState(initialUmfragen)
   const [showFilter, setShowFilter] = useState(false)
   const [gallery, setGallery] = useState<{ bilder: string[]; index: number } | null>(null)

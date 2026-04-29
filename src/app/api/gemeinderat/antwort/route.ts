@@ -1,34 +1,34 @@
 import { NextResponse } from 'next/server'
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { withAuth } from '@/lib/api'
+import { validate, gemeinderatAntwortSchema } from '@/lib/validations'
 
-export async function PATCH(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Nicht angemeldet' }, { status: 401 })
+export const PATCH = withAuth(
+  async (req, { user }) => {
+    const body = await req.json()
+    const v = validate(gemeinderatAntwortSchema, body)
+    if (!v.success) return v.error
 
-  const { frageId, antwort } = await request.json()
-  if (!frageId || !antwort?.trim()) {
-    return NextResponse.json({ error: 'Fehlende Felder' }, { status: 400 })
-  }
+    const service = await createServiceClient()
 
-  const service = await createServiceClient()
+    // Verifizieren dass dieser Gemeinderat die Frage besitzt
+    const { data: frage } = await service
+      .from('gemeinderat_fragen')
+      .select('gemeinderat_id')
+      .eq('id', v.data.frageId)
+      .single()
 
-  // Verify this Gemeinderat owns this question
-  const { data: frage } = await service
-    .from('gemeinderat_fragen')
-    .select('gemeinderat_id')
-    .eq('id', frageId)
-    .single()
+    if (!frage || frage.gemeinderat_id !== user.id) {
+      return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
+    }
 
-  if (!frage || frage.gemeinderat_id !== user.id) {
-    return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
-  }
+    const { error } = await service
+      .from('gemeinderat_fragen')
+      .update({ antwort: v.data.antwort.trim(), status: 'beantwortet' })
+      .eq('id', v.data.frageId)
 
-  const { error } = await service
-    .from('gemeinderat_fragen')
-    .update({ antwort: antwort.trim(), status: 'beantwortet', beantwortet_at: new Date().toISOString() })
-    .eq('id', frageId)
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ ok: true })
-}
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true })
+  },
+  { roles: ['gemeinderat'] },
+)
