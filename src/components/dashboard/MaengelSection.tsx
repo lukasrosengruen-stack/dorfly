@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from 'sonner'
 import { useState } from 'react'
 import { AlertTriangle, Loader2, Trash2 } from 'lucide-react'
 import Link from 'next/link'
@@ -35,7 +37,7 @@ export default function MaengelSection({ maengel: initialMaengel, offeneMaengel,
       })
       if (!res.ok) throw new Error()
       setMaengel(prev => prev.filter(m => m.id !== id))
-    } catch { alert('Fehler beim Löschen') }
+    } catch { toast.error('Fehler beim Löschen') }
     finally { setDeleting(null) }
   }
 
@@ -50,7 +52,7 @@ export default function MaengelSection({ maengel: initialMaengel, offeneMaengel,
       if (!res.ok) throw new Error()
       setMaengel(prev => prev.map(m => m.id === id ? { ...m, status } : m))
     } catch {
-      alert('Fehler beim Aktualisieren')
+      toast.error('Fehler beim Aktualisieren')
     } finally {
       setUpdating(null)
     }

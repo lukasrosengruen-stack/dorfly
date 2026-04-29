@@ -15,7 +15,8 @@ const rightItems = [
   { href: '/buergermeister', label: 'Frag BM',   icon: MessageCircleQuestion },
 ]
 
-export default function BottomNav({ role: _role }: { role?: string }) {
+export default function BottomNav({ role }: { role?: string }) {
+  void role // wird in zukünftigen Phasen für rollenbasierte Navigation genutzt
   const pathname = usePathname()
 
   return (

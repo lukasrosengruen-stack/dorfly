@@ -1,5 +1,7 @@
-﻿'use client'
+'use client'
 
+
+import { toast } from 'sonner'
 import { useState } from 'react'
 import { Umfrage, UmfrageAntwort, FrageTyp } from '@/types/umfrage'
 import { Profile } from '@/types/database'
@@ -84,7 +86,7 @@ export default function UmfrageCard({ umfrage: initialUmfrage, hatAbgestimmt: in
       if (!res.ok) throw new Error()
       onDelete?.(umfrage.id)
     } catch {
-      alert('Fehler beim Löschen')
+      toast.error('Fehler beim Löschen')
     } finally {
       setDeleting(false)
     }

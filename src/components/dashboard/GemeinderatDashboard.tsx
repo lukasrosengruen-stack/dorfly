@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from 'sonner'
 import { useState } from 'react'
 import { format } from 'date-fns'
 import { de } from 'date-fns/locale'
@@ -51,7 +53,7 @@ export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profil
       setBeantwortet(prev => new Set([...prev, frageId]))
       setAntworten(prev => ({ ...prev, [frageId]: '' }))
     } else {
-      alert('Fehler beim Senden der Antwort')
+      toast.error('Fehler beim Senden der Antwort')
     }
   }
 

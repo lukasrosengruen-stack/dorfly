@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from 'sonner'
 import { useState } from 'react'
 import { Check, X, Loader2, CalendarClock } from 'lucide-react'
 
@@ -29,7 +31,7 @@ export default function PostFreigabe({ pendingPosts }: { pendingPosts: PendingPo
       if (!res.ok) throw new Error()
       setPosts(prev => prev.filter(p => p.id !== postId))
     } catch {
-      alert('Fehler beim Verarbeiten')
+      toast.error('Fehler beim Verarbeiten')
     } finally {
       setLoading(null)
     }

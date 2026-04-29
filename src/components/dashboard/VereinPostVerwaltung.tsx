@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from 'sonner'
 import { useState } from 'react'
 import { Plus, Clock, CheckCircle2, XCircle, Loader2, X, Pencil, Trash2, CalendarClock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -105,7 +107,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
       const { error } = await supabase.from('posts').delete().eq('id', id)
       if (error) throw error
       setPosts(prev => prev.filter(p => p.id !== id))
-    } catch { alert('Fehler beim Löschen') }
+    } catch { toast.error('Fehler beim Löschen') }
     finally { setDeleting(null) }
   }
 
@@ -130,7 +132,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
       if (error) throw error
       setPosts(prev => [data as Post, ...prev])
       closeForm()
-    } catch { alert('Fehler beim Einreichen') }
+    } catch { toast.error('Fehler beim Einreichen') }
     finally { setLoading(false) }
   }
 
@@ -154,7 +156,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
       if (error) throw error
       setPosts(prev => prev.map(p => p.id === editingId ? { ...p, ...form, status: 'pending' } : p))
       closeForm()
-    } catch (e: unknown) { alert('Fehler beim Speichern: ' + (e instanceof Error ? e.message : JSON.stringify(e))) }
+    } catch (e: unknown) { toast.error('Fehler beim Speichern: ' + (e instanceof Error ? e.message : JSON.stringify(e))) }
     finally { setLoading(false) }
   }
 

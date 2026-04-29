@@ -5,14 +5,27 @@ const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'
 const DEFAULT_SLUG = process.env.NEXT_PUBLIC_DEFAULT_GEMEINDE_SLUG ?? 'ehningen'
 
 function extractSlug(hostname: string): string {
-  if (
-    hostname.includes('localhost') ||
-    hostname.includes('vercel.app') ||
-    hostname === ROOT_DOMAIN ||
-    hostname === `www.${ROOT_DOMAIN}`
-  ) {
+  // Reines localhost (ohne Subdomain) → Default-Slug
+  if (hostname === 'localhost' || /^localhost:\d+$/.test(hostname)) {
     return DEFAULT_SLUG
   }
+
+  // *.localhost (z.B. ehningen.localhost:3000) → Subdomain extrahieren
+  if (hostname.includes('.localhost')) {
+    return hostname.split('.localhost')[0]
+  }
+
+  // Vercel Preview-Deployments → Default-Slug
+  if (hostname.includes('vercel.app')) {
+    return DEFAULT_SLUG
+  }
+
+  // Root-Domain (dorfly.de / www.dorfly.de) → Default-Slug
+  if (hostname === ROOT_DOMAIN || hostname === `www.${ROOT_DOMAIN}`) {
+    return DEFAULT_SLUG
+  }
+
+  // Subdomain (ehningen.dorfly.de) → Slug extrahieren
   return hostname.replace(`.${ROOT_DOMAIN}`, '')
 }
 

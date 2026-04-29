@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from 'sonner'
 import { useState } from 'react'
 import { Plus, X, Loader2, Clock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -82,7 +84,7 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
       reset()
       window.location.reload()
     } catch {
-      alert('Fehler beim Erstellen')
+      toast.error('Fehler beim Erstellen')
     } finally {
       setLoading(false)
     }

@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from 'sonner'
 import { useState } from 'react'
 import { Pencil, Trash2, Loader2, X, ImagePlus, Newspaper, CalendarClock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -116,7 +118,7 @@ export default function PostVerwaltungSection({ posts: initialPosts }: Props) {
       if (!res.ok) throw new Error()
       setPosts(prev => prev.map(p => p.id === editingId ? { ...p, ...form, bild_url, veranstaltung_datum } : p))
       closeEdit()
-    } catch { alert('Fehler beim Speichern') }
+    } catch { toast.error('Fehler beim Speichern') }
     finally { setLoading(false) }
   }
 
@@ -131,7 +133,7 @@ export default function PostVerwaltungSection({ posts: initialPosts }: Props) {
       })
       if (!res.ok) throw new Error()
       setPosts(prev => prev.filter(p => p.id !== id))
-    } catch { alert('Fehler beim Löschen') }
+    } catch { toast.error('Fehler beim Löschen') }
     finally { setDeleting(null) }
   }
 

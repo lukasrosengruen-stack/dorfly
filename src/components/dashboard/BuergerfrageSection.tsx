@@ -1,5 +1,7 @@
 'use client'
 
+
+import { toast } from 'sonner'
 import { useState } from 'react'
 import { MessageCircleQuestion, ChevronDown, ChevronUp, Loader2, CheckCircle2, Pencil, Trash2 } from 'lucide-react'
 import Link from 'next/link'
@@ -34,7 +36,7 @@ export default function BuergerfrageSection({ fragen: initialFragen }: { fragen:
       setFragen(prev => prev.map(f => f.id === frageId ? { ...f, antwort: text, status: 'beantwortet' } : f))
       setEditingId(null)
       setExpandedId(null)
-    } catch { alert('Fehler beim Speichern') }
+    } catch { toast.error('Fehler beim Speichern') }
     finally { setLoading(null) }
   }
 
@@ -49,7 +51,7 @@ export default function BuergerfrageSection({ fragen: initialFragen }: { fragen:
       })
       if (!res.ok) throw new Error()
       setFragen(prev => prev.filter(f => f.id !== id))
-    } catch { alert('Fehler beim Löschen') }
+    } catch { toast.error('Fehler beim Löschen') }
     finally { setDeleting(null) }
   }
 

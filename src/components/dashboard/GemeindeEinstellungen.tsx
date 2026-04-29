@@ -1,5 +1,7 @@
-﻿'use client'
+'use client'
 
+
+import { toast } from 'sonner'
 import { useState } from 'react'
 import { Settings, Check, X, Loader2 } from 'lucide-react'
 
@@ -33,7 +35,7 @@ export default function GemeindeEinstellungen({ gemeindeId, initialEinwohner, in
       setSaved(true)
       setTimeout(() => { setSaved(false); setOpen(false) }, 1200)
     } catch (e: unknown) {
-      alert('Fehler beim Speichern: ' + (e instanceof Error ? e.message : String(e)))
+      toast.error('Fehler beim Speichern: ' + (e instanceof Error ? e.message : String(e)))
     } finally {
       setLoading(false)
     }
