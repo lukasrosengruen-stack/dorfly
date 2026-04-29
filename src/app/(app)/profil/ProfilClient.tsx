@@ -1,10 +1,10 @@
 'use client'
 
-
 import { toast } from 'sonner'
 import { useState } from 'react'
 import { Profile } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
+import { updateProfil } from '@/app/actions/profil'
 import { useRouter } from 'next/navigation'
 import { LogOut, Shield, Pencil, X, Check, Loader2, User, MapPin, Trash2, KeyRound, Eye, EyeOff } from 'lucide-react'
 
@@ -51,17 +51,14 @@ export default function ProfilClient({ profile }: { profile: FullProfile | null 
 
   async function save() {
     setSaving(true)
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        vorname:      form.vorname || null,
-        nachname:     form.nachname || null,
-        display_name: [form.vorname, form.nachname].filter(Boolean).join(' ') || null,
-      })
-      .eq('id', profile?.id ?? '')
+    const result = await updateProfil({ vorname: form.vorname, nachname: form.nachname })
     setSaving(false)
-    if (!error) { setEditing(false); router.refresh() }
-    else toast.error('Fehler beim Speichern')
+    if (result.success) {
+      setEditing(false)
+      router.refresh()
+    } else {
+      toast.error(result.error ?? 'Fehler beim Speichern')
+    }
   }
 
   async function signOut() {

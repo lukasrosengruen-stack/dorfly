@@ -1,9 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
+import { getGemeinde } from '@/lib/gemeinde'
 import UmfragenClient from './UmfragenClient'
 
 export default async function UmfragenPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const [{ data: { user } }, gemeinde] = await Promise.all([
+    supabase.auth.getUser(),
+    getGemeinde(),
+  ])
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -40,6 +44,7 @@ export default async function UmfragenPage() {
     <UmfragenClient
       umfragen={umfragenMitDaten}
       profile={profile}
+      gemeindeName={gemeinde?.name}
     />
   )
 }

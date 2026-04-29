@@ -1,32 +1,28 @@
-import { ShoppingBag, Clock, User } from 'lucide-react'
-import Link from 'next/link'
+import { getGemeinde } from '@/lib/gemeinde'
+import { PageHeader } from '@/components/ui'
+import { ShoppingBag, Clock } from 'lucide-react'
 
-export default function MarktplatzPage() {
+export default async function MarktplatzPage() {
+  const gemeinde = await getGemeinde()
+
   return (
     <div>
-      <div className="bg-primary-500 px-4 pt-12 pb-5">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-primary-200 text-xs font-bold tracking-[0.2em] uppercase mb-1">Gemeinde Ehningen</p>
-            <h1 className="text-white font-black text-2xl tracking-wide uppercase">Marktplatz</h1>
-            <p className="text-primary-200 text-sm mt-1">Lokale Angebote & Gesuche</p>
-          </div>
-          <Link href="/profil" className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-1">
-            <User className="w-4 h-4 text-white" />
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        gemeindeName={gemeinde?.name}
+        title="Marktplatz"
+        subtitle="Lokale Angebote & Gesuche"
+      />
 
-      <div className="p-4">
-        <div className="bg-white rounded-2xl shadow-sm p-8 text-center mt-4">
+      <div className="p-4 mt-4">
+        <div className="bg-white rounded-2xl shadow-[0_2px_14px_rgba(15,45,107,0.08)] p-8 text-center">
           <div className="w-16 h-16 bg-primary-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <ShoppingBag className="w-8 h-8 text-primary-500" />
+            <ShoppingBag className="w-8 h-8 text-primary-400" strokeWidth={1.5} />
           </div>
           <h2 className="font-black text-gray-900 text-lg uppercase tracking-wide mb-2">
             Demnächst verfügbar
           </h2>
           <p className="text-gray-500 text-sm leading-relaxed max-w-xs mx-auto">
-            Der digitale Marktplatz für Ehningen ist in Planung. Hier können Sie bald lokale Angebote und Gesuche einstellen.
+            Der digitale Marktplatz ist in Planung. Hier können Sie bald lokale Angebote und Gesuche einstellen.
           </p>
           <div className="flex items-center justify-center gap-2 mt-6 text-xs text-gray-400">
             <Clock className="w-3.5 h-3.5" />

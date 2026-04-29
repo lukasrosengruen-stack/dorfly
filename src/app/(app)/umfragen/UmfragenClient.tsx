@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { Umfrage } from '@/types/umfrage'
 import { Profile } from '@/types/database'
-import { BarChart2, User } from 'lucide-react'
-import Link from 'next/link'
+import { BarChart2 } from 'lucide-react'
+import { PageHeader, EmptyState } from '@/components/ui'
 import UmfrageCard from '@/components/umfrage/UmfrageCard'
 
 interface UmfrageMitDaten {
@@ -16,34 +16,28 @@ interface UmfrageMitDaten {
 interface Props {
   umfragen: UmfrageMitDaten[]
   profile: Profile | null
+  gemeindeName?: string
 }
 
-export default function UmfragenClient({ umfragen: initialUmfragen, profile }: Props) {
+export default function UmfragenClient({ umfragen: initialUmfragen, profile, gemeindeName }: Props) {
   const [umfragen, setUmfragen] = useState(initialUmfragen)
 
   return (
     <div>
-      {/* Header */}
-      <div className="bg-primary-500 px-4 pt-12 pb-5">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-primary-200 text-xs font-bold tracking-[0.2em] uppercase mb-1">Gemeinde Ehningen</p>
-            <h1 className="text-white font-black text-2xl tracking-wide uppercase">Umfragen</h1>
-            <p className="text-primary-200 text-sm mt-1">Ihre Meinung zählt</p>
-          </div>
-          <Link href="/profil" className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-1">
-            <User className="w-4 h-4 text-white" />
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        gemeindeName={gemeindeName}
+        title="Umfragen"
+        subtitle="Ihre Meinung zählt"
+      />
 
       {/* Inhalt */}
       <div className="p-4 space-y-4">
         {umfragen.length === 0 && (
-          <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
-            <BarChart2 className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500 font-medium">Noch keine Umfragen</p>
-            </div>
+          <EmptyState
+            icon={BarChart2}
+            title="Noch keine Umfragen"
+            description="Sobald eine Umfrage gestartet wird, erscheint sie hier."
+          />
         )}
 
         {umfragen.map(({ umfrage, hatAbgestimmt, teilnehmerAnzahl }) => (
