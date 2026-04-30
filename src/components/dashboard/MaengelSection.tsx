@@ -3,7 +3,7 @@
 
 import { toast } from 'sonner'
 import { useState } from 'react'
-import { AlertTriangle, Loader2, MessageSquare, Trash2 } from 'lucide-react'
+import { AlertTriangle, Loader2, MapPin, MessageSquare, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 
 type Status = 'offen' | 'in_bearbeitung' | 'erledigt'
@@ -13,6 +13,11 @@ interface Mangel {
   titel: string
   status: Status
   created_at: string
+  beschreibung?: string | null
+  adresse?: string | null
+  foto_url?: string | null
+  lat?: number | null
+  lng?: number | null
   nachricht_an_buerger?: string | null
   profiles?: { display_name: string | null } | null
 }
@@ -165,35 +170,70 @@ export default function MaengelSection({ maengel: initialMaengel, offeneMaengel,
                 </td>
               </tr>
               {expandedId === m.id && (
-                <tr key={`${m.id}-nachricht`} className="border-b border-gray-100 bg-primary-50/40">
-                  <td colSpan={5} className="px-5 py-3">
-                    <div className="flex flex-col gap-2">
-                      <p className="text-xs font-semibold text-primary-700">Nachricht an Bürger</p>
-                      <textarea
-                        value={nachrichten[m.id] ?? ''}
-                        onChange={e => setNachrichten(prev => ({ ...prev, [m.id]: e.target.value }))}
-                        placeholder="Nachricht an den Melder verfassen …"
-                        maxLength={2000}
-                        rows={3}
-                        className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-primary-300"
-                      />
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-400">{(nachrichten[m.id] ?? '').length}/2000</span>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => setExpandedId(null)}
-                            className="text-xs px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
-                          >
-                            Abbrechen
-                          </button>
-                          <button
-                            onClick={() => sendNachricht(m.id, m.status)}
-                            disabled={sending === m.id}
-                            className="text-xs px-3 py-1.5 rounded-lg bg-primary-500 text-white hover:bg-primary-600 transition-colors disabled:opacity-50 flex items-center gap-1"
-                          >
-                            {sending === m.id && <Loader2 className="w-3 h-3 animate-spin" />}
-                            Senden
-                          </button>
+                <tr key={`${m.id}-detail`} className="border-b border-gray-100 bg-primary-50/40">
+                  <td colSpan={5} className="px-5 py-4">
+                    <div className="flex gap-4">
+                      {/* Foto */}
+                      {m.foto_url && (
+                        <a href={m.foto_url} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                          <img src={m.foto_url} alt={m.titel} className="w-32 h-32 object-cover rounded-xl border border-gray-200" />
+                        </a>
+                      )}
+
+                      <div className="flex-1 flex flex-col gap-3 min-w-0">
+                        {/* Beschreibung + Adresse */}
+                        <div className="flex flex-col gap-1">
+                          {m.beschreibung && (
+                            <p className="text-sm text-gray-700">{m.beschreibung}</p>
+                          )}
+                          {(m.adresse || (m.lat && m.lng)) && (
+                            <div className="flex items-center gap-1 text-xs text-gray-500">
+                              <MapPin className="w-3 h-3 shrink-0" />
+                              {m.adresse && <span>{m.adresse}</span>}
+                              {m.lat && m.lng && (
+                                <a
+                                  href={`https://www.google.com/maps?q=${m.lat},${m.lng}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary-500 hover:underline ml-1"
+                                >
+                                  Karte öffnen ↗
+                                </a>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Nachricht an Bürger */}
+                        <div className="flex flex-col gap-2">
+                          <p className="text-xs font-semibold text-primary-700">Nachricht an Bürger</p>
+                          <textarea
+                            value={nachrichten[m.id] ?? ''}
+                            onChange={e => setNachrichten(prev => ({ ...prev, [m.id]: e.target.value }))}
+                            placeholder="Nachricht an den Melder verfassen …"
+                            maxLength={2000}
+                            rows={3}
+                            className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-primary-300"
+                          />
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-400">{(nachrichten[m.id] ?? '').length}/2000</span>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => setExpandedId(null)}
+                                className="text-xs px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                              >
+                                Abbrechen
+                              </button>
+                              <button
+                                onClick={() => sendNachricht(m.id, m.status)}
+                                disabled={sending === m.id}
+                                className="text-xs px-3 py-1.5 rounded-lg bg-primary-500 text-white hover:bg-primary-600 transition-colors disabled:opacity-50 flex items-center gap-1"
+                              >
+                                {sending === m.id && <Loader2 className="w-3 h-3 animate-spin" />}
+                                Senden
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
