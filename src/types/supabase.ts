@@ -219,6 +219,12 @@ export interface Database {
             referencedRelation: 'profiles'
             referencedColumns: ['id']
           },
+          {
+            foreignKeyName: 'organisationen_branche_id_fkey'
+            columns: ['branche_id']
+            referencedRelation: 'gewerbe_branchen'
+            referencedColumns: ['id']
+          },
         ]
       }
 

@@ -53,7 +53,7 @@ export default async function GewerbeProfilPage({ params }: { params: Promise<{ 
       posts={posts ?? []}
       istAbonniert={!!abo}
       abonnentenAnzahl={abonnentenAnzahl ?? 0}
-      istEigentümer={profile?.gemeinde_id === betrieb.gemeinde_id && false}
+      istEigentümer={false}
     />
   )
 }
