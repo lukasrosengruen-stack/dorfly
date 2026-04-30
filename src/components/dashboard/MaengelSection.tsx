@@ -47,7 +47,7 @@ export default function MaengelSection({ maengel: initialMaengel, offeneMaengel,
       const res = await fetch('/api/maengel/status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ maengelId: id, status }),
+        body: JSON.stringify({ mangelId: id, status }),
       })
       if (!res.ok) throw new Error()
       setMaengel(prev => prev.map(m => m.id === id ? { ...m, status } : m))
