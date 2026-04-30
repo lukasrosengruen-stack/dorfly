@@ -20,6 +20,7 @@ export default async function DashboardPage() {
     .eq('id', user?.id ?? '')
     .single()
 
+  if (profile?.role === 'gewerbe') redirect('/gewerbe/dashboard')
   if (!profile || !['verwaltung', 'super_admin', 'verein', 'organisation', 'gemeinderat'].includes(profile.role)) {
     redirect('/feed')
   }

@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getGemeinde } from '@/lib/gemeinde'
-import { Newspaper, AlertTriangle, ShoppingBag, BarChart2, MessageCircleQuestion, LayoutDashboard, CalendarDays, ExternalLink, ScrollText, Scale, UserCircle } from 'lucide-react'
+import { Newspaper, AlertTriangle, BarChart2, MessageCircleQuestion, LayoutDashboard, CalendarDays, ExternalLink, ScrollText, Scale, UserCircle, Store } from 'lucide-react'
 import Link from 'next/link'
 
 const tiles = [
@@ -8,7 +8,7 @@ const tiles = [
   { href: '/veranstaltungen', label: 'Veranstaltungen',  icon: CalendarDays,          color: '#7c3aed', bg: 'rgba(124,58,237,0.1)', desc: 'Events & Termine' },
   { href: '/maengel',         label: 'Mängel melden',    icon: AlertTriangle,         color: '#c41e1e', bg: 'rgba(196,30,30,0.1)',  desc: 'Schäden melden' },
   { href: '/umfragen',        label: 'Umfragen',         icon: BarChart2,             color: '#7c3aed', bg: 'rgba(124,58,237,0.1)', desc: 'Ihre Meinung' },
-  { href: '/marktplatz',      label: 'Marktplatz',       icon: ShoppingBag,           color: '#ea580c', bg: 'rgba(234,88,12,0.1)',  desc: 'Angebote & Gesuche' },
+  { href: '/lokale-angebote', label: 'Lokale Angebote',  icon: Store,                 color: '#ea580c', bg: 'rgba(234,88,12,0.1)',  desc: 'Betriebe vor Ort' },
   { href: '/buergermeister',  label: 'Frag den BM',      icon: MessageCircleQuestion, color: '#1a5cbf', bg: 'rgba(26,92,191,0.1)',  desc: 'An die Verwaltung' },
   { href: '/gemeinderat',     label: 'Gemeinderat',      icon: Scale,                 color: '#0f2d6b', bg: 'rgba(15,45,107,0.1)',  desc: 'Politik & Fragen' },
   { href: '/profil',          label: 'Mein Profil',      icon: UserCircle,            color: '#475569', bg: 'rgba(71,85,105,0.1)',  desc: 'Einstellungen & Konto' },
@@ -28,7 +28,8 @@ export default async function HomePage() {
   ])
 
   const profile = profileResult.data
-  const hasDashboard = profile?.role === 'verwaltung' || profile?.role === 'super_admin' || profile?.role === 'verein' || profile?.role === 'organisation' || profile?.role === 'gemeinderat'
+  const hasDashboard = profile?.role === 'verwaltung' || profile?.role === 'super_admin' || profile?.role === 'verein' || profile?.role === 'organisation' || profile?.role === 'gemeinderat' || profile?.role === 'gewerbe'
+  const dashboardHref = profile?.role === 'gewerbe' ? '/gewerbe/dashboard' : '/dashboard'
   const gemeindeName = gemeinde?.name ?? ''
   const vorname = profile?.display_name?.split(' ')[0] ?? 'Hallo'
 
@@ -46,7 +47,7 @@ export default async function HomePage() {
       <div className="px-4 py-4 space-y-3">
         {/* Dashboard Banner */}
         {hasDashboard && (
-          <Link href="/dashboard"
+          <Link href={dashboardHref}
             className="bg-primary-500 rounded-[20px] p-4 flex items-center gap-4 shadow-[0_4px_14px_rgba(15,45,107,0.33)] active:opacity-90">
             <div className="w-11 h-11 rounded-[14px] bg-white/14 flex items-center justify-center shrink-0">
               <LayoutDashboard className="w-[22px] h-[22px] text-white" strokeWidth={1.5} />

@@ -173,3 +173,27 @@ export const umfrageBearbeitenSchema = z.object({
   beschreibung: z.string().max(1000).nullable().optional(),
   enddatum: z.string().optional(),
 })
+
+// ── Gewerbe ───────────────────────────────────────────────────────────────────
+
+export const gewerbeProfilSchema = z.object({
+  gewerbeId: uuid,
+  name: nonEmpty.max(200),
+  branche_id: z.string().uuid().nullable().optional(),
+  beschreibung: z.string().max(2000).nullable().optional(),
+  adresse: z.string().max(500).nullable().optional(),
+  oeffnungszeiten: z.string().max(1000).nullable().optional(),
+  website: z.union([z.url(), z.literal(''), z.null()]).optional(),
+  logo_url: z.union([z.url(), z.null()]).optional(),
+})
+
+export const gewerbePostSchema = z.object({
+  gewerbeId: uuid,
+  text: nonEmpty.max(5000),
+  bildUrl: z.url().optional(),
+  ablaufdatum: z.string().optional(),
+})
+
+export const gewerbeAbonnierenSchema = z.object({
+  gewerbeId: uuid,
+})

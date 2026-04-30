@@ -9,11 +9,17 @@ import type { Row } from './supabase'
 
 // ── Re-Export der Enum-Typen ──────────────────────────────────────────────────
 export type { UserRole, OrgType, PostChannel, PostStatus, MaengelStatus, FrageStatus, FrageTyp } from './supabase'
+export type Gewerbetreibender      = Organisation & { typ: 'gewerbe' }
+export type OrganisationMitBranche = Organisation & {
+  gewerbe_branchen: Pick<Gewerbebranche, 'id' | 'name'> | null
+}
 
 // ── Basis-Tabellen-Typen (nur DB-Felder, keine Joins) ─────────────────────────
 export type Gemeinde            = Row<'gemeinden'>
 export type Profile             = Row<'profiles'>
 export type Organisation        = Row<'organisationen'>
+export type Gewerbebranche      = Row<'gewerbe_branchen'>
+export type GewerbeAbonnement   = Row<'gewerbe_abonnements'>
 export type Post                = Row<'posts'>
 export type Mangel              = Row<'maengel'>
 export type Frage               = Row<'fragen'>

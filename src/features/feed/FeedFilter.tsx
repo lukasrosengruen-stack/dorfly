@@ -17,6 +17,9 @@ interface FeedFilterProps {
   onSetDays: (days: number | null) => void
   hasVerwaltungPosts: boolean
   vereinNames: string[]
+  nurLokaleAngebote: boolean
+  onToggleLokaleAngebote: () => void
+  hatGewerbeAbonnements: boolean
 }
 
 export function FeedFilter({
@@ -28,15 +31,18 @@ export function FeedFilter({
   onSetDays,
   hasVerwaltungPosts,
   vereinNames,
+  nurLokaleAngebote,
+  onToggleLokaleAngebote,
+  hatGewerbeAbonnements,
 }: FeedFilterProps) {
   if (!open) return null
 
-  const activeFilterCount = selectedSenders.size + (selectedDays ? 1 : 0)
+  const activeFilterCount = selectedSenders.size + (selectedDays ? 1 : 0) + (nurLokaleAngebote ? 1 : 0)
 
   function reset() {
-    // Reset über Set-Callbacks
     Array.from(selectedSenders).forEach(s => onToggleSender(s))
     onSetDays(null)
+    if (nurLokaleAngebote) onToggleLokaleAngebote()
   }
 
   return (
@@ -84,6 +90,27 @@ export function FeedFilter({
               ))}
             </div>
           </div>
+
+            {/* Lokale Angebote */}
+          {hatGewerbeAbonnements && (
+            <div>
+              <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Lokale Angebote</p>
+              <button
+                onClick={onToggleLokaleAngebote}
+                className="w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 border-gray-200 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-xs font-black text-orange-600">
+                    G
+                  </div>
+                  <span className="font-bold text-gray-900 text-sm">Nur abonnierte Betriebe</span>
+                </div>
+                <span className={clsx('w-6 h-6 rounded-full flex items-center justify-center shrink-0', nurLokaleAngebote ? 'bg-orange-500' : 'bg-gray-100')}>
+                  {nurLokaleAngebote && <Check className="w-3.5 h-3.5 text-white" />}
+                </span>
+              </button>
+            </div>
+          )}
 
           {/* Absender */}
           {(hasVerwaltungPosts || vereinNames.length > 0) && (

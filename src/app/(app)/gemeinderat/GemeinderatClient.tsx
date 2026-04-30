@@ -36,7 +36,16 @@ interface Props {
 
 export default function GemeinderatClient({ posts, raete, profileId, gemeindeId, gemeindeName }: Props) {
   const [activeTab, setActiveTab] = useState<'beitraege' | 'raete'>('beitraege')
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [selectedRat, setSelectedRat] = useState<Rat | null>(null)
+
+  function toggleExpanded(id: string) {
+    setExpanded(prev => {
+      const s = new Set(prev)
+      s.has(id) ? s.delete(id) : s.add(id)
+      return s
+    })
+  }
   const [frage, setFrage] = useState('')
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState<string | null>(null)
@@ -109,6 +118,7 @@ export default function GemeinderatClient({ posts, raete, profileId, gemeindeId,
                 ? post.bilder_urls as string[]
                 : post.bild_url ? [post.bild_url] : []
               const tag = post.tag ?? 'nachricht'
+              const isExpanded = expanded.has(post.id)
 
               return (
                 <article key={post.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
@@ -128,7 +138,14 @@ export default function GemeinderatClient({ posts, raete, profileId, gemeindeId,
                       </span>
                     </div>
                     <h2 className="font-black text-gray-900 text-base leading-snug uppercase tracking-wide">{post.titel}</h2>
-                    <p className="text-gray-600 text-sm mt-2 leading-relaxed line-clamp-3">{post.inhalt}</p>
+                    <div onClick={() => toggleExpanded(post.id)} className="cursor-pointer">
+                      <p className={clsx('text-gray-600 text-sm mt-2 leading-relaxed', !isExpanded && 'line-clamp-3')}>
+                        {post.inhalt}
+                      </p>
+                      {!isExpanded && (
+                        <span className="text-xs font-bold text-primary-500 mt-1 inline-block">Mehr lesen</span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
                       <div className="w-7 h-7 rounded-full bg-primary-100 flex items-center justify-center text-xs font-black text-primary-700 shrink-0">
                         {autorName[0]?.toUpperCase()}

@@ -23,6 +23,7 @@ export type UserRole =
   | 'buerger'
   | 'verein'
   | 'organisation'
+  | 'gewerbe'
   | 'gemeinderat'
   | 'verwaltung'
   | 'super_admin'
@@ -167,6 +168,10 @@ export interface Database {
           logo_url: string | null
           website: string | null
           verified: boolean
+          branche_id: string | null
+          adresse: string | null
+          oeffnungszeiten: string | null
+          plan: string
           created_at: string
         }
         Insert: {
@@ -179,6 +184,10 @@ export interface Database {
           logo_url?: string | null
           website?: string | null
           verified?: boolean
+          branche_id?: string | null
+          adresse?: string | null
+          oeffnungszeiten?: string | null
+          plan?: string
           created_at?: string
         }
         Update: {
@@ -191,6 +200,10 @@ export interface Database {
           logo_url?: string | null
           website?: string | null
           verified?: boolean
+          branche_id?: string | null
+          adresse?: string | null
+          oeffnungszeiten?: string | null
+          plan?: string
           created_at?: string
         }
         Relationships: [
@@ -204,6 +217,62 @@ export interface Database {
             foreignKeyName: 'organisationen_profile_id_fkey'
             columns: ['profile_id']
             referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+
+      // ── Gewerbe-Branchen ──────────────────────────────────────────────────
+      gewerbe_branchen: {
+        Row: {
+          id: string
+          name: string
+          reihenfolge: number
+        }
+        Insert: {
+          id?: string
+          name: string
+          reihenfolge?: number
+        }
+        Update: {
+          id?: string
+          name?: string
+          reihenfolge?: number
+        }
+        Relationships: []
+      }
+
+      // ── Gewerbe-Abonnements ────────────────────────────────────────────────
+      gewerbe_abonnements: {
+        Row: {
+          id: string
+          user_id: string
+          gewerbe_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          gewerbe_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          gewerbe_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'gewerbe_abonnements_user_id_fkey'
+            columns: ['user_id']
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'gewerbe_abonnements_gewerbe_id_fkey'
+            columns: ['gewerbe_id']
+            referencedRelation: 'organisationen'
             referencedColumns: ['id']
           },
         ]
@@ -674,6 +743,7 @@ export interface Database {
       maengel_status: MaengelStatus
       frage_status: FrageStatus
       frage_typ: FrageTyp
+      gewerbe_plan: 'standard' | 'premium'
     }
 
     CompositeTypes: Record<string, never>

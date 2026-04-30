@@ -19,14 +19,16 @@ interface Props {
   profile: (Profile & { gemeinden?: { name: string } | null }) | null
   alleVereine?: string[]
   umfragen: UmfrageMitDaten[]
+  gewerbeAbonnements?: string[]
 }
 
-export default function FeedClient({ posts: initialPosts, profile, umfragen: initialUmfragen }: Props) {
+export default function FeedClient({ posts: initialPosts, profile, umfragen: initialUmfragen, gewerbeAbonnements = [] }: Props) {
   const [umfragen, setUmfragen] = useState(initialUmfragen)
   const [showFilter, setShowFilter] = useState(false)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [selectedSenders, setSelectedSenders] = useState<Set<string>>(new Set())
   const [selectedDays, setSelectedDays] = useState<number | null>(null)
+  const [nurLokaleAngebote, setNurLokaleAngebote] = useState(false)
 
   const gemeindeName = profile?.gemeinden?.name ?? ''
 
@@ -43,7 +45,7 @@ export default function FeedClient({ posts: initialPosts, profile, umfragen: ini
       .filter((v): v is string => !!v),
   )]
 
-  const activeFilterCount = selectedSenders.size + (selectedDays ? 1 : 0)
+  const activeFilterCount = selectedSenders.size + (selectedDays ? 1 : 0) + (nurLokaleAngebote ? 1 : 0)
 
   const cutoff = selectedDays
     ? new Date(Date.now() - selectedDays * 24 * 60 * 60 * 1000)
@@ -51,6 +53,11 @@ export default function FeedClient({ posts: initialPosts, profile, umfragen: ini
 
   const filtered = initialPosts.filter(p => {
     if (cutoff && new Date(p.published_at) < cutoff) return false
+    // Gewerbe-Posts nur anzeigen wenn abonniert
+    if (p.channel === 'gewerbe' && (!p.org_id || !gewerbeAbonnements.includes(p.org_id))) return false
+    if (nurLokaleAngebote) {
+      if (p.channel !== 'gewerbe' || !p.org_id || !gewerbeAbonnements.includes(p.org_id)) return false
+    }
     if (selectedSenders.size > 0) {
       const autor = (p.profiles as { verein_name?: string | null; role?: string } | null)
       const isVerwaltungPost = autor?.role === 'verwaltung' || autor?.role === 'super_admin'
@@ -109,6 +116,9 @@ export default function FeedClient({ posts: initialPosts, profile, umfragen: ini
         onSetDays={setSelectedDays}
         hasVerwaltungPosts={hasVerwaltungPosts}
         vereinNames={vereinNames}
+        nurLokaleAngebote={nurLokaleAngebote}
+        onToggleLokaleAngebote={() => setNurLokaleAngebote(v => !v)}
+        hatGewerbeAbonnements={gewerbeAbonnements.length > 0}
       />
 
       <div className="p-4 space-y-4 pt-4">
