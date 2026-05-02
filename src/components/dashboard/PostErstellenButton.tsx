@@ -80,7 +80,7 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
         })
         if (!res.ok) throw new Error('API error')
       } else {
-        const { error } = await supabase.from('posts').insert({
+        const { data: newPost, error } = await supabase.from('posts').insert({
           gemeinde_id: gemeindeId, author_id: profileId,
           channel: form.channel, titel: form.titel, inhalt: form.inhalt,
           tag: form.tag, status: 'published', pinned: form.pinned,
@@ -89,13 +89,13 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
           published_at: publishAt ?? new Date().toISOString(),
           veranstaltung_datum: veranstaltungDatum,
           veranstaltung_ort: veranstaltungOrt,
-        })
+        }).select('id').single()
         if (error) throw error
         if (form.push) {
           await fetch('/api/notifications/send', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title: form.titel, message: form.inhalt.slice(0, 150) }),
+            body: JSON.stringify({ title: form.titel, message: form.inhalt.slice(0, 150), url: `/posts/${newPost?.id}` }),
           })
         }
       }

@@ -101,6 +101,7 @@ export const maengelDeleteSchema = z.object({
 export const notificationSendSchema = z.object({
   title: nonEmpty.max(100),
   message: nonEmpty.max(500),
+  url: z.string().optional(),
 })
 
 // ── Posts ─────────────────────────────────────────────────────────────────────

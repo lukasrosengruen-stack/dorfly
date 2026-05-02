@@ -9,7 +9,7 @@ export const POST = withAuth(
     const v = validate(notificationSendSchema, body)
     if (!v.success) return v.error
 
-    const { title, message } = v.data
+    const { title, message, url } = v.data
 
     const supabase = await createClient()
     const { data: gemeinde } = profile.gemeinde_id
@@ -29,6 +29,7 @@ export const POST = withAuth(
         ],
         headings: { de: title, en: title },
         contents: { de: message, en: message },
+        ...(url && { url: `${process.env.NEXT_PUBLIC_APP_URL}${url}` }),
       }),
     })
 
