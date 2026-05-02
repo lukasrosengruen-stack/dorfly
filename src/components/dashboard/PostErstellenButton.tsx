@@ -95,7 +95,7 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
           await fetch('/api/notifications/send', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title: form.titel, message: form.inhalt.slice(0, 150), url: `/posts/${newPost?.id}` }),
+            body: JSON.stringify({ title: form.titel, message: form.inhalt.slice(0, 150), url: '/feed' }),
           })
         }
       }

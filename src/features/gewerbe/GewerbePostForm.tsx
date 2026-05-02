@@ -69,7 +69,7 @@ export function GewerbePostForm({ gewerbeId, naechsterMontag, onCreated }: Gewer
         await fetch('/api/notifications/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title: 'Neues Angebot', message: text.trim().slice(0, 150), url: `/posts/${data.post.id}` }),
+          body: JSON.stringify({ title: 'Neues Angebot', message: text.trim().slice(0, 150), url: '/feed' }),
         })
       }
       setText('')
