@@ -68,6 +68,7 @@ export default async function DashboardPage() {
         profileId={user!.id}
         vereinName={profile.verein_name}
         channel="verein"
+        role={profile.role as 'verein' | 'organisation'}
       />
     )
   }

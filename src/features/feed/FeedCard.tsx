@@ -66,6 +66,12 @@ export function FeedCard({ post, expanded, onToggleExpand, gemeindeName }: FeedC
     ?? (autor?.role ? autor.role.charAt(0).toUpperCase() + autor.role.slice(1) : CHANNEL_LABELS[post.channel])
   const personName = autor?.display_name ?? autor?.verein_name ?? gemeindeName
 
+  // Farbe nach Autor-Rolle, nicht nach Channel (verhindert falsche Gewerbe-Farbe für Organisation)
+  const bannerColor =
+    autor?.role === 'organisation' ? 'bg-teal-600 text-white' :
+    autor?.role === 'verein'       ? 'bg-violet-600 text-white' :
+    CHANNEL_COLORS[post.channel]
+
   const bilder = (post.bilder_urls && (post.bilder_urls as string[]).length > 0)
     ? post.bilder_urls as string[]
     : post.bild_url ? [post.bild_url] : []
@@ -74,7 +80,7 @@ export function FeedCard({ post, expanded, onToggleExpand, gemeindeName }: FeedC
     <>
       <article className="bg-white rounded-2xl shadow-[0_2px_14px_rgba(15,45,107,0.08)] overflow-hidden">
         {/* Kanal-Banner */}
-        <div className={clsx('px-4 py-2 flex items-center justify-between', CHANNEL_COLORS[post.channel])}>
+        <div className={clsx('px-4 py-2 flex items-center justify-between', bannerColor)}>
           <span className="text-xs font-black uppercase tracking-widest">{badgeLabel}</span>
           <div className="flex items-center gap-2">
             {bilder.length > 1 && (

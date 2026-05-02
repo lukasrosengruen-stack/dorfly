@@ -26,6 +26,7 @@ interface Props {
   profileId: string
   vereinName: string | null
   channel: 'verein' | 'gewerbe'
+  role?: 'verein' | 'organisation'
 }
 
 const STATUS_META = {
@@ -40,7 +41,7 @@ type FormState = { titel: string; inhalt: string; tag: string; veranstaltung_dat
 
 const emptyForm: FormState = { titel: '', inhalt: '', tag: 'nachricht', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', geplant: false, scheduled_date: '', scheduled_time: '' }
 
-export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, profileId, vereinName, channel }: Props) {
+export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, profileId, vereinName, channel, role }: Props) {
   const [posts, setPosts] = useState(initialPosts)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showNewForm, setShowNewForm] = useState(false)
@@ -166,7 +167,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-200 px-8 pt-8 pb-5">
-        <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">Vereinsbereich</p>
+        <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">{role === 'organisation' ? 'Organisationsbereich' : 'Vereinsbereich'}</p>
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">{vereinName ?? 'Meine Beiträge'}</h1>
           <button onClick={openNew}
