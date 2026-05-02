@@ -144,7 +144,7 @@ export function FeedCard({ post, expanded, onToggleExpand, gemeindeName }: FeedC
           )}
 
           <div onClick={onToggleExpand} className="cursor-pointer">
-            <p className={clsx('text-gray-600 text-sm mt-2 leading-relaxed', !expanded && 'line-clamp-3')}>
+            <p className={clsx('text-gray-600 text-sm mt-2 leading-relaxed whitespace-pre-wrap', !expanded && 'line-clamp-3')}>
               {post.inhalt}
             </p>
             {!expanded && (
