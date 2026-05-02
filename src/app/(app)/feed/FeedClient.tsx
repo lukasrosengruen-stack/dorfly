@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { SlidersHorizontal } from 'lucide-react'
 import { PostMitProfil, Profile } from '@/types/database'
 import { PageHeader } from '@/components/ui'
@@ -23,7 +24,16 @@ interface Props {
 }
 
 export default function FeedClient({ posts: initialPosts, profile, umfragen: initialUmfragen, gewerbeAbonnements = [] }: Props) {
+  const router = useRouter()
   const [umfragen, setUmfragen] = useState(initialUmfragen)
+
+  useEffect(() => {
+    function onVisible() {
+      if (!document.hidden) router.refresh()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [router])
   const [showFilter, setShowFilter] = useState(false)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [selectedSenders, setSelectedSenders] = useState<Set<string>>(new Set())
