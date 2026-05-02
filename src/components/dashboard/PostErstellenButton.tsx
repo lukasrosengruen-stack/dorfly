@@ -62,25 +62,43 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
       const publishAt = form.geplant && form.scheduled_date
         ? new Date(`${form.scheduled_date}T${form.scheduled_time || '08:00'}`).toISOString()
         : null
-      const { error } = await supabase.from('posts').insert({
-        gemeinde_id: gemeindeId, author_id: profileId,
-        channel: form.channel, titel: form.titel, inhalt: form.inhalt,
-        tag: form.tag, status: 'published', pinned: form.pinned,
-        bild_url, bilder_urls,
-        publish_at: publishAt,
-        published_at: publishAt ?? new Date().toISOString(),
-        veranstaltung_datum: form.tag === 'veranstaltung' && form.veranstaltung_datum
-          ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null,
-        veranstaltung_ort: form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null,
-      })
-      if (error) throw error
-      if (form.push) {
-        await fetch('/api/notifications/send', {
+      const veranstaltungDatum = form.tag === 'veranstaltung' && form.veranstaltung_datum
+        ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null
+      const veranstaltungOrt = form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null
+
+      if (form.channel === 'gemeinderat') {
+        const res = await fetch('/api/gemeinderat/post', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title: form.titel, message: form.inhalt.slice(0, 150) }),
+          body: JSON.stringify({
+            gemeindeId, titel: form.titel, inhalt: form.inhalt, tag: form.tag,
+            bildUrl: bild_url, bilderUrls: bilder_urls,
+            publishAt, publishedAt: publishAt ?? new Date().toISOString(),
+            veranstaltungDatum, veranstaltungOrt,
+          }),
         })
+        if (!res.ok) throw new Error('API error')
+      } else {
+        const { error } = await supabase.from('posts').insert({
+          gemeinde_id: gemeindeId, author_id: profileId,
+          channel: form.channel, titel: form.titel, inhalt: form.inhalt,
+          tag: form.tag, status: 'published', pinned: form.pinned,
+          bild_url, bilder_urls,
+          publish_at: publishAt,
+          published_at: publishAt ?? new Date().toISOString(),
+          veranstaltung_datum: veranstaltungDatum,
+          veranstaltung_ort: veranstaltungOrt,
+        })
+        if (error) throw error
+        if (form.push) {
+          await fetch('/api/notifications/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: form.titel, message: form.inhalt.slice(0, 150) }),
+          })
+        }
       }
+
       reset()
       window.location.reload()
     } catch {
@@ -165,14 +183,21 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
                   </div>
                 )}
               </div>
-              <label className="flex items-center gap-2 text-sm font-bold text-red-700 cursor-pointer bg-red-50 px-3 py-2.5 rounded-xl border border-red-200">
-                <input type="checkbox" checked={form.push} onChange={e => setForm(f => ({ ...f, push: e.target.checked }))} className="rounded accent-red-600" />
-                🔔 Push-Benachrichtigung senden (alle Nutzer)
-              </label>
+              {form.channel !== 'gemeinderat' && (
+                <label className="flex items-center gap-2 text-sm font-bold text-red-700 cursor-pointer bg-red-50 px-3 py-2.5 rounded-xl border border-red-200">
+                  <input type="checkbox" checked={form.push} onChange={e => setForm(f => ({ ...f, push: e.target.checked }))} className="rounded accent-red-600" />
+                  🔔 Push-Benachrichtigung senden (alle Nutzer)
+                </label>
+              )}
+              {form.channel === 'gemeinderat' && (
+                <p className="text-xs text-amber-700 bg-amber-50 px-3 py-2.5 rounded-xl border border-amber-200">
+                  ⏳ Dein Beitrag wird erst nach Freigabe durch die Verwaltung veröffentlicht.
+                </p>
+              )}
               <button onClick={submit} disabled={loading || !form.titel || !form.inhalt || (form.geplant && !form.scheduled_date)}
                 className="w-full bg-primary-500 text-white font-bold py-3 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2">
                 {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                Veröffentlichen
+                {form.channel === 'gemeinderat' ? 'Zur Freigabe einreichen' : 'Veröffentlichen'}
               </button>
             </div>
           </div>

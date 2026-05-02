@@ -5,13 +5,14 @@ import { toast } from 'sonner'
 import { useState } from 'react'
 import { format } from 'date-fns'
 import { de } from 'date-fns/locale'
-import { Scale, MessageCircle, CheckCircle2, Clock, Send, Loader2 } from 'lucide-react'
+import { Scale, MessageCircle, CheckCircle2, Clock, Send, Loader2, Pencil, Trash2, X } from 'lucide-react'
 import { clsx } from 'clsx'
 import PostErstellenButton from './PostErstellenButton'
 
 interface Post {
   id: string
   titel: string
+  inhalt: string
   tag: string | null
   status: string
   published_at: string
@@ -38,6 +39,52 @@ export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profil
   const [antworten, setAntworten] = useState<Record<string, string>>({})
   const [sending, setSending] = useState<string | null>(null)
   const [beantwortet, setBeantwortet] = useState<Set<string>>(new Set())
+  const [editPost, setEditPost] = useState<Post | null>(null)
+  const [editForm, setEditForm] = useState({ titel: '', inhalt: '', tag: '' })
+  const [editLoading, setEditLoading] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [localPosts, setLocalPosts] = useState(posts)
+
+  function openEdit(post: Post) {
+    setEditPost(post)
+    setEditForm({ titel: post.titel, inhalt: post.inhalt, tag: post.tag ?? 'nachricht' })
+  }
+
+  async function saveEdit() {
+    if (!editPost || !editForm.titel || !editForm.inhalt) return
+    setEditLoading(true)
+    const res = await fetch('/api/posts/update', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: editPost.id, titel: editForm.titel, inhalt: editForm.inhalt, tag: editForm.tag }),
+    })
+    setEditLoading(false)
+    if (res.ok) {
+      setLocalPosts(prev => prev.map(p => p.id === editPost.id
+        ? { ...p, titel: editForm.titel, inhalt: editForm.inhalt, tag: editForm.tag, status: 'pending' }
+        : p))
+      setEditPost(null)
+      toast.success('Beitrag zur Freigabe eingereicht')
+    } else {
+      toast.error('Fehler beim Speichern')
+    }
+  }
+
+  async function deletePost(postId: string) {
+    setDeletingId(postId)
+    const res = await fetch('/api/posts/delete', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: postId }),
+    })
+    setDeletingId(null)
+    if (res.ok) {
+      setLocalPosts(prev => prev.filter(p => p.id !== postId))
+      toast.success('Beitrag gelöscht')
+    } else {
+      toast.error('Fehler beim Löschen')
+    }
+  }
 
   async function sendAntwort(frageId: string) {
     const antwort = antworten[frageId]
@@ -77,7 +124,7 @@ export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profil
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="bg-primary-50 rounded-2xl p-4">
             <Scale className="w-5 h-5 text-primary-500 mb-2" />
-            <p className="text-2xl font-bold text-gray-900">{posts.length}</p>
+            <p className="text-2xl font-bold text-gray-900">{localPosts.length}</p>
             <p className="text-xs text-gray-500 font-medium mt-0.5">Beiträge</p>
           </div>
           <div className="bg-amber-50 rounded-2xl p-4">
@@ -176,13 +223,13 @@ export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profil
         {/* BEITRÄGE TAB */}
         {activeTab === 'beitraege' && (
           <div className="space-y-3">
-            {posts.length === 0 && (
+            {localPosts.length === 0 && (
               <div className="bg-white rounded-2xl shadow-sm px-5 py-10 text-center text-gray-400">
                 <Scale className="w-8 h-8 mx-auto mb-2 opacity-40" />
                 <p className="font-medium">Noch keine Beiträge verfasst</p>
               </div>
             )}
-            {posts.map(post => (
+            {localPosts.map(post => (
               <div key={post.id} className="bg-white rounded-2xl shadow-sm p-4 flex items-center gap-4">
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-gray-900 text-sm truncate">{post.titel}</p>
@@ -197,11 +244,60 @@ export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profil
                 )}>
                   {post.status === 'published' ? 'Veröffentlicht' : 'Ausstehend'}
                 </span>
+                <button onClick={() => openEdit(post)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+                  <Pencil className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => deletePost(post.id)}
+                  disabled={deletingId === post.id}
+                  className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
+                >
+                  {deletingId === post.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                </button>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Edit-Modal */}
+      {editPost && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 bg-white">
+              <h2 className="font-bold text-gray-900 text-lg">Beitrag bearbeiten</h2>
+              <button onClick={() => setEditPost(null)}><X className="w-5 h-5 text-gray-400" /></button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-xs text-amber-700 bg-amber-50 px-3 py-2.5 rounded-xl border border-amber-200">
+                ⏳ Nach dem Speichern wird der Beitrag erneut zur Freigabe eingereicht.
+              </p>
+              <input
+                type="text"
+                value={editForm.titel}
+                onChange={e => setEditForm(f => ({ ...f, titel: e.target.value }))}
+                placeholder="Titel"
+                className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 font-bold"
+              />
+              <textarea
+                value={editForm.inhalt}
+                onChange={e => setEditForm(f => ({ ...f, inhalt: e.target.value }))}
+                placeholder="Inhalt"
+                rows={6}
+                className="w-full border border-gray-300 rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              <button
+                onClick={saveEdit}
+                disabled={editLoading || !editForm.titel || !editForm.inhalt}
+                className="w-full bg-primary-500 text-white font-bold py-3 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {editLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                Speichern & zur Freigabe einreichen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

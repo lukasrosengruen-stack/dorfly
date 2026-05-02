@@ -30,7 +30,7 @@ export default async function DashboardPage() {
     const [gemeinderatPostsResult, gemeinderatFragenResult] = await Promise.all([
       supabase
         .from('posts')
-        .select('id, titel, tag, status, published_at')
+        .select('id, titel, inhalt, tag, status, published_at')
         .eq('author_id', user!.id)
         .eq('channel', 'gemeinderat')
         .order('published_at', { ascending: false }),

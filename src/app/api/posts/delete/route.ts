@@ -9,15 +9,14 @@ export const DELETE = withAuth(
     const v = validate(postDeleteSchema, body)
     if (!v.success) return v.error
 
+    const isGemeinderat = profile.role === 'gemeinderat'
     const service = await createServiceClient()
-    const { error } = await service
-      .from('posts')
-      .delete()
-      .eq('id', v.data.id)
-      .eq('gemeinde_id', profile.gemeinde_id!)
+    const { error } = await (isGemeinderat
+      ? service.from('posts').delete().eq('id', v.data.id).eq('gemeinde_id', profile.gemeinde_id!).eq('author_id', profile.id)
+      : service.from('posts').delete().eq('id', v.data.id).eq('gemeinde_id', profile.gemeinde_id!))
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ ok: true })
   },
-  { roles: ['verwaltung', 'super_admin'] },
+  { roles: ['verwaltung', 'super_admin', 'gemeinderat'] },
 )

@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { useState } from 'react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
-import { Scale, Users, Send, X, Loader2, MessageCircle, User } from 'lucide-react'
+import { Scale, Users, Send, X, Loader2, MessageCircle, User, CheckCircle, Clock } from 'lucide-react'
 import Link from 'next/link'
 import { clsx } from 'clsx'
 
@@ -26,16 +26,27 @@ interface Rat {
   verein_name: string | null
 }
 
+interface MeineFrage {
+  id: string
+  frage: string
+  antwort: string | null
+  status: string
+  created_at: string
+  gemeinderat_id: string
+  profiles: { display_name: string | null } | null
+}
+
 interface Props {
   posts: Post[]
   raete: Rat[]
+  meineFragen: MeineFrage[]
   profileId: string
   gemeindeId: string
   gemeindeName: string
 }
 
-export default function GemeinderatClient({ posts, raete, profileId, gemeindeId, gemeindeName }: Props) {
-  const [activeTab, setActiveTab] = useState<'beitraege' | 'raete'>('beitraege')
+export default function GemeinderatClient({ posts, raete, meineFragen, profileId, gemeindeId, gemeindeName }: Props) {
+  const [activeTab, setActiveTab] = useState<'beitraege' | 'raete' | 'meine-fragen'>('beitraege')
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [selectedRat, setSelectedRat] = useState<Rat | null>(null)
 
@@ -90,9 +101,10 @@ export default function GemeinderatClient({ posts, raete, profileId, gemeindeId,
         <div className="flex gap-1.5 pb-3">
           {[
             { id: 'beitraege', label: 'Beiträge' },
-            { id: 'raete', label: `Räte & Fragen` },
+            { id: 'raete', label: 'Räte & Fragen' },
+            { id: 'meine-fragen', label: meineFragen.length > 0 ? `Meine Fragen (${meineFragen.length})` : 'Meine Fragen' },
           ].map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id as 'beitraege' | 'raete')}
+            <button key={tab.id} onClick={() => setActiveTab(tab.id as 'beitraege' | 'raete' | 'meine-fragen')}
               className={clsx('px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors',
                 activeTab === tab.id ? 'bg-gold-500 text-white' : 'bg-white/15 text-white/75')}>
               {tab.label}
@@ -195,6 +207,58 @@ export default function GemeinderatClient({ posts, raete, profileId, gemeindeId,
                 </div>
               )
             })}
+          </>
+        )}
+
+        {/* MEINE FRAGEN TAB */}
+        {activeTab === 'meine-fragen' && (
+          <>
+            {meineFragen.length === 0 ? (
+              <div className="text-center text-gray-400 py-16">
+                <MessageCircle className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                <p className="font-bold text-base uppercase tracking-wide">Noch keine Fragen</p>
+                <p className="text-sm mt-1">Stelle einem Gemeinderat eine Frage im Tab "Räte & Fragen".</p>
+              </div>
+            ) : (
+              meineFragen.map(frage => {
+                const ratName = frage.profiles?.display_name ?? 'Gemeinderat'
+                const beantwortet = frage.status === 'beantwortet'
+                return (
+                  <div key={frage.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                    <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-gray-400">Frage an</p>
+                        <p className="font-bold text-gray-900 text-sm">{ratName}</p>
+                      </div>
+                      {beantwortet ? (
+                        <span className="flex items-center gap-1 text-xs font-bold text-green-600 bg-green-50 px-2.5 py-1 rounded-full">
+                          <CheckCircle className="w-3.5 h-3.5" /> Beantwortet
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full">
+                          <Clock className="w-3.5 h-3.5" /> Offen
+                        </span>
+                      )}
+                    </div>
+                    <div className="p-4 space-y-3">
+                      <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Deine Frage</p>
+                        <p className="text-sm text-gray-800">{frage.frage}</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {format(new Date(frage.created_at), 'd. MMM yyyy', { locale: de })}
+                        </p>
+                      </div>
+                      {frage.antwort && (
+                        <div className="bg-primary-50 rounded-xl p-3">
+                          <p className="text-xs font-bold text-primary-600 uppercase tracking-wider mb-1">Antwort von {ratName}</p>
+                          <p className="text-sm text-gray-800">{frage.antwort}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })
+            )}
           </>
         )}
       </div>

@@ -58,11 +58,13 @@ export default function PostFreigabe({ pendingPosts }: { pendingPosts: PendingPo
                     post.profiles?.role === 'organisation' ? 'bg-teal-100 text-teal-700' :
                     post.channel === 'verein' || post.profiles?.role === 'verein' ? 'bg-violet-100 text-violet-700' :
                     post.channel === 'gewerbe' ? 'bg-orange-100 text-orange-700' :
+                    post.channel === 'gemeinderat' ? 'bg-blue-100 text-blue-700' :
                     'bg-primary-100 text-primary-700'
                   }`}>
                     {post.profiles?.role === 'organisation' ? 'Organisation' :
                      post.channel === 'verein' || post.profiles?.role === 'verein' ? 'Verein' :
-                     post.channel === 'gewerbe' ? 'Gewerbe' : 'Gemeinde'}
+                     post.channel === 'gewerbe' ? 'Gewerbe' :
+                     post.channel === 'gemeinderat' ? 'Gemeinderat' : 'Gemeinde'}
                   </span>
                   <span className="text-xs text-gray-400">{autor}</span>
                 </div>
