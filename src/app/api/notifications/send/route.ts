@@ -12,11 +12,9 @@ export const POST = withAuth(
     const { title, message } = v.data
 
     const supabase = await createClient()
-    const { data: gemeinde } = await supabase
-      .from('gemeinden')
-      .select('slug')
-      .eq('id', profile.gemeinde_id)
-      .single()
+    const { data: gemeinde } = profile.gemeinde_id
+      ? await supabase.from('gemeinden').select('slug').eq('id', profile.gemeinde_id).single()
+      : { data: null }
 
     const res = await fetch('https://onesignal.com/api/v1/notifications', {
       method: 'POST',
