@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { useState } from 'react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
-import { Scale, Users, Send, X, Loader2, MessageCircle, User, CheckCircle, Clock } from 'lucide-react'
+import { Scale, Users, Send, X, Loader2, MessageCircle, User, CheckCircle, Clock, Mail } from 'lucide-react'
 import Link from 'next/link'
 import { clsx } from 'clsx'
 
@@ -24,6 +24,9 @@ interface Rat {
   id: string
   display_name: string | null
   verein_name: string | null
+  fraktion: string | null
+  ueber_mich: string | null
+  kontakt_email: string | null
 }
 
 interface MeineFrage {
@@ -49,6 +52,7 @@ export default function GemeinderatClient({ posts, raete, meineFragen, profileId
   const [activeTab, setActiveTab] = useState<'beitraege' | 'raete' | 'meine-fragen'>('beitraege')
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [selectedRat, setSelectedRat] = useState<Rat | null>(null)
+  const [expandedRat, setExpandedRat] = useState<string | null>(null)
 
   function toggleExpanded(id: string) {
     setExpanded(prev => {
@@ -186,23 +190,56 @@ export default function GemeinderatClient({ posts, raete, meineFragen, profileId
             {raete.map(rat => {
               const name = rat.display_name ?? 'Gemeinderat'
               const hatGesendet = sent === rat.id
+              const isExpanded = expandedRat === rat.id
               return (
-                <div key={rat.id} className="bg-white rounded-2xl shadow-sm p-4 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center text-lg font-black text-primary-700 shrink-0">
-                    {name[0]?.toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-gray-900 text-sm">{name}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">Gemeinderat · {gemeindeName}</p>
-                  </div>
-                  {hatGesendet ? (
-                    <span className="text-xs text-green-600 font-medium">Gesendet ✓</span>
-                  ) : (
-                    <button onClick={() => setSelectedRat(rat)}
-                      className="flex items-center gap-1.5 bg-primary-50 text-primary-600 font-bold text-xs px-3 py-2 rounded-xl">
-                      <MessageCircle className="w-3.5 h-3.5" />
-                      Fragen
-                    </button>
+                <div key={rat.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                  <button
+                    onClick={() => setExpandedRat(isExpanded ? null : rat.id)}
+                    className="w-full p-4 flex items-center gap-4 text-left"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center text-lg font-black text-primary-700 shrink-0">
+                      {name[0]?.toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-gray-900 text-sm">{name}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {rat.fraktion ? `${rat.fraktion} · ` : ''}{gemeindeName}
+                      </p>
+                    </div>
+                    <MessageCircle className={clsx('w-4 h-4 shrink-0 transition-colors', isExpanded ? 'text-primary-500' : 'text-gray-300')} />
+                  </button>
+
+                  {isExpanded && (
+                    <div className="px-4 pb-4 pt-0 space-y-3 border-t border-gray-100">
+                      {rat.ueber_mich && (
+                        <p className="text-sm text-gray-600 leading-relaxed">{rat.ueber_mich}</p>
+                      )}
+                      {!rat.ueber_mich && (
+                        <p className="text-sm text-gray-400 italic">Noch keine Beschreibung hinterlegt.</p>
+                      )}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {hatGesendet ? (
+                          <span className="text-xs text-green-600 font-medium">Frage gesendet ✓</span>
+                        ) : (
+                          <button
+                            onClick={() => setSelectedRat(rat)}
+                            className="flex items-center gap-1.5 bg-primary-50 text-primary-600 font-bold text-xs px-3 py-2 rounded-xl"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5" />
+                            Frage stellen
+                          </button>
+                        )}
+                        {rat.kontakt_email && (
+                          <a
+                            href={`mailto:${rat.kontakt_email}`}
+                            className="flex items-center gap-1.5 bg-gray-50 text-gray-600 font-bold text-xs px-3 py-2 rounded-xl"
+                          >
+                            <Mail className="w-3.5 h-3.5" />
+                            E-Mail schreiben
+                          </a>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
               )

@@ -108,6 +108,9 @@ export interface Database {
           avatar_url: string | null
           phone_verified: boolean
           verein_name: string | null
+          fraktion: string | null
+          ueber_mich: string | null
+          kontakt_email: string | null
           feed_einstellungen: Json | null
           created_at: string
           updated_at: string
@@ -125,6 +128,9 @@ export interface Database {
           avatar_url?: string | null
           phone_verified?: boolean
           verein_name?: string | null
+          fraktion?: string | null
+          ueber_mich?: string | null
+          kontakt_email?: string | null
           feed_einstellungen?: Json | null
           created_at?: string
           updated_at?: string
@@ -142,6 +148,9 @@ export interface Database {
           avatar_url?: string | null
           phone_verified?: boolean
           verein_name?: string | null
+          fraktion?: string | null
+          ueber_mich?: string | null
+          kontakt_email?: string | null
           feed_einstellungen?: Json | null
           created_at?: string
           updated_at?: string

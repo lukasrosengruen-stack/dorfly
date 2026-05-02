@@ -32,10 +32,17 @@ interface Props {
   fragen: Frage[]
   gemeindeId: string
   profileId: string
+  fraktion: string | null
+  ueber_mich: string | null
+  kontakt_email: string | null
 }
 
-export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profileId }: Props) {
-  const [activeTab, setActiveTab] = useState<'beitraege' | 'fragen'>('fragen')
+export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profileId, fraktion: initialFraktion, ueber_mich: initialUeberMich, kontakt_email: initialKontaktEmail }: Props) {
+  const [activeTab, setActiveTab] = useState<'beitraege' | 'fragen' | 'profil'>('fragen')
+  const [fraktion, setFraktion] = useState(initialFraktion ?? '')
+  const [ueber_mich, setUeberMich] = useState(initialUeberMich ?? '')
+  const [kontakt_email, setKontaktEmail] = useState(initialKontaktEmail ?? '')
+  const [profilSaving, setProfilSaving] = useState(false)
   const [antworten, setAntworten] = useState<Record<string, string>>({})
   const [sending, setSending] = useState<string | null>(null)
   const [beantwortet, setBeantwortet] = useState<Set<string>>(new Set())
@@ -44,6 +51,18 @@ export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profil
   const [editLoading, setEditLoading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [localPosts, setLocalPosts] = useState(posts)
+
+  async function saveProfil() {
+    setProfilSaving(true)
+    const res = await fetch('/api/profil/gemeinderat', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fraktion: fraktion || null, ueber_mich: ueber_mich || null, kontakt_email: kontakt_email || null }),
+    })
+    setProfilSaving(false)
+    if (res.ok) toast.success('Profil gespeichert')
+    else toast.error('Fehler beim Speichern')
+  }
 
   function openEdit(post: Post) {
     setEditPost(post)
@@ -140,14 +159,15 @@ export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profil
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-5">
+        <div className="flex gap-2 mb-5 flex-wrap">
           {[
             { id: 'fragen', label: `Fragen (${offeneFragen.length} offen)` },
             { id: 'beitraege', label: 'Meine Beiträge' },
+            { id: 'profil', label: 'Mein Profil' },
           ].map(tab => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as 'beitraege' | 'fragen')}
+              onClick={() => setActiveTab(tab.id as 'beitraege' | 'fragen' | 'profil')}
               className={clsx(
                 'px-4 py-2 rounded-xl text-sm font-semibold transition-colors',
                 activeTab === tab.id ? 'bg-primary-500 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
@@ -217,6 +237,52 @@ export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profil
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* PROFIL TAB */}
+        {activeTab === 'profil' && (
+          <div className="bg-white rounded-2xl shadow-sm p-6 space-y-5 max-w-lg">
+            <div>
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Fraktion</label>
+              <input
+                type="text"
+                value={fraktion}
+                onChange={e => setFraktion(e.target.value)}
+                placeholder="z.B. SPD, CDU, Grüne, FW …"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Kontakt-E-Mail (öffentlich)</label>
+              <input
+                type="email"
+                value={kontakt_email}
+                onChange={e => setKontaktEmail(e.target.value)}
+                placeholder="deine@email.de"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              <p className="text-xs text-gray-400 mt-1">Wird Bürgern angezeigt, damit sie dich direkt per E-Mail kontaktieren können.</p>
+            </div>
+            <div>
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Über mich</label>
+              <textarea
+                value={ueber_mich}
+                onChange={e => setUeberMich(e.target.value)}
+                placeholder="Stell dich den Bürgerinnen und Bürgern vor …"
+                rows={5}
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              <p className="text-xs text-gray-400 mt-1 text-right">{ueber_mich.length} / 1000</p>
+            </div>
+            <button
+              onClick={saveProfil}
+              disabled={profilSaving}
+              className="flex items-center gap-2 bg-primary-500 text-white font-bold px-5 py-2.5 rounded-xl text-sm disabled:opacity-50"
+            >
+              {profilSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+              Speichern
+            </button>
           </div>
         )}
 

@@ -29,7 +29,7 @@ export default async function GemeinderatPage() {
       .limit(50),
     service
       .from('profiles')
-      .select('id, display_name, verein_name')
+      .select('id, display_name, verein_name, fraktion, ueber_mich, kontakt_email')
       .eq('gemeinde_id', gemeindeId)
       .eq('role', 'gemeinderat'),
     supabase
