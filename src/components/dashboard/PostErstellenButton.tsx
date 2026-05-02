@@ -17,9 +17,10 @@ interface Props {
   profileId: string
   defaultChannel?: 'gemeinde' | 'verein' | 'gewerbe' | 'gemeinderat'
   canPin?: boolean
+  canPush?: boolean
 }
 
-export default function PostErstellenButton({ gemeindeId, profileId, defaultChannel, canPin = false }: Props) {
+export default function PostErstellenButton({ gemeindeId, profileId, defaultChannel, canPin = false, canPush = false }: Props) {
   const [showForm, setShowForm] = useState(false)
   const [loading, setLoading] = useState(false)
   const [bildFiles, setBildFiles] = useState<File[]>([])
@@ -183,7 +184,7 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
                   </div>
                 )}
               </div>
-              {form.channel !== 'gemeinderat' && (
+              {canPush && (
                 <label className="flex items-center gap-2 text-sm font-bold text-red-700 cursor-pointer bg-red-50 px-3 py-2.5 rounded-xl border border-red-200">
                   <input type="checkbox" checked={form.push} onChange={e => setForm(f => ({ ...f, push: e.target.checked }))} className="rounded accent-red-600" />
                   🔔 Push-Benachrichtigung senden (alle Nutzer)

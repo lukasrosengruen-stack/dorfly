@@ -1,12 +1,12 @@
 'use client'
 
 import { toast } from 'sonner'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Profile } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
 import { updateProfil } from '@/app/actions/profil'
 import { useRouter } from 'next/navigation'
-import { LogOut, Shield, Pencil, X, Check, Loader2, User, MapPin, Trash2, KeyRound, Eye, EyeOff } from 'lucide-react'
+import { LogOut, Shield, Pencil, X, Check, Loader2, User, MapPin, Trash2, KeyRound, Eye, EyeOff, Bell } from 'lucide-react'
 
 const ROLE_LABELS: Record<string, string> = {
   buerger:      'Bürger',
@@ -36,6 +36,14 @@ export default function ProfilClient({ profile }: { profile: FullProfile | null 
   const [pwError, setPwError] = useState('')
   const [pwDone, setPwDone] = useState(false)
   const [showPw, setShowPw] = useState(false)
+  const [pushPermission, setPushPermission] = useState<NotificationPermission | null>(null)
+  const [pushLoading, setPushLoading] = useState(false)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setPushPermission(Notification.permission)
+    }
+  }, [])
   const [form, setForm] = useState({
     vorname:      profile?.vorname ?? '',
     nachname:     profile?.nachname ?? '',
@@ -77,6 +85,24 @@ export default function ProfilClient({ profile }: { profile: FullProfile | null 
     setPwDone(true)
     setPwForm({ neu: '', confirm: '' })
     setTimeout(() => { setPwDone(false); setShowPwForm(false) }, 2000)
+  }
+
+  async function enablePush() {
+    setPushLoading(true)
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const OneSignal = (window as any).OneSignal
+      if (!OneSignal) {
+        toast.error('Bitte Seite neu laden und erneut versuchen')
+        return
+      }
+      await OneSignal.Notifications.requestPermission()
+      setPushPermission(Notification.permission)
+    } catch {
+      toast.error('Push konnte nicht aktiviert werden')
+    } finally {
+      setPushLoading(false)
+    }
   }
 
   async function deleteAccount() {
@@ -218,6 +244,36 @@ export default function ProfilClient({ profile }: { profile: FullProfile | null 
               )}
             </div>
           )}
+        </div>
+
+        {/* Push-Benachrichtigungen */}
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-50">
+            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Benachrichtigungen</h3>
+          </div>
+          <div className="px-4 py-3.5 flex items-center gap-3">
+            <Bell className="w-4 h-4 text-gray-400 shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-gray-700">Push-Benachrichtigungen</p>
+              <p className="text-xs text-gray-400">
+                {pushPermission === 'granted' ? 'Aktiviert' :
+                 pushPermission === 'denied' ? 'Blockiert – in Browser-Einstellungen aktivieren' :
+                 'Nicht aktiviert'}
+              </p>
+            </div>
+            {pushPermission === 'default' && (
+              <button
+                onClick={enablePush}
+                disabled={pushLoading}
+                className="text-xs font-medium text-primary-500 bg-primary-50 px-3 py-1.5 rounded-full disabled:opacity-50 shrink-0"
+              >
+                {pushLoading ? 'Wird aktiviert…' : 'Aktivieren'}
+              </button>
+            )}
+            {pushPermission === 'granted' && (
+              <span className="text-xs font-medium text-green-600 bg-green-50 px-3 py-1.5 rounded-full shrink-0">Aktiv</span>
+            )}
+          </div>
         </div>
 
         <button

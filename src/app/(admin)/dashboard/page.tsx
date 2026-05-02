@@ -167,7 +167,7 @@ export default async function DashboardPage() {
               />
             )}
             {gemeindeId && user && (
-              <PostErstellenButton gemeindeId={gemeindeId} profileId={user.id} defaultChannel="gemeinde" canPin={['verwaltung', 'super_admin'].includes(profile.role)} />
+              <PostErstellenButton gemeindeId={gemeindeId} profileId={user.id} defaultChannel="gemeinde" canPin={['verwaltung', 'super_admin'].includes(profile.role)} canPush={['verwaltung', 'super_admin'].includes(profile.role)} />
             )}
           </div>
         </div>
