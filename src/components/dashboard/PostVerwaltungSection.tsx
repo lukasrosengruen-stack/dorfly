@@ -22,6 +22,7 @@ interface Post {
   veranstaltung_ort: string | null
   published_at: string
   publish_at?: string | null
+  profiles?: { role?: string | null } | null
 }
 
 interface Props {
@@ -43,9 +44,16 @@ const CHANNEL_COLORS: Record<string, string> = {
   gemeinde: 'bg-primary-100 text-primary-600',
   verein: 'bg-violet-100 text-violet-700',
   gewerbe: 'bg-orange-100 text-orange-700',
+  organisation: 'bg-teal-100 text-teal-700',
 }
 const CHANNEL_LABELS: Record<string, string> = {
-  gemeinde: 'Gemeinde', verein: 'Verein', gewerbe: 'Gewerbe',
+  gemeinde: 'Gemeinde', verein: 'Verein', gewerbe: 'Gewerbe', organisation: 'Organisation',
+}
+
+function getChannelKey(post: Post): string {
+  if (post.profiles?.role === 'organisation') return 'organisation'
+  if (post.profiles?.role === 'verein') return 'verein'
+  return post.channel
 }
 
 export default function PostVerwaltungSection({ posts: initialPosts }: Props) {
@@ -229,8 +237,8 @@ export default function PostVerwaltungSection({ posts: initialPosts }: Props) {
         )}
         {posts.map(p => (
           <div key={p.id} className="px-5 py-3 flex items-center gap-3">
-            <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 font-medium ${CHANNEL_COLORS[p.channel] ?? 'bg-gray-100 text-gray-600'}`}>
-              {CHANNEL_LABELS[p.channel] ?? p.channel}
+            <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 font-medium ${CHANNEL_COLORS[getChannelKey(p)] ?? 'bg-gray-100 text-gray-600'}`}>
+              {CHANNEL_LABELS[getChannelKey(p)] ?? p.channel}
             </span>
             <span className="text-sm text-gray-800 truncate flex-1">{p.titel}</span>
             {p.publish_at && new Date(p.publish_at) > new Date() ? (

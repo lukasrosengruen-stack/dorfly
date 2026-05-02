@@ -13,7 +13,7 @@ interface PendingPost {
   tag: string | null
   created_at: string
   publish_at?: string | null
-  profiles?: { display_name: string | null; verein_name?: string | null } | null
+  profiles?: { display_name: string | null; verein_name?: string | null; role?: string | null } | null
 }
 
 export default function PostFreigabe({ pendingPosts }: { pendingPosts: PendingPost[] }) {
@@ -55,9 +55,14 @@ export default function PostFreigabe({ pendingPosts }: { pendingPosts: PendingPo
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    post.channel === 'verein' ? 'bg-violet-100 text-violet-700' : 'bg-orange-100 text-orange-700'
+                    post.profiles?.role === 'organisation' ? 'bg-teal-100 text-teal-700' :
+                    post.channel === 'verein' || post.profiles?.role === 'verein' ? 'bg-violet-100 text-violet-700' :
+                    post.channel === 'gewerbe' ? 'bg-orange-100 text-orange-700' :
+                    'bg-primary-100 text-primary-700'
                   }`}>
-                    {post.channel === 'verein' ? 'Verein' : 'Gewerbe'}
+                    {post.profiles?.role === 'organisation' ? 'Organisation' :
+                     post.channel === 'verein' || post.profiles?.role === 'verein' ? 'Verein' :
+                     post.channel === 'gewerbe' ? 'Gewerbe' : 'Gemeinde'}
                   </span>
                   <span className="text-xs text-gray-400">{autor}</span>
                 </div>
