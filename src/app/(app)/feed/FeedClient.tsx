@@ -53,8 +53,8 @@ export default function FeedClient({ posts: initialPosts, profile, umfragen: ini
 
   const filtered = initialPosts.filter(p => {
     if (cutoff && new Date(p.published_at) < cutoff) return false
-    // Gewerbe-Posts nur anzeigen wenn abonniert
-    if (p.channel === 'gewerbe' && (!p.org_id || !gewerbeAbonnements.includes(p.org_id))) return false
+    // Gewerbe-Betrieb-Posts (org_id gesetzt) nur für Abonnenten
+    if (p.channel === 'gewerbe' && p.org_id && !gewerbeAbonnements.includes(p.org_id)) return false
     if (nurLokaleAngebote) {
       if (p.channel !== 'gewerbe' || !p.org_id || !gewerbeAbonnements.includes(p.org_id)) return false
     }

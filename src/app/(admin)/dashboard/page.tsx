@@ -67,7 +67,7 @@ export default async function DashboardPage() {
         gemeindeId={profile.gemeinde_id!}
         profileId={user!.id}
         vereinName={profile.verein_name}
-        channel={profile.role === 'organisation' ? 'gewerbe' : 'verein'}
+        channel="verein"
       />
     )
   }
