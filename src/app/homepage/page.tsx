@@ -212,12 +212,12 @@ function DemoModal({ onClose }: { onClose: () => void }) {
         position: 'fixed', inset: 0, zIndex: 200,
         background: 'rgba(13,27,42,0.6)', backdropFilter: 'blur(8px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '24px',
+        padding: '16px',
       }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div style={{
-        background: C.white, borderRadius: 24, padding: 40, maxWidth: 480, width: '100%',
+        background: C.white, borderRadius: 24, padding: 'clamp(24px, 5vw, 40px)', maxWidth: 480, width: '100%',
         boxShadow: '0 32px 80px rgba(13,27,42,.25)', position: 'relative',
         maxHeight: '90vh', overflowY: 'auto',
       }}>
@@ -351,7 +351,7 @@ function Nav({ onDemo }: { onDemo: () => void }) {
     }}>
       <div style={{
         maxWidth: 1320, margin: '0 auto', height: '100%',
-        padding: '0 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 clamp(16px, 4vw, 48px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <Logo size={22} />
 
@@ -438,7 +438,7 @@ function Hero({ onDemo }: { onDemo: () => void }) {
       <div style={{ position: 'absolute', top: -200, right: -200, width: 700, height: 700, borderRadius: '50%', background: `radial-gradient(circle,rgba(0,87,168,.07),transparent 70%)`, pointerEvents: 'none' }} />
       <div style={{ position: 'absolute', bottom: -100, left: -100, width: 500, height: 500, borderRadius: '50%', background: `radial-gradient(circle,rgba(0,168,120,.05),transparent 70%)`, pointerEvents: 'none' }} />
 
-      <div style={{ maxWidth: 1320, margin: '0 auto', padding: '80px 48px' }}>
+      <div style={{ maxWidth: 1320, margin: '0 auto', padding: 'clamp(40px, 8vw, 80px) clamp(20px, 5vw, 48px)' }}>
         <div className="grid md:grid-cols-2 gap-16 items-center">
           {/* Left */}
           <div>
@@ -459,7 +459,7 @@ function Hero({ onDemo }: { onDemo: () => void }) {
 
             <R delay={0.1}>
               <h1 style={{
-                fontSize: 'clamp(42px, 5.5vw, 70px)', fontWeight: 800,
+                fontSize: 'clamp(36px, 5.5vw, 70px)', fontWeight: 800,
                 letterSpacing: '-0.04em', lineHeight: 1.06, color: C.navy, marginBottom: 24,
               }}>
                 Deine Gemeinde.<br />
@@ -474,7 +474,7 @@ function Hero({ onDemo }: { onDemo: () => void }) {
             </R>
 
             <R delay={0.3}>
-              <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+              <div className="flex flex-col sm:flex-row" style={{ gap: 14 }}>
                 <button
                   onClick={onDemo}
                   style={{
@@ -496,7 +496,7 @@ function Hero({ onDemo }: { onDemo: () => void }) {
                     border: `1.5px solid ${C.border}`, borderRadius: 12, fontFamily: 'inherit',
                     fontSize: 16, fontWeight: 600, textDecoration: 'none',
                     transition: 'border-color .2s, background .2s',
-                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = C.navy; e.currentTarget.style.background = C.white }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.background = 'transparent' }}
@@ -527,8 +527,8 @@ const zielgruppen = [
 
 function Zielgruppen() {
   return (
-    <section id="zielgruppen" style={{ background: C.white, padding: '120px 0' }}>
-      <div style={{ maxWidth: 1320, margin: '0 auto', padding: '0 48px' }}>
+    <section id="zielgruppen" style={{ background: C.white, padding: 'clamp(64px, 10vw, 120px) 0' }}>
+      <div style={{ maxWidth: 1320, margin: '0 auto', padding: '0 clamp(20px, 5vw, 48px)' }}>
         <R><Eyebrow>Für jeden in Ihrer Gemeinde</Eyebrow></R>
         <R delay={0.1}>
           <h2 style={{ fontSize: 'clamp(30px, 3.5vw, 52px)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.1, color: C.navy, marginBottom: 64 }}>
@@ -562,8 +562,8 @@ function Zielgruppen() {
 // ── PROBLEM ───────────────────────────────────────────────────────────────────
 function Problem() {
   return (
-    <section style={{ padding: '120px 0', background: C.bg }}>
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 48px' }}>
+    <section style={{ padding: 'clamp(64px, 10vw, 120px) 0', background: C.bg }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 clamp(20px, 5vw, 48px)' }}>
         <R><Eyebrow>Das Problem</Eyebrow></R>
         <R delay={0.1}>
           <h2 style={{ fontSize: 'clamp(30px, 3.5vw, 52px)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.1, color: C.navy, marginBottom: 40 }}>
@@ -601,8 +601,8 @@ const features = [
 
 function Features() {
   return (
-    <section id="features" style={{ background: C.white, padding: '120px 0' }}>
-      <div style={{ maxWidth: 1320, margin: '0 auto', padding: '0 48px' }}>
+    <section id="features" style={{ background: C.white, padding: 'clamp(64px, 10vw, 120px) 0' }}>
+      <div style={{ maxWidth: 1320, margin: '0 auto', padding: '0 clamp(20px, 5vw, 48px)' }}>
         <R><Eyebrow>Funktionen</Eyebrow></R>
         <R delay={0.1}>
           <h2 style={{ fontSize: 'clamp(30px, 3.5vw, 52px)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.1, color: C.navy, marginBottom: 12 }}>
@@ -638,7 +638,8 @@ function Features() {
         {/* DSGVO – featured full-width card */}
         <R delay={0.1}>
           <div style={{
-            marginTop: 20, background: C.navy, borderRadius: 22, padding: '36px 40px',
+            marginTop: 20, background: C.navy, borderRadius: 22,
+            padding: 'clamp(24px, 4vw, 36px) clamp(20px, 4vw, 40px)',
             display: 'flex', alignItems: 'flex-start', gap: 28, flexWrap: 'wrap',
           }}>
             <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -667,8 +668,8 @@ const steps = [
 
 function Setup() {
   return (
-    <section id="setup" style={{ background: C.bg, padding: '120px 0' }}>
-      <div style={{ maxWidth: 1320, margin: '0 auto', padding: '0 48px' }}>
+    <section id="setup" style={{ background: C.bg, padding: 'clamp(64px, 10vw, 120px) 0' }}>
+      <div style={{ maxWidth: 1320, margin: '0 auto', padding: '0 clamp(20px, 5vw, 48px)' }}>
         <R><Eyebrow>Setup & Begleitung</Eyebrow></R>
         <R delay={0.1}>
           <h2 style={{ fontSize: 'clamp(30px, 3.5vw, 52px)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.1, color: C.navy, marginBottom: 12 }}>
@@ -710,9 +711,9 @@ function Setup() {
 // ── ÜBER UNS ──────────────────────────────────────────────────────────────────
 function About() {
   return (
-    <section id="about" style={{ background: C.navy, padding: '120px 0' }}>
-      <div style={{ maxWidth: 1320, margin: '0 auto', padding: '0 48px' }}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-24 items-start">
+    <section id="about" style={{ background: C.navy, padding: 'clamp(64px, 10vw, 120px) 0' }}>
+      <div style={{ maxWidth: 1320, margin: '0 auto', padding: '0 clamp(20px, 5vw, 48px)' }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-24 items-start">
           {/* Left – story */}
           <div>
             <R><Eyebrow light>Über Dorfly</Eyebrow></R>
@@ -792,7 +793,7 @@ function About() {
 // ── CTA ───────────────────────────────────────────────────────────────────────
 function CTA({ onDemo }: { onDemo: () => void }) {
   return (
-    <section style={{ padding: '80px 48px 120px' }}>
+    <section style={{ padding: 'clamp(40px, 8vw, 80px) clamp(20px, 5vw, 48px) clamp(64px, 10vw, 120px)' }}>
       <div style={{ maxWidth: 1224, margin: '0 auto' }}>
         <div style={{
           background: C.navy, borderRadius: 32, padding: 'clamp(48px, 6vw, 80px) clamp(32px, 5vw, 80px)',
@@ -846,7 +847,7 @@ function CTA({ onDemo }: { onDemo: () => void }) {
 // ── FOOTER ────────────────────────────────────────────────────────────────────
 function Footer() {
   return (
-    <footer style={{ background: C.white, borderTop: `1px solid ${C.border}`, padding: '48px' }}>
+    <footer style={{ background: C.white, borderTop: `1px solid ${C.border}`, padding: 'clamp(32px, 6vw, 48px) clamp(20px, 5vw, 48px)' }}>
       <div style={{ maxWidth: 1320, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 24 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <Logo size={20} />
