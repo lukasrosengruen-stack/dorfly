@@ -276,6 +276,25 @@ export default function ProfilClient({ profile }: { profile: FullProfile | null 
           </div>
         </div>
 
+        {/* Rechtliches */}
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-50">
+            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Rechtliches</h3>
+          </div>
+          <div className="divide-y divide-gray-50">
+            <a href="/datenschutz" className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors">
+              <Shield className="w-4 h-4 text-gray-400 shrink-0" />
+              <span className="text-sm font-medium text-gray-700 flex-1">Datenschutzerklärung</span>
+              <span className="text-gray-300">›</span>
+            </a>
+            <a href="/impressum" className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors">
+              <Shield className="w-4 h-4 text-gray-400 shrink-0" />
+              <span className="text-sm font-medium text-gray-700 flex-1">Impressum</span>
+              <span className="text-gray-300">›</span>
+            </a>
+          </div>
+        </div>
+
         <button
           onClick={signOut}
           className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-red-200 text-red-500 font-medium hover:bg-red-50 transition-colors"

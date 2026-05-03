@@ -188,6 +188,14 @@ export default function LoginPage() {
               Passwort vergessen?
             </button>
           )}
+
+          {mode === 'register' && (
+            <p className="text-xs text-gray-400 text-center leading-relaxed pt-1">
+              Mit dem Erstellen eines Kontos stimmst du unserer{' '}
+              <a href="/datenschutz" className="text-primary-500 hover:underline">Datenschutzerklärung</a>
+              {' '}zu.
+            </p>
+          )}
         </div>
 
         {/* Passwort vergessen */}
