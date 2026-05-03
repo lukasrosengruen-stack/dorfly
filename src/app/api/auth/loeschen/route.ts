@@ -15,6 +15,8 @@ export const DELETE = withAuth(async (req, { user, profile }) => {
   await service.from('fragen').delete().eq('fragesteller_id', user.id)      // BUGFIX: war 'author_id'
   await service.from('gemeinderat_fragen').delete().eq('fragesteller_id', user.id)
   await service.from('gemeinderat_fragen').delete().eq('gemeinderat_id', user.id)
+  await service.from('gewerbe_abonnements').delete().eq('user_id', user.id)
+  await service.from('organisationen').delete().eq('profile_id', user.id)
   await service.from('sms_verifications').delete().eq('phone', profile.phone) // BUGFIX: kein user_id, lösche per phone
   await service.from('profiles').delete().eq('id', user.id)
 
