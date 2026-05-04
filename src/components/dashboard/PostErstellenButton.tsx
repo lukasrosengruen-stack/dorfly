@@ -2,8 +2,9 @@
 
 
 import { toast } from 'sonner'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Plus, X, Loader2, Clock } from 'lucide-react'
+import { BoldButton } from '@/lib/richText'
 import { createClient } from '@/lib/supabase/client'
 import { compressImage } from '@/lib/compressImage'
 import { clsx } from 'clsx'
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export default function PostErstellenButton({ gemeindeId, profileId, defaultChannel, canPin = false, canPush = false }: Props) {
+  const inhaltRef = useRef<HTMLTextAreaElement>(null)
   const [showForm, setShowForm] = useState(false)
   const [loading, setLoading] = useState(false)
   const [bildFiles, setBildFiles] = useState<File[]>([])
@@ -139,9 +141,14 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
               <input type="text" placeholder="Titel" value={form.titel}
                 onChange={e => setForm(f => ({ ...f, titel: e.target.value }))}
                 className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 font-bold" />
-              <textarea placeholder="Inhalt" value={form.inhalt} rows={5}
-                onChange={e => setForm(f => ({ ...f, inhalt: e.target.value }))}
-                className="w-full border border-gray-300 rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              <div>
+                <div className="flex gap-1 mb-1">
+                  <BoldButton textareaRef={inhaltRef} value={form.inhalt} onChange={v => setForm(f => ({ ...f, inhalt: v }))} />
+                </div>
+                <textarea ref={inhaltRef} placeholder="Inhalt" value={form.inhalt} rows={5}
+                  onChange={e => setForm(f => ({ ...f, inhalt: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
               <BilderUpload id="post-bilder" previews={bildPreviews} onAdd={addBilder} onRemove={removeBild} />
               {form.tag === 'veranstaltung' && (
                 <div className="space-y-3">

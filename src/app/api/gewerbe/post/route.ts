@@ -1,5 +1,5 @@
 import { withAuth } from '@/lib/api'
-import { validate, gewerbePostSchema } from '@/lib/validations'
+import { validate, gewerbePostSchema, gewerbePostUpdateSchema, gewerbePostDeleteSchema } from '@/lib/validations'
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
@@ -80,6 +80,71 @@ export const POST = withAuth(
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
     return NextResponse.json({ post })
+  },
+  { roles: ['gewerbe'] },
+)
+
+export const PATCH = withAuth(
+  async (req, { profile }) => {
+    const body = await req.json()
+    const v = validate(gewerbePostUpdateSchema, body)
+    if (!v.success) return v.error
+
+    const { postId, text, bildUrl, ablaufdatum } = v.data
+
+    const supabase = await createClient()
+
+    const { data: existing, error: fetchError } = await supabase
+      .from('posts')
+      .select('id')
+      .eq('id', postId)
+      .eq('author_id', profile.id)
+      .eq('channel', 'gewerbe')
+      .single()
+
+    if (fetchError || !existing) {
+      return NextResponse.json({ error: 'Beitrag nicht gefunden' }, { status: 404 })
+    }
+
+    const { data: post, error } = await supabase
+      .from('posts')
+      .update({
+        inhalt: text,
+        titel: text.slice(0, 100),
+        ...(bildUrl !== undefined ? { bild_url: bildUrl } : {}),
+        ...(ablaufdatum !== undefined ? { publish_at: ablaufdatum } : {}),
+      })
+      .eq('id', postId)
+      .select()
+      .single()
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    return NextResponse.json({ post })
+  },
+  { roles: ['gewerbe'] },
+)
+
+export const DELETE = withAuth(
+  async (req, { profile }) => {
+    const body = await req.json()
+    const v = validate(gewerbePostDeleteSchema, body)
+    if (!v.success) return v.error
+
+    const { postId } = v.data
+
+    const supabase = await createClient()
+
+    const { error } = await supabase
+      .from('posts')
+      .delete()
+      .eq('id', postId)
+      .eq('author_id', profile.id)
+      .eq('channel', 'gewerbe')
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    return NextResponse.json({ ok: true })
   },
   { roles: ['gewerbe'] },
 )

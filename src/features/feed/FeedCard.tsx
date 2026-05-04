@@ -13,6 +13,7 @@ import { de } from 'date-fns/locale'
 import { PostMitProfil, PostChannel } from '@/types/database'
 import GalleryLightbox from '@/components/GalleryLightbox'
 import ShareButton from '@/components/ShareButton'
+import { renderRichText } from '@/lib/richText'
 import { useState } from 'react'
 
 // ── Typen & Konstanten ──────────────────────────────────────────────────────
@@ -145,7 +146,7 @@ export function FeedCard({ post, expanded, onToggleExpand, gemeindeName }: FeedC
 
           <div onClick={onToggleExpand} className="cursor-pointer">
             <p className={clsx('text-gray-600 text-sm mt-2 leading-relaxed whitespace-pre-wrap', !expanded && 'line-clamp-3')}>
-              {post.inhalt}
+              {renderRichText(post.inhalt)}
             </p>
             {!expanded && (
               <span className="text-xs text-primary-500 font-semibold mt-1 block">Mehr lesen</span>

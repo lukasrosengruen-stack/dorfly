@@ -195,6 +195,17 @@ export const gewerbePostSchema = z.object({
   ablaufdatum: z.string().optional(),
 })
 
+export const gewerbePostUpdateSchema = z.object({
+  postId: uuid,
+  text: nonEmpty.max(5000),
+  bildUrl: z.union([z.url(), z.null()]).optional(),
+  ablaufdatum: z.string().nullable().optional(),
+})
+
+export const gewerbePostDeleteSchema = z.object({
+  postId: uuid,
+})
+
 export const gewerbeAbonnierenSchema = z.object({
   gewerbeId: uuid,
 })
