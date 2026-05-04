@@ -30,6 +30,5 @@ export async function GET(request: NextRequest) {
     if (!error) return response
   }
 
-  // Bei Fehler: zurück zur Login-Seite
-  return NextResponse.redirect(new URL('/login', origin))
+  return NextResponse.redirect(new URL('/login?error=confirmation_failed', origin))
 }

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { MessageSquare, ArrowRight, Loader2, ChevronDown, Mail } from 'lucide-react'
 
@@ -9,6 +9,7 @@ type Mode = 'login' | 'register' | 'forgot'
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [mode, setMode] = useState<Mode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -19,7 +20,23 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [registered, setRegistered] = useState(false)
   const [resetSent, setResetSent] = useState(false)
+  const [resendSent, setResendSent] = useState(false)
   const supabase = createClient()
+
+  useEffect(() => {
+    if (searchParams.get('error') === 'confirmation_failed') {
+      setError('email_not_confirmed')
+    }
+  }, [searchParams])
+
+  async function resendConfirmation() {
+    if (!email) { setError('Bitte E-Mail eingeben'); return }
+    setLoading(true)
+    const { error } = await supabase.auth.resend({ type: 'signup', email })
+    setLoading(false)
+    if (error) setError(error.message)
+    else setResendSent(true)
+  }
 
   async function sendReset() {
     if (!email) { setError('Bitte E-Mail eingeben'); return }
@@ -60,6 +77,7 @@ export default function LoginPage() {
       const msg = e instanceof Error ? e.message : 'Fehler'
       if (msg.includes('Invalid login')) setError('E-Mail oder Passwort falsch')
       else if (msg.includes('already registered')) setError('E-Mail bereits registriert')
+      else if (msg.includes('email_not_confirmed') || msg.includes('Email not confirmed')) setError('email_not_confirmed')
       else setError(msg)
     } finally {
       setLoading(false)
@@ -168,7 +186,25 @@ export default function LoginPage() {
             </div>
           )}
 
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {error === 'email_not_confirmed' ? (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm">
+              <p className="text-amber-800 font-medium">E-Mail noch nicht bestätigt</p>
+              <p className="text-amber-700 mt-1">Bitte klicke auf den Link in der Bestätigungs-E-Mail, die wir dir geschickt haben.</p>
+              {resendSent ? (
+                <p className="text-green-700 mt-2 font-medium">E-Mail erneut gesendet!</p>
+              ) : (
+                <button
+                  onClick={resendConfirmation}
+                  disabled={loading}
+                  className="mt-2 text-amber-900 underline font-medium disabled:opacity-50"
+                >
+                  {loading ? 'Sende...' : 'Bestätigungs-E-Mail erneut senden'}
+                </button>
+              )}
+            </div>
+          ) : error ? (
+            <p className="text-red-500 text-sm">{error}</p>
+          ) : null}
 
           <button
             onClick={submit}
