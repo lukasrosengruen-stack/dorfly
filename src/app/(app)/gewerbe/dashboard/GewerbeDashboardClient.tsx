@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { Building2, Users, PenLine, ChevronDown, ChevronUp, Pencil, Trash2, Loader2, X } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { PageHeader, Card, Button } from '@/components/ui'
 import { GewerbeProfilForm, GewerbePostForm, AbonnentenStats } from '@/features/gewerbe'
-import { BoldButton, renderRichText } from '@/lib/richText'
+import { RichTextEditor, renderRichText } from '@/lib/richText'
 import { createClient } from '@/lib/supabase/client'
 import { compressImage } from '@/lib/compressImage'
 import type { Organisation, Post, Profile, Gewerbebranche } from '@/types/database'
@@ -33,7 +33,6 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
   const [editUploading, setEditUploading] = useState(false)
   const [editSaving, setEditSaving] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
-  const editTextareaRef = useRef<HTMLTextAreaElement>(null)
 
   const gemeindeName = (profile as { gemeinden?: { name: string } | null }).gemeinden?.name ?? ''
 
@@ -206,18 +205,13 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
                       </button>
                     </div>
                     <div className="space-y-3">
-                      <div>
-                        <div className="flex gap-1 mb-1">
-                          <BoldButton textareaRef={editTextareaRef} value={editForm.text} onChange={v => setEditForm(f => ({ ...f, text: v }))} />
-                        </div>
-                        <textarea
-                          ref={editTextareaRef}
-                          rows={4}
-                          value={editForm.text}
-                          onChange={e => setEditForm(f => ({ ...f, text: e.target.value }))}
-                          className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
-                        />
-                      </div>
+                      <RichTextEditor
+                        value={editForm.text}
+                        onChange={v => setEditForm(f => ({ ...f, text: v }))}
+                        placeholder="Text bearbeiten…"
+                        rows={4}
+                        compact
+                      />
 
                       <div className="flex gap-3">
                         <div className="flex-1">

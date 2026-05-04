@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { Lock } from 'lucide-react'
-import { BoldButton } from '@/lib/richText'
+import { RichTextEditor } from '@/lib/richText'
 import { Button } from '@/components/ui'
 import { compressImage } from '@/lib/compressImage'
 import { createClient } from '@/lib/supabase/client'
@@ -17,7 +17,6 @@ interface GewerbePostFormProps {
 }
 
 export function GewerbePostForm({ gewerbeId, naechsterMontag, onCreated }: GewerbePostFormProps) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [text, setText] = useState('')
   const [bildUrl, setBildUrl] = useState<string | null>(null)
   const [ablaufdatum, setAblaufdatum] = useState('')
@@ -105,20 +104,13 @@ export function GewerbePostForm({ gewerbeId, naechsterMontag, onCreated }: Gewer
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      <div>
-        <div className="flex gap-1 mb-1">
-          <BoldButton textareaRef={textareaRef} value={text} onChange={setText} />
-        </div>
-        <textarea
-          ref={textareaRef}
-          rows={4}
-          required
-          value={text}
-          onChange={e => setText(e.target.value)}
-          placeholder="Was möchten Sie Ihrer Gemeinde mitteilen?"
-          className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
-        />
-      </div>
+      <RichTextEditor
+        value={text}
+        onChange={setText}
+        placeholder="Was möchten Sie Ihrer Gemeinde mitteilen?"
+        rows={4}
+        compact
+      />
 
       <div className="flex gap-3">
         <div className="flex-1">

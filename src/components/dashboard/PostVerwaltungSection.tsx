@@ -2,9 +2,9 @@
 
 
 import { toast } from 'sonner'
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { Pencil, Trash2, Loader2, X, ImagePlus, Newspaper, CalendarClock } from 'lucide-react'
-import { BoldButton } from '@/lib/richText'
+import { RichTextEditor } from '@/lib/richText'
 import { createClient } from '@/lib/supabase/client'
 import { clsx } from 'clsx'
 
@@ -58,7 +58,6 @@ function getChannelKey(post: Post): string {
 }
 
 export default function PostVerwaltungSection({ posts: initialPosts }: Props) {
-  const inhaltRef = useRef<HTMLTextAreaElement>(null)
   const [posts, setPosts] = useState(initialPosts)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -186,14 +185,12 @@ export default function PostVerwaltungSection({ posts: initialPosts }: Props) {
             <input type="text" placeholder="Titel" value={form.titel}
               onChange={e => setForm(f => ({ ...f, titel: e.target.value }))}
               className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 font-bold" />
-            <div>
-              <div className="flex gap-1 mb-1">
-                <BoldButton textareaRef={inhaltRef} value={form.inhalt} onChange={v => setForm(f => ({ ...f, inhalt: v }))} />
-              </div>
-              <textarea ref={inhaltRef} placeholder="Inhalt" value={form.inhalt} rows={4}
-                onChange={e => setForm(f => ({ ...f, inhalt: e.target.value }))}
-                className="w-full border border-gray-300 rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500" />
-            </div>
+            <RichTextEditor
+              value={form.inhalt}
+              onChange={v => setForm(f => ({ ...f, inhalt: v }))}
+              placeholder="Inhalt"
+              rows={4}
+            />
             <input type="file" accept="image/*" id="verwaltung-edit-bild" className="hidden" onChange={handleBild} />
             <button onClick={() => document.getElementById('verwaltung-edit-bild')?.click()}
               className={clsx('w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 text-sm font-bold',
