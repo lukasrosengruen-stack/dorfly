@@ -80,12 +80,13 @@ export default async function DashboardPage() {
   const gemeindeId = profile.gemeinde_id
   const gemeinde = profile.gemeinden as {
     id: string; name: string; bundesland: string;
-    einwohner: number | null; haushalte: number | null; plz: string | null
+    einwohner: number | null; haushalte: number | null; plz: string | null;
+    features: Record<string, unknown> | null
   } | null
 
   const service = await createServiceClient()
 
-  const wasteFeatureAktiv = (gemeinde?.features as { wasteCalendarEnabled?: boolean } | null)?.wasteCalendarEnabled ?? false
+  const wasteFeatureAktiv = (gemeinde?.features as { wasteCalendarEnabled?: boolean } | null | undefined)?.wasteCalendarEnabled ?? false
 
   const [maengelResult, fragenResult, postsResult, pendingPostsResult, umfragenResult, nutzerResult, abfallEinstellungenResult] = await Promise.all([
     supabase.from('maengel').select('id, titel, status, created_at, beschreibung, adresse, foto_url, lat, lng, nachricht_an_buerger, profiles(display_name)').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }),
