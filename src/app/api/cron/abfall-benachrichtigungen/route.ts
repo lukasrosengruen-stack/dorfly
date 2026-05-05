@@ -17,9 +17,9 @@ import { ABFALL_TYP_CONFIG } from '@/lib/icsParser'
 import type { AbfallTypSchluessel } from '@/lib/icsParser'
 import { Resend } from 'resend'
 
-export async function POST(req: NextRequest) {
-  const secret = req.headers.get('x-cron-secret')
-  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+export async function GET(req: NextRequest) {
+  const authHeader = req.headers.get('authorization')
+  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
