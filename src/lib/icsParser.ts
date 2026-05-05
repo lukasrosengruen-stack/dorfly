@@ -103,11 +103,9 @@ const SUMMARY_MAP: Record<string, AbfallTypSchluessel> = {
   'Restmüll ab 2.500l (wöchentlich)': 'restmuell_2500_woechentlich',
   'Restmüll ab 2.500l (zweiwöchentlich)': 'restmuell_2500_zweimal',
   'Restmüll ab 2.500l (vierwöchentlich)': 'restmuell_2500_vierfach',
-  // Mojibake-Fallback: UTF-8-Bytes als Latin-1 fehlinterpretiert
+  // Mojibake-Fallback: UTF-8-Bytes als Latin-1 fehlinterpretiert (nur Einträge mit Sonderzeichen)
   'BiomÃ¼ll': 'biomuell',
   'RestmÃ¼ll 120l/240l': 'restmuell_120_240',
-  'Papier 120l/240l': 'papier_120_240',
-  'Papier ab 1.100l': 'papier_ab_1100',
   'RestmÃ¼ll 1.100l (wÃ¶chentlich)': 'restmuell_1100_woechentlich',
   'RestmÃ¼ll 1.100l (zweiwÃ¶chentlich)': 'restmuell_1100_zweimal',
   'RestmÃ¼ll 1.100l (vierwÃ¶chentlich)': 'restmuell_1100_vierfach',
