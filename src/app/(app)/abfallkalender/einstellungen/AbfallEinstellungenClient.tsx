@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronLeft, Bell, Mail, Clock, CheckCircle } from 'lucide-react'
+import { ChevronLeft, Bell, Mail, CheckCircle } from 'lucide-react'
 import { clsx } from 'clsx'
 import Link from 'next/link'
 import { ABFALL_TYP_CONFIG } from '@/lib/icsParser'
@@ -14,7 +14,6 @@ interface Props {
   initialAusgewaehlt: string[]
   initialPush: boolean
   initialEmail: boolean
-  initialUhrzeit: string
 }
 
 export default function AbfallEinstellungenClient({
@@ -23,12 +22,10 @@ export default function AbfallEinstellungenClient({
   initialAusgewaehlt,
   initialPush,
   initialEmail,
-  initialUhrzeit,
 }: Props) {
   const [ausgewaehlt, setAusgewaehlt] = useState<string[]>(initialAusgewaehlt)
   const [push, setPush] = useState(initialPush)
   const [email, setEmail] = useState(initialEmail)
-  const [uhrzeit, setUhrzeit] = useState(initialUhrzeit)
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
   function toggleTyp(typ: string) {
@@ -47,7 +44,7 @@ export default function AbfallEinstellungenClient({
           ausgewaehlteTypen: ausgewaehlt,
           pushAktiviert: push,
           emailAktiviert: email,
-          benachrichtigungUhrzeit: uhrzeit,
+          benachrichtigungUhrzeit: '18:00',
         }),
       })
 
@@ -182,23 +179,10 @@ export default function AbfallEinstellungenClient({
             </button>
           </div>
 
-          {/* Uhrzeit */}
           {(push || email) && (
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
-                <Clock className="w-4 h-4 text-amber-600" strokeWidth={1.5} />
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold text-gray-800 text-sm">Uhrzeit</p>
-                <p className="text-xs text-gray-400">Wann soll die Erinnerung kommen?</p>
-              </div>
-              <input
-                type="time"
-                value={uhrzeit}
-                onChange={e => setUhrzeit(e.target.value)}
-                className="text-sm font-semibold text-gray-800 bg-gray-100 rounded-lg px-3 py-1.5 border-0 outline-none"
-              />
-            </div>
+            <p className="text-xs text-gray-400 pl-1">
+              Die Erinnerung kommt am Vortag der Abfuhr um <strong>18:00 Uhr</strong>.
+            </p>
           )}
         </section>
 

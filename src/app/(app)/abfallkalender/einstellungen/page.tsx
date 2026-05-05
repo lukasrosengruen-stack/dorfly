@@ -49,7 +49,6 @@ export default async function AbfallEinstellungenPage() {
       initialAusgewaehlt={praeferenzen?.ausgewaehlte_typen ?? verfuegbareTypen}
       initialPush={praeferenzen?.push_aktiviert ?? false}
       initialEmail={praeferenzen?.email_aktiviert ?? false}
-      initialUhrzeit={praeferenzen?.benachrichtigung_uhrzeit ?? '18:00'}
     />
   )
 }
