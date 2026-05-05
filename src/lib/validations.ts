@@ -209,3 +209,19 @@ export const gewerbePostDeleteSchema = z.object({
 export const gewerbeAbonnierenSchema = z.object({
   gewerbeId: uuid,
 })
+
+// ── Abfallkalender ────────────────────────────────────────────────────────────
+
+export const abfallPraeferenzenSchema = z.object({
+  ausgewaehlteTypen: z.array(z.string()).default([]),
+  pushAktiviert: z.boolean().default(true),
+  emailAktiviert: z.boolean().default(false),
+  benachrichtigungUhrzeit: z
+    .string()
+    .regex(/^\d{2}:\d{2}$/, 'Ungültiges Uhrzeitformat (HH:MM)')
+    .default('18:00'),
+})
+
+export const abfallImportSchema = z.object({
+  gemeindeId: uuid,
+})

@@ -2,6 +2,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { BarChart2, Star, Users, Home, TrendingUp, AlertTriangle, Clock, MessageCircleQuestion } from 'lucide-react'
 import { FrageErgebnis } from '@/types/umfrage'
+import AbfallkalenderSection from '@/components/dashboard/AbfallkalenderSection'
 import GemeindeEinstellungen from '@/components/dashboard/GemeindeEinstellungen'
 import PostFreigabe from '@/components/dashboard/PostFreigabe'
 import PostErstellenButton from '@/components/dashboard/PostErstellenButton'
@@ -84,15 +85,19 @@ export default async function DashboardPage() {
 
   const service = await createServiceClient()
 
-  const [maengelResult, fragenResult, postsResult, pendingPostsResult, umfragenResult, nutzerResult] = await Promise.all([
+  const wasteFeatureAktiv = (gemeinde?.features as { wasteCalendarEnabled?: boolean } | null)?.wasteCalendarEnabled ?? false
+
+  const [maengelResult, fragenResult, postsResult, pendingPostsResult, umfragenResult, nutzerResult, abfallEinstellungenResult] = await Promise.all([
     supabase.from('maengel').select('id, titel, status, created_at, beschreibung, adresse, foto_url, lat, lng, nachricht_an_buerger, profiles(display_name)').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }),
     supabase.from('fragen').select('id, frage, antwort, status, created_at').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }),
     service.from('posts').select('id, titel, inhalt, tag, channel, pinned, bild_url, veranstaltung_datum, veranstaltung_ort, published_at, publish_at, profiles(role)').eq('gemeinde_id', gemeindeId!).eq('status', 'published').order('published_at', { ascending: false }).limit(50),
     service.from('posts').select('id, titel, inhalt, channel, tag, created_at, publish_at, profiles(display_name, verein_name, role)').eq('gemeinde_id', gemeindeId!).eq('status', 'pending').order('created_at', { ascending: false }),
     supabase.from('umfragen').select('*, umfrage_fragen(*, umfrage_optionen(*))').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }),
     service.from('profiles').select('id, role', { count: 'exact' }).eq('gemeinde_id', gemeindeId!),
+    supabase.from('abfallkalender_einstellungen').select('*').eq('gemeinde_id', gemeindeId!).maybeSingle(),
   ])
 
+  const abfallEinstellungen = abfallEinstellungenResult.data ?? null
   const maengel = maengelResult.data ?? []
   const fragen = fragenResult.data ?? []
   const posts = postsResult.data ?? []
@@ -202,6 +207,10 @@ export default async function DashboardPage() {
             />
 
             <BuergerfrageSection fragen={fragen as unknown as Parameters<typeof BuergerfrageSection>[0]['fragen']} />
+
+            {wasteFeatureAktiv && (
+              <AbfallkalenderSection einstellungen={abfallEinstellungen} />
+            )}
 
             <PostVerwaltungSection posts={posts as unknown as Parameters<typeof PostVerwaltungSection>[0]['posts']} />
           </div>

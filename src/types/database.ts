@@ -51,3 +51,8 @@ export type FrageMitProfil = Frage & {
 export type GemeinderatFrageMitProfil = GemeinderatFrage & {
   fragesteller?: Pick<Profile, 'display_name'> | null
 }
+
+// ── Abfallkalender ────────────────────────────────────────────────────────────
+export type Abfalltermin              = Row<'abfalltermine'>
+export type AbfallkalenderEinstellung = Row<'abfallkalender_einstellungen'>
+export type AbfallkalenderPraeferenz  = Row<'abfallkalender_praeferenzen'>

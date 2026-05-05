@@ -62,6 +62,7 @@ export interface Database {
           logo_url: string | null
           primary_color: string | null
           ratsinformation_url: string | null
+          features: Json
           created_at: string
         }
         Insert: {
@@ -75,6 +76,7 @@ export interface Database {
           logo_url?: string | null
           primary_color?: string | null
           ratsinformation_url?: string | null
+          features?: Json
           created_at?: string
         }
         Update: {
@@ -88,6 +90,7 @@ export interface Database {
           logo_url?: string | null
           primary_color?: string | null
           ratsinformation_url?: string | null
+          features?: Json
           created_at?: string
         }
         Relationships: []
@@ -711,6 +714,126 @@ export interface Database {
             foreignKeyName: 'umfrage_teilnahmen_umfrage_id_fkey'
             columns: ['umfrage_id']
             referencedRelation: 'umfragen'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+
+      // ── Abfalltermine ─────────────────────────────────────────────────────
+      abfalltermine: {
+        Row: {
+          id: string
+          gemeinde_id: string
+          typ: string
+          datum: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          gemeinde_id: string
+          typ: string
+          datum: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          gemeinde_id?: string
+          typ?: string
+          datum?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'abfalltermine_gemeinde_id_fkey'
+            columns: ['gemeinde_id']
+            referencedRelation: 'gemeinden'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+
+      // ── Abfallkalender-Einstellungen ───────────────────────────────────────
+      abfallkalender_einstellungen: {
+        Row: {
+          gemeinde_id: string
+          verfuegbare_typen: string[]
+          importiert_am: string | null
+          importiert_von: string | null
+          erstellt_am: string
+          aktualisiert_am: string
+        }
+        Insert: {
+          gemeinde_id: string
+          verfuegbare_typen?: string[]
+          importiert_am?: string | null
+          importiert_von?: string | null
+          erstellt_am?: string
+          aktualisiert_am?: string
+        }
+        Update: {
+          gemeinde_id?: string
+          verfuegbare_typen?: string[]
+          importiert_am?: string | null
+          importiert_von?: string | null
+          erstellt_am?: string
+          aktualisiert_am?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'abfallkalender_einstellungen_gemeinde_id_fkey'
+            columns: ['gemeinde_id']
+            referencedRelation: 'gemeinden'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+
+      // ── Abfallkalender-Präferenzen (pro Nutzer) ────────────────────────────
+      abfallkalender_praeferenzen: {
+        Row: {
+          id: string
+          user_id: string
+          gemeinde_id: string
+          ausgewaehlte_typen: string[]
+          push_aktiviert: boolean
+          email_aktiviert: boolean
+          benachrichtigung_uhrzeit: string
+          erstellt_am: string
+          aktualisiert_am: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          gemeinde_id: string
+          ausgewaehlte_typen?: string[]
+          push_aktiviert?: boolean
+          email_aktiviert?: boolean
+          benachrichtigung_uhrzeit?: string
+          erstellt_am?: string
+          aktualisiert_am?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          gemeinde_id?: string
+          ausgewaehlte_typen?: string[]
+          push_aktiviert?: boolean
+          email_aktiviert?: boolean
+          benachrichtigung_uhrzeit?: string
+          erstellt_am?: string
+          aktualisiert_am?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'abfallkalender_praeferenzen_user_id_fkey'
+            columns: ['user_id']
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'abfallkalender_praeferenzen_gemeinde_id_fkey'
+            columns: ['gemeinde_id']
+            referencedRelation: 'gemeinden'
             referencedColumns: ['id']
           },
         ]

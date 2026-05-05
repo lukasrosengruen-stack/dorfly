@@ -1,9 +1,18 @@
 import { createClient } from '@/lib/supabase/server'
 import { getGemeinde } from '@/lib/gemeinde'
-import { Newspaper, AlertTriangle, BarChart2, MessageCircleQuestion, LayoutDashboard, CalendarDays, ExternalLink, ScrollText, Scale, UserCircle, Store } from 'lucide-react'
+import { Newspaper, AlertTriangle, BarChart2, MessageCircleQuestion, LayoutDashboard, CalendarDays, ExternalLink, ScrollText, Scale, UserCircle, Store, Trash2, LucideIcon } from 'lucide-react'
 import Link from 'next/link'
 
-const tiles = [
+interface Tile {
+  href: string
+  label: string
+  icon: LucideIcon
+  color: string
+  bg: string
+  desc: string
+}
+
+const BASE_TILES: Tile[] = [
   { href: '/feed',            label: 'Newsfeed',         icon: Newspaper,            color: '#1a5cbf', bg: 'rgba(26,92,191,0.1)',  desc: 'Aktuelles' },
   { href: '/veranstaltungen', label: 'Veranstaltungen',  icon: CalendarDays,          color: '#7c3aed', bg: 'rgba(124,58,237,0.1)', desc: 'Events & Termine' },
   { href: '/maengel',         label: 'Mängel melden',    icon: AlertTriangle,         color: '#c41e1e', bg: 'rgba(196,30,30,0.1)',  desc: 'Schäden melden' },
@@ -13,6 +22,15 @@ const tiles = [
   { href: '/gemeinderat',     label: 'Gemeinderat',      icon: Scale,                 color: '#0f2d6b', bg: 'rgba(15,45,107,0.1)',  desc: 'Politik & Fragen' },
   { href: '/profil',          label: 'Mein Profil',      icon: UserCircle,            color: '#475569', bg: 'rgba(71,85,105,0.1)',  desc: 'Einstellungen & Konto' },
 ]
+
+const ABFALL_TILE: Tile = {
+  href: '/abfallkalender',
+  label: 'Abfallkalender',
+  icon: Trash2,
+  color: '#16a34a',
+  bg: 'rgba(22,163,74,0.1)',
+  desc: 'Abfuhrtermine',
+}
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -32,6 +50,9 @@ export default async function HomePage() {
   const dashboardHref = profile?.role === 'gewerbe' ? '/gewerbe/dashboard' : '/dashboard'
   const gemeindeName = gemeinde?.name ?? ''
   const vorname = profile?.display_name?.split(' ')[0] ?? 'Hallo'
+
+  const wasteFeatureAktiv = (gemeinde?.features as { wasteCalendarEnabled?: boolean } | null)?.wasteCalendarEnabled ?? false
+  const tiles = wasteFeatureAktiv ? [...BASE_TILES, ABFALL_TILE] : BASE_TILES
 
   return (
     <div className="min-h-screen bg-[#f5f7fc]">
