@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { BarChart2, Star, Users, Home, TrendingUp, AlertTriangle, Clock, MessageCircleQuestion } from 'lucide-react'
 import { FrageErgebnis } from '@/types/umfrage'
 import AbfallkalenderSection from '@/components/dashboard/AbfallkalenderSection'
+import EinladungenSection from '@/components/dashboard/EinladungenSection'
 import GemeindeEinstellungen from '@/components/dashboard/GemeindeEinstellungen'
 import PostFreigabe from '@/components/dashboard/PostFreigabe'
 import PostErstellenButton from '@/components/dashboard/PostErstellenButton'
@@ -341,6 +342,10 @@ export default async function DashboardPage() {
             </section>
           </div>
         </div>
+
+        {/* Nutzer & Rollen */}
+        <EinladungenSection />
+
       </div>
     </div>
   )

@@ -992,6 +992,108 @@ export interface Database {
         }
         Relationships: []
       }
+      // ── Einladungen ────────────────────────────────────────────────────────
+      einladungen: {
+        Row: {
+          id: string
+          gemeinde_id: string
+          email: string
+          rolle: 'buerger' | 'verein' | 'organisation' | 'gewerbe'
+          organisation_name: string | null
+          verein_id: string | null
+          org_id: string | null
+          hinweis: string | null
+          token: string
+          eingeladen_von: string
+          erstellt_am: string
+          ablauft_am: string
+          angenommen_am: string | null
+          status: 'offen' | 'angenommen' | 'abgelaufen' | 'widerrufen'
+        }
+        Insert: {
+          id?: string
+          gemeinde_id: string
+          email: string
+          rolle: 'buerger' | 'verein' | 'organisation' | 'gewerbe'
+          organisation_name?: string | null
+          verein_id?: string | null
+          org_id?: string | null
+          hinweis?: string | null
+          token?: string
+          eingeladen_von: string
+          erstellt_am?: string
+          ablauft_am?: string
+          angenommen_am?: string | null
+          status?: 'offen' | 'angenommen' | 'abgelaufen' | 'widerrufen'
+        }
+        Update: {
+          id?: string
+          gemeinde_id?: string
+          email?: string
+          rolle?: 'buerger' | 'verein' | 'organisation' | 'gewerbe'
+          organisation_name?: string | null
+          verein_id?: string | null
+          org_id?: string | null
+          hinweis?: string | null
+          token?: string
+          eingeladen_von?: string
+          erstellt_am?: string
+          ablauft_am?: string
+          angenommen_am?: string | null
+          status?: 'offen' | 'angenommen' | 'abgelaufen' | 'widerrufen'
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'einladungen_gemeinde_id_fkey'
+            columns: ['gemeinde_id']
+            referencedRelation: 'gemeinden'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'einladungen_eingeladen_von_fkey'
+            columns: ['eingeladen_von']
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+
+      // ── Rollen-Log ─────────────────────────────────────────────────────────
+      rollen_log: {
+        Row: {
+          id: string
+          gemeinde_id: string
+          aktion: 'eingeladen' | 'rolle_gesetzt' | 'rolle_transfer' | 'widerrufen'
+          ziel_profile_id: string | null
+          ziel_email: string
+          alte_rolle: string | null
+          neue_rolle: string | null
+          einladung_id: string | null
+          ausgefuehrt_von: string
+          erstellt_am: string
+        }
+        Insert: {
+          id?: string
+          gemeinde_id: string
+          aktion: 'eingeladen' | 'rolle_gesetzt' | 'rolle_transfer' | 'widerrufen'
+          ziel_profile_id?: string | null
+          ziel_email: string
+          alte_rolle?: string | null
+          neue_rolle?: string | null
+          einladung_id?: string | null
+          ausgefuehrt_von: string
+          erstellt_am?: string
+        }
+        Update: never
+        Relationships: [
+          {
+            foreignKeyName: 'rollen_log_gemeinde_id_fkey'
+            columns: ['gemeinde_id']
+            referencedRelation: 'gemeinden'
+            referencedColumns: ['id']
+          },
+        ]
+      }
     }
 
     Views: Record<string, never>

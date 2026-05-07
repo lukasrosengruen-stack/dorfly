@@ -50,6 +50,7 @@ export const registrierenSchema = z.object({
   userId: uuid,
   vorname: z.string().optional(),
   nachname: z.string().optional(),
+  token: z.string().optional(),
 })
 
 // ── Fragen (Frag den Bürgermeister) ──────────────────────────────────────────
@@ -261,6 +262,34 @@ export const vereinPostDeleteSchema = z.object({
 
 export const vereinAbonnierenSchema = z.object({
   vereinId: uuid,
+})
+
+// ── Rollenverwaltung ──────────────────────────────────────────────────────────
+
+const einladungRolle = z.enum(['buerger', 'verein', 'organisation', 'gewerbe'])
+
+export const einladungenSendenSchema = z.object({
+  einladungen: z
+    .array(
+      z.object({
+        email: z.email('Ungültige E-Mail'),
+        rolle: einladungRolle,
+        organisation_name: z.string().max(200).optional(),
+        hinweis: z.string().max(500).optional(),
+        verein_id: uuid.optional(),
+        org_id: uuid.optional(),
+      }),
+    )
+    .min(1)
+    .max(50),
+})
+
+export const rolleZuweisenSchema = z.object({
+  email: z.email('Ungültige E-Mail'),
+  neueRolle: einladungRolle,
+  organisation_name: z.string().max(200).optional(),
+  verein_id: uuid.optional(),
+  org_id: uuid.optional(),
 })
 
 // ── Abfallkalender ────────────────────────────────────────────────────────────

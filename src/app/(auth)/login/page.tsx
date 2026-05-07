@@ -7,6 +7,20 @@ import { MessageSquare, ArrowRight, Loader2, ChevronDown, Mail } from 'lucide-re
 
 type Mode = 'login' | 'register' | 'forgot'
 
+interface EinladungsInfo {
+  email: string
+  rolle: string
+  organisation_name: string | null
+  gemeinde_name: string
+}
+
+const ROLLEN_LABEL: Record<string, string> = {
+  buerger: 'Bürger:in',
+  verein: 'Vereinsverantwortliche:r',
+  organisation: 'Organisationsverantwortliche:r',
+  gewerbe: 'Gewerbetreibende:r',
+}
+
 export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -21,11 +35,33 @@ export default function LoginPage() {
   const [registered, setRegistered] = useState(false)
   const [resetSent, setResetSent] = useState(false)
   const [resendSent, setResendSent] = useState(false)
+  const [einladungsToken, setEinladungsToken] = useState<string | null>(null)
+  const [einladungsInfo, setEinladungsInfo] = useState<EinladungsInfo | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
     if (searchParams.get('error') === 'confirmation_failed') {
       setError('email_not_confirmed')
+    }
+    const token = searchParams.get('token')
+    if (token) {
+      setEinladungsToken(token)
+      setMode('register')
+      fetch(`/api/einladung/${token}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.email) {
+            setEinladungsInfo(data as EinladungsInfo)
+            setEmail(data.email)
+          } else {
+            setError(
+              data.grund === 'bereits_angenommen' ? 'Diese Einladung wurde bereits angenommen.' :
+              data.grund === 'abgelaufen'          ? 'Diese Einladung ist abgelaufen. Bitte wende dich an deine Gemeindeverwaltung.' :
+              'Diese Einladung ist nicht mehr gültig.'
+            )
+          }
+        })
+        .catch(() => setError('Einladung konnte nicht geladen werden.'))
     }
   }, [searchParams])
 
@@ -65,7 +101,12 @@ export default function LoginPage() {
           await fetch('/api/auth/registrieren', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: data.user.id, vorname, nachname }),
+            body: JSON.stringify({
+              userId: data.user.id,
+              vorname,
+              nachname,
+              ...(einladungsToken ? { token: einladungsToken } : {}),
+            }),
           })
         }
         setRegistered(true)
@@ -119,6 +160,21 @@ export default function LoginPage() {
           <p className="text-gray-500 text-sm mt-1">Die digitale Heimat deiner Gemeinde</p>
         </div>
 
+        {/* Einladungs-Banner */}
+        {einladungsInfo && (
+          <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 mb-4 text-sm">
+            <p className="font-semibold text-primary-800">
+              Einladung von {einladungsInfo.gemeinde_name}
+            </p>
+            <p className="text-primary-700 mt-1">
+              Rolle: <strong>{ROLLEN_LABEL[einladungsInfo.rolle] ?? einladungsInfo.rolle}</strong>
+              {einladungsInfo.organisation_name && (
+                <> · {einladungsInfo.organisation_name}</>
+              )}
+            </p>
+          </div>
+        )}
+
         {/* Tab */}
         <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
           {(['login', 'register'] as const).map(m => (
@@ -140,7 +196,8 @@ export default function LoginPage() {
             value={email}
             onChange={e => setEmail(e.target.value)}
             placeholder="E-Mail-Adresse"
-            className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            readOnly={!!einladungsInfo}
+            className={`w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 ${einladungsInfo ? 'bg-gray-50 text-gray-500' : ''}`}
           />
           <input
             type="password"

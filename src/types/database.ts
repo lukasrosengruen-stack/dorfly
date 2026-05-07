@@ -62,3 +62,14 @@ export type GemeinderatFrageMitProfil = GemeinderatFrage & {
 export type Abfalltermin              = Row<'abfalltermine'>
 export type AbfallkalenderEinstellung = Row<'abfallkalender_einstellungen'>
 export type AbfallkalenderPraeferenz  = Row<'abfallkalender_praeferenzen'>
+
+// ── Rollenverwaltung ──────────────────────────────────────────────────────────
+export type Einladung    = Row<'einladungen'>
+export type RollenLog    = Row<'rollen_log'>
+
+export type EinladungRolle  = 'buerger' | 'verein' | 'organisation' | 'gewerbe'
+export type EinladungStatus = 'offen' | 'angenommen' | 'abgelaufen' | 'widerrufen'
+
+export type EinladungMitEinlader = Einladung & {
+  profiles?: Pick<Profile, 'display_name'> | null
+}
