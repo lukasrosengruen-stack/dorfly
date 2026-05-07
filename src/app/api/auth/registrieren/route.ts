@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { validate, registrierenSchema } from '@/lib/validations'
 import { getGemeindeSlug } from '@/lib/gemeinde'
+import type { UserRole } from '@/types/supabase'
 
 export async function POST(request: Request) {
   try {
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
 
     const { error } = await supabase.from('profiles').upsert({
       id: userId,
-      role: rolle,
+      role: rolle as UserRole,
       gemeinde_id: gemeinde?.id ?? null,
       vorname: vorname || null,
       nachname: nachname || null,
