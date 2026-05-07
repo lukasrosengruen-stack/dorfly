@@ -3,6 +3,7 @@ import { withAuth, apiError } from '@/lib/api'
 import { validate, rolleZuweisenSchema } from '@/lib/validations'
 import { createServiceClient } from '@/lib/supabase/server'
 import { sendeRollenentzugEmail, sendeRollenzuweisungEmail } from '@/lib/email'
+import type { UserRole } from '@/types/supabase'
 
 // PATCH /api/verwaltung/nutzer/rolle – Einem bestehenden Nutzer eine Rolle direkt zuweisen
 export const PATCH = withAuth(
@@ -138,7 +139,12 @@ export const PATCH = withAuth(
     }
 
     // Neue Rolle setzen
-    await supabase.from('profiles').update({ role: neueRolle }).eq('id', zielProfil.id)
+    const { error: rolleUpdateError } = await supabase
+      .from('profiles')
+      .update({ role: neueRolle as UserRole })
+      .eq('id', zielProfil.id)
+
+    if (rolleUpdateError) return apiError(`Rolle konnte nicht gesetzt werden: ${rolleUpdateError.message}`)
 
     // Offene Einladungen für diesen Nutzer widerrufen
     await supabase
