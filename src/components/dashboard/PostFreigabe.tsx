@@ -42,11 +42,14 @@ export default function PostFreigabe({ pendingPosts }: { pendingPosts: PendingPo
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
-      if (!res.ok) throw new Error()
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error ?? `HTTP ${res.status}`)
+      }
       setPosts(prev => prev.filter(p => p.id !== postId))
       setRejectingId(null)
-    } catch {
-      toast.error('Fehler beim Verarbeiten')
+    } catch (e) {
+      toast.error('Fehler: ' + (e instanceof Error ? e.message : 'Unbekannt'))
     } finally {
       setLoading(null)
     }
