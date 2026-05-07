@@ -23,6 +23,9 @@ export const POST = withAuth(
     const { error } = await service.from('posts').update({
       status: action === 'publish' ? 'published' : 'rejected',
       published_at: action === 'publish' ? publishedAt : undefined,
+      ...(action === 'publish' && v.data.sichtbarkeit
+        ? { sichtbarkeit: v.data.sichtbarkeit }
+        : {}),
     }).eq('id', postId).eq('gemeinde_id', profile.gemeinde_id!)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })

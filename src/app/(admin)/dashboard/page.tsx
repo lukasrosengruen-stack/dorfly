@@ -56,23 +56,58 @@ export default async function DashboardPage() {
     )
   }
 
-  // Verein sieht nur seine eigenen Beiträge
+  // Verein / Organisation sieht eigene Beiträge + Profil
   if (profile.role === 'verein' || profile.role === 'organisation') {
-    const { data: vereinPosts } = await supabase
-      .from('posts')
-      .select('id, titel, inhalt, status, created_at, tag, bild_url, publish_at')
-      .eq('author_id', user!.id)
-      .order('created_at', { ascending: false })
+    const [vereinPostsResult, vereinProfilResult, kategorienResult] = await Promise.all([
+      supabase
+        .from('posts')
+        .select('id, titel, inhalt, status, created_at, tag, bild_url, publish_at')
+        .eq('author_id', user!.id)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('vereine')
+        .select('*')
+        .eq('profile_id', user!.id)
+        .maybeSingle(),
+      supabase
+        .from('verein_kategorien')
+        .select('id, name, reihenfolge')
+        .order('reihenfolge'),
+    ])
+
+    const vereinProfil = vereinProfilResult.data ?? null
+
+    // Abonnenten-Stats nur wenn Profil vorhanden
+    let abonnentenStats = null
+    if (vereinProfil) {
+      const vereinService = await createServiceClient()
+      const jetzt = new Date()
+      const vor7  = new Date(jetzt); vor7.setDate(jetzt.getDate() - 7)
+      const vor30 = new Date(jetzt); vor30.setDate(jetzt.getDate() - 30)
+
+      const [gesamtRes, neu7Res, neu30Res] = await Promise.all([
+        vereinService.from('verein_abonnements').select('id', { count: 'exact', head: true }).eq('verein_id', vereinProfil.id),
+        vereinService.from('verein_abonnements').select('id', { count: 'exact', head: true }).eq('verein_id', vereinProfil.id).gte('created_at', vor7.toISOString()),
+        vereinService.from('verein_abonnements').select('id', { count: 'exact', head: true }).eq('verein_id', vereinProfil.id).gte('created_at', vor30.toISOString()),
+      ])
+      abonnentenStats = {
+        gesamt:        gesamtRes.count ?? 0,
+        letzter7Tage:  neu7Res.count ?? 0,
+        letzter30Tage: neu30Res.count ?? 0,
+      }
+    }
 
     const VereinPostVerwaltung = (await import('@/components/dashboard/VereinPostVerwaltung')).default
     return (
       <VereinPostVerwaltung
-        posts={(vereinPosts ?? []) as Parameters<typeof VereinPostVerwaltung>[0]['posts']}
+        posts={(vereinPostsResult.data ?? []) as Parameters<typeof VereinPostVerwaltung>[0]['posts']}
         gemeindeId={profile.gemeinde_id!}
         profileId={user!.id}
         vereinName={profile.verein_name}
-        channel="verein"
         role={profile.role as 'verein' | 'organisation'}
+        vereinProfil={vereinProfil}
+        kategorien={kategorienResult.data ?? []}
+        abonnentenStats={abonnentenStats}
       />
     )
   }

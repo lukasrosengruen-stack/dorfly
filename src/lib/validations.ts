@@ -109,6 +109,7 @@ export const notificationSendSchema = z.object({
 export const postFreigebenSchema = z.object({
   postId: uuid,
   action: z.enum(['publish', 'reject']),
+  sichtbarkeit: z.enum(['alle', 'abonnenten']).optional(),
 })
 
 export const postDeleteSchema = z.object({
@@ -208,6 +209,57 @@ export const gewerbePostDeleteSchema = z.object({
 
 export const gewerbeAbonnierenSchema = z.object({
   gewerbeId: uuid,
+})
+
+// ── Vereine ───────────────────────────────────────────────────────────────────
+
+export const vereinProfilErstellenSchema = z.object({
+  verein_name: z.string().min(1).max(200),
+  kategorie_id: z.string().uuid().nullable().optional(),
+  beschreibung: z.string().max(2000).nullable().optional(),
+  website: z.union([z.url(), z.literal(''), z.null()]).optional(),
+  logo_url: z.union([z.url(), z.null()]).optional(),
+})
+
+export const vereinProfilAktualisierenSchema = z.object({
+  vereinId: uuid,
+  verein_name: z.string().min(1).max(200),
+  kategorie_id: z.string().uuid().nullable().optional(),
+  beschreibung: z.string().max(2000).nullable().optional(),
+  website: z.union([z.url(), z.literal(''), z.null()]).optional(),
+  logo_url: z.union([z.url(), z.null()]).optional(),
+})
+
+export const vereinPostSchema = z.object({
+  vereinId: uuid,
+  titel: z.string().min(1).max(200),
+  inhalt: z.string().min(1).max(10000),
+  tag: z.enum(['nachricht', 'veranstaltung', 'bekanntmachung']).optional(),
+  bildUrl: z.string().nullable().optional(),
+  bilderUrls: z.array(z.string()).optional(),
+  publishAt: z.string().nullable().optional(),
+  veranstaltungDatum: z.string().nullable().optional(),
+  veranstaltungOrt: z.string().nullable().optional(),
+})
+
+export const vereinPostUpdateSchema = z.object({
+  postId: uuid,
+  titel: z.string().min(1).max(200),
+  inhalt: z.string().min(1).max(10000),
+  tag: z.enum(['nachricht', 'veranstaltung', 'bekanntmachung']).optional(),
+  bildUrl: z.string().nullable().optional(),
+  bilderUrls: z.array(z.string()).optional(),
+  publishAt: z.string().nullable().optional(),
+  veranstaltungDatum: z.string().nullable().optional(),
+  veranstaltungOrt: z.string().nullable().optional(),
+})
+
+export const vereinPostDeleteSchema = z.object({
+  postId: uuid,
+})
+
+export const vereinAbonnierenSchema = z.object({
+  vereinId: uuid,
 })
 
 // ── Abfallkalender ────────────────────────────────────────────────────────────

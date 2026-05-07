@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getGemeinde } from '@/lib/gemeinde'
-import { Newspaper, AlertTriangle, BarChart2, MessageCircleQuestion, LayoutDashboard, CalendarDays, ExternalLink, ScrollText, Scale, UserCircle, Store, Trash2, LucideIcon } from 'lucide-react'
+import { Newspaper, AlertTriangle, BarChart2, MessageCircleQuestion, LayoutDashboard, CalendarDays, ExternalLink, ScrollText, Scale, UserCircle, Store, Trash2, Users, LucideIcon } from 'lucide-react'
 import Link from 'next/link'
 
 interface Tile {
@@ -18,6 +18,7 @@ const BASE_TILES: Tile[] = [
   { href: '/maengel',         label: 'Mängel melden',    icon: AlertTriangle,         color: '#c41e1e', bg: 'rgba(196,30,30,0.1)',  desc: 'Schäden melden' },
   { href: '/umfragen',        label: 'Umfragen',         icon: BarChart2,             color: '#7c3aed', bg: 'rgba(124,58,237,0.1)', desc: 'Ihre Meinung' },
   { href: '/lokale-angebote', label: 'Lokale Angebote',  icon: Store,                 color: '#ea580c', bg: 'rgba(234,88,12,0.1)',  desc: 'Betriebe vor Ort' },
+  { href: '/vereine',         label: 'Vereine & Orgs',   icon: Users,                 color: '#7c3aed', bg: 'rgba(124,58,237,0.1)', desc: 'Vereine & Organisationen' },
   { href: '/buergermeister',  label: 'Frag den BM',      icon: MessageCircleQuestion, color: '#1a5cbf', bg: 'rgba(26,92,191,0.1)',  desc: 'An die Verwaltung' },
   { href: '/gemeinderat',     label: 'Gemeinderat',      icon: Scale,                 color: '#0f2d6b', bg: 'rgba(15,45,107,0.1)',  desc: 'Politik & Fragen' },
   { href: '/profil',          label: 'Mein Profil',      icon: UserCircle,            color: '#475569', bg: 'rgba(71,85,105,0.1)',  desc: 'Einstellungen & Konto' },

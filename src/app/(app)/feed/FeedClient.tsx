@@ -21,9 +21,10 @@ interface Props {
   alleVereine?: string[]
   umfragen: UmfrageMitDaten[]
   gewerbeAbonnements?: string[]
+  vereinAbonnements?: string[]
 }
 
-export default function FeedClient({ posts: initialPosts, profile, umfragen: initialUmfragen, gewerbeAbonnements = [] }: Props) {
+export default function FeedClient({ posts: initialPosts, profile, umfragen: initialUmfragen, gewerbeAbonnements = [], vereinAbonnements = [] }: Props) {
   const router = useRouter()
   const [umfragen, setUmfragen] = useState(initialUmfragen)
 
@@ -63,8 +64,10 @@ export default function FeedClient({ posts: initialPosts, profile, umfragen: ini
 
   const filtered = initialPosts.filter(p => {
     if (cutoff && new Date(p.published_at) < cutoff) return false
-    // Gewerbe-Betrieb-Posts (org_id gesetzt) nur für Abonnenten
+    // Gewerbe-Posts nur für Abonnenten
     if (p.channel === 'gewerbe' && p.org_id && !gewerbeAbonnements.includes(p.org_id)) return false
+    // Verein-Posts: nur für Abonnenten, außer sichtbarkeit === 'alle'
+    if (p.channel === 'verein' && p.org_id && (p as unknown as { sichtbarkeit?: string | null }).sichtbarkeit !== 'alle' && !vereinAbonnements.includes(p.org_id)) return false
     if (nurLokaleAngebote) {
       if (p.channel !== 'gewerbe' || !p.org_id || !gewerbeAbonnements.includes(p.org_id)) return false
     }

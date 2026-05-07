@@ -15,10 +15,10 @@ export default async function FeedPage() {
 
   const gemeindeId = profile?.gemeinde_id
 
-  const [postsResult, vereineResult, umfragenResult, abonnementsResult] = await Promise.all([
+  const [postsResult, vereineResult, umfragenResult, abonnementsResult, vereinAbonnementsResult] = await Promise.all([
     gemeindeId
       ? supabase.from('posts')
-          .select('id, titel, inhalt, bild_url, bilder_urls, tag, channel, pinned, status, published_at, publish_at, author_id, org_id, veranstaltung_datum, veranstaltung_ort')
+          .select('id, titel, inhalt, bild_url, bilder_urls, tag, channel, pinned, status, published_at, publish_at, author_id, org_id, veranstaltung_datum, veranstaltung_ort, sichtbarkeit')
           .eq('gemeinde_id', gemeindeId)
           .eq('status', 'published')
           .neq('channel', 'gemeinderat')
@@ -47,6 +47,10 @@ export default async function FeedPage() {
     user
       ? supabase.from('gewerbe_abonnements').select('gewerbe_id').eq('user_id', user.id)
       : Promise.resolve({ data: [] }),
+
+    user
+      ? supabase.from('verein_abonnements').select('verein_id').eq('user_id', user.id)
+      : Promise.resolve({ data: [] }),
   ])
 
   const posts = postsResult.data ?? []
@@ -69,6 +73,7 @@ export default async function FeedPage() {
     .filter((v, i, arr) => arr.indexOf(v) === i)
 
   const gewerbeAbonnements = (abonnementsResult.data ?? []).map((a: { gewerbe_id: string }) => a.gewerbe_id)
+  const vereinAbonnements  = (vereinAbonnementsResult.data ?? []).map((a: { verein_id: string }) => a.verein_id)
 
   const umfragen = umfragenResult.data ?? []
 
@@ -102,6 +107,7 @@ export default async function FeedPage() {
       alleVereine={vereine}
       umfragen={umfragenMitDaten}
       gewerbeAbonnements={gewerbeAbonnements}
+      vereinAbonnements={vereinAbonnements}
     />
   )
 }

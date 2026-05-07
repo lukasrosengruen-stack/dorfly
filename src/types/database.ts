@@ -13,6 +13,9 @@ export type Gewerbetreibender      = Organisation & { typ: 'gewerbe' }
 export type OrganisationMitBranche = Organisation & {
   gewerbe_branchen: Pick<Gewerbebranche, 'id' | 'name'> | null
 }
+export type VereinMitKategorie = Verein & {
+  verein_kategorien: Pick<VereinKategorie, 'id' | 'name'> | null
+}
 
 // ── Basis-Tabellen-Typen (nur DB-Felder, keine Joins) ─────────────────────────
 export type Gemeinde            = Row<'gemeinden'>
@@ -29,6 +32,9 @@ export type UmfrageFrage        = Row<'umfrage_fragen'>
 export type UmfrageOption       = Row<'umfrage_optionen'>
 export type UmfrageAntwort      = Row<'umfrage_antworten'>
 export type UmfrageTeilnahme    = Row<'umfrage_teilnahmen'>
+export type Verein              = Row<'vereine'>
+export type VereinKategorie     = Row<'verein_kategorien'>
+export type VereinAbonnement    = Row<'verein_abonnements'>
 
 // ── Join-Typen (für Supabase-Queries mit .select('*, profiles(...)')) ─────────
 // Diese Typen werden verwendet wenn Supabase mehrere Tabellen zusammen lädt.

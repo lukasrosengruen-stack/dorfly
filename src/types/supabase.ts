@@ -315,6 +315,7 @@ export interface Database {
           veranstaltung_ort: string | null
           publish_at: string | null
           published_at: string
+          sichtbarkeit: string | null
           created_at: string
         }
         Insert: {
@@ -334,6 +335,7 @@ export interface Database {
           veranstaltung_ort?: string | null
           publish_at?: string | null
           published_at?: string
+          sichtbarkeit?: string | null
           created_at?: string
         }
         Update: {
@@ -353,6 +355,7 @@ export interface Database {
           veranstaltung_ort?: string | null
           publish_at?: string | null
           published_at?: string
+          sichtbarkeit?: string | null
           created_at?: string
         }
         Relationships: [
@@ -834,6 +837,125 @@ export interface Database {
             foreignKeyName: 'abfallkalender_praeferenzen_gemeinde_id_fkey'
             columns: ['gemeinde_id']
             referencedRelation: 'gemeinden'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+
+      // ── Verein-Kategorien ─────────────────────────────────────────────────
+      verein_kategorien: {
+        Row: {
+          id: string
+          name: string
+          reihenfolge: number
+        }
+        Insert: {
+          id?: string
+          name: string
+          reihenfolge?: number
+        }
+        Update: {
+          id?: string
+          name?: string
+          reihenfolge?: number
+        }
+        Relationships: []
+      }
+
+      // ── Vereine ───────────────────────────────────────────────────────────
+      vereine: {
+        Row: {
+          id: string
+          profile_id: string
+          gemeinde_id: string
+          verein_name: string
+          typ: string
+          kategorie_id: string | null
+          beschreibung: string | null
+          website: string | null
+          logo_url: string | null
+          verified: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          profile_id: string
+          gemeinde_id: string
+          verein_name: string
+          typ: string
+          kategorie_id?: string | null
+          beschreibung?: string | null
+          website?: string | null
+          logo_url?: string | null
+          verified?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          profile_id?: string
+          gemeinde_id?: string
+          verein_name?: string
+          typ?: string
+          kategorie_id?: string | null
+          beschreibung?: string | null
+          website?: string | null
+          logo_url?: string | null
+          verified?: boolean
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'vereine_profile_id_fkey'
+            columns: ['profile_id']
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'vereine_gemeinde_id_fkey'
+            columns: ['gemeinde_id']
+            referencedRelation: 'gemeinden'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'vereine_kategorie_id_fkey'
+            columns: ['kategorie_id']
+            referencedRelation: 'verein_kategorien'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+
+      // ── Verein-Abonnements ─────────────────────────────────────────────────
+      verein_abonnements: {
+        Row: {
+          id: string
+          user_id: string
+          verein_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          verein_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          verein_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'verein_abonnements_user_id_fkey'
+            columns: ['user_id']
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'verein_abonnements_verein_id_fkey'
+            columns: ['verein_id']
+            referencedRelation: 'vereine'
             referencedColumns: ['id']
           },
         ]

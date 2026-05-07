@@ -9,6 +9,8 @@ import { createClient } from '@/lib/supabase/client'
 import { compressImage } from '@/lib/compressImage'
 import { clsx } from 'clsx'
 import BilderUpload from './BilderUpload'
+import { VereinProfilForm, AbonnentenStats } from '@/features/verein'
+import type { Verein, VereinKategorie } from '@/types/database'
 
 interface Post {
   id: string
@@ -26,8 +28,10 @@ interface Props {
   gemeindeId: string
   profileId: string
   vereinName: string | null
-  channel: 'verein' | 'gewerbe'
   role?: 'verein' | 'organisation'
+  vereinProfil?: Verein | null
+  kategorien?: VereinKategorie[]
+  abonnentenStats?: { gesamt: number; letzter7Tage: number; letzter30Tage: number } | null
 }
 
 const STATUS_META = {
@@ -42,7 +46,9 @@ type FormState = { titel: string; inhalt: string; tag: string; veranstaltung_dat
 
 const emptyForm: FormState = { titel: '', inhalt: '', tag: 'nachricht', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', geplant: false, scheduled_date: '', scheduled_time: '' }
 
-export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, profileId, vereinName, channel, role }: Props) {
+export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, profileId, vereinName, role, vereinProfil: initialVereinProfil, kategorien = [], abonnentenStats }: Props) {
+  const [vereinProfil, setVereinProfil] = useState(initialVereinProfil ?? null)
+  const [showProfilForm, setShowProfilForm] = useState(false)
   const [posts, setPosts] = useState(initialPosts)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showNewForm, setShowNewForm] = useState(false)
@@ -52,6 +58,15 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
   const [bildPreviews, setBildPreviews] = useState<string[]>([])
   const [form, setForm] = useState<FormState>(emptyForm)
   const supabase = createClient()
+
+  const accentColor = role === 'organisation' ? 'teal' : 'violet'
+
+  const emptyVereinProfil: Verein = {
+    id: '', profile_id: profileId, gemeinde_id: gemeindeId,
+    verein_name: vereinName ?? '', typ: role ?? 'verein',
+    kategorie_id: null, beschreibung: null, website: null,
+    logo_url: null, verified: false, created_at: new Date().toISOString(),
+  }
 
   function addBilder(files: File[]) {
     setBildFiles(prev => [...prev, ...files])
@@ -106,35 +121,49 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
     if (!confirm(`"${titel}" wirklich löschen?`)) return
     setDeleting(id)
     try {
-      const { error } = await supabase.from('posts').delete().eq('id', id)
-      if (error) throw error
+      const res = await fetch('/api/verein/post', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId: id }),
+      })
+      if (!res.ok) throw new Error()
       setPosts(prev => prev.filter(p => p.id !== id))
     } catch { toast.error('Fehler beim Löschen') }
     finally { setDeleting(null) }
   }
 
   async function submitNew() {
-    if (!form.titel || !form.inhalt) return
+    if (!form.titel || !form.inhalt || !vereinProfil?.id) return
     setLoading(true)
     try {
-      const bilder_urls = await uploadBilder()
-      const bild_url = bilder_urls[0] ?? null
+      const bilderUrls = await uploadBilder()
+      const bildUrl = bilderUrls[0] ?? null
       const publishAt = form.geplant && form.scheduled_date
         ? new Date(`${form.scheduled_date}T${form.scheduled_time || '08:00'}`).toISOString()
         : null
-      const { data, error } = await supabase.from('posts').insert({
-        gemeinde_id: gemeindeId, author_id: profileId,
-        channel, titel: form.titel, inhalt: form.inhalt,
-        tag: form.tag, status: 'pending', bild_url, bilder_urls,
-        publish_at: publishAt,
-        veranstaltung_datum: form.tag === 'veranstaltung' && form.veranstaltung_datum
-          ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null,
-        veranstaltung_ort: form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null,
-      }).select('id, titel, inhalt, status, created_at, tag, bild_url, publish_at').single()
-      if (error) throw error
-      setPosts(prev => [data as Post, ...prev])
+      const res = await fetch('/api/verein/post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vereinId: vereinProfil.id,
+          titel: form.titel,
+          inhalt: form.inhalt,
+          tag: form.tag,
+          bildUrl,
+          bilderUrls,
+          publishAt,
+          veranstaltungDatum: form.tag === 'veranstaltung' && form.veranstaltung_datum
+            ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null,
+          veranstaltungOrt: form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null,
+        }),
+      })
+      const text = await res.text()
+      let json: Record<string, unknown>
+      try { json = JSON.parse(text) } catch { throw new Error(`HTTP ${res.status}: ${text.slice(0, 200)}`) }
+      if (!res.ok) throw new Error(json.error as string ?? 'Fehler')
+      setPosts(prev => [json.post as Post, ...prev])
       closeForm()
-    } catch { toast.error('Fehler beim Einreichen') }
+    } catch (e: unknown) { toast.error('Fehler: ' + (e instanceof Error ? e.message : JSON.stringify(e))) }
     finally { setLoading(false) }
   }
 
@@ -142,21 +171,30 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
     if (!form.titel || !form.inhalt || !editingId) return
     setLoading(true)
     try {
-      const bilder_urls = await uploadBilder()
-      const bild_url = bilder_urls.length > 0 ? bilder_urls[0] : (bildPreviews.length > 0 ? posts.find(p => p.id === editingId)?.bild_url ?? null : null)
+      const bilderUrls = await uploadBilder()
+      const bildUrl = bilderUrls.length > 0 ? bilderUrls[0] : (bildPreviews.length > 0 ? posts.find(p => p.id === editingId)?.bild_url ?? null : null)
       const publishAt = form.geplant && form.scheduled_date
         ? new Date(`${form.scheduled_date}T${form.scheduled_time || '08:00'}`).toISOString()
         : null
-      const { error } = await supabase.from('posts').update({
-        titel: form.titel, inhalt: form.inhalt, tag: form.tag,
-        status: 'pending', bild_url, bilder_urls: bilder_urls.length > 0 ? bilder_urls : undefined,
-        publish_at: publishAt,
-        veranstaltung_datum: form.tag === 'veranstaltung' && form.veranstaltung_datum
-          ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null,
-        veranstaltung_ort: form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null,
-      }).eq('id', editingId)
-      if (error) throw error
-      setPosts(prev => prev.map(p => p.id === editingId ? { ...p, ...form, status: 'pending' } : p))
+      const res = await fetch('/api/verein/post', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          postId: editingId,
+          titel: form.titel,
+          inhalt: form.inhalt,
+          tag: form.tag,
+          bildUrl,
+          ...(bilderUrls.length > 0 ? { bilderUrls } : {}),
+          publishAt,
+          veranstaltungDatum: form.tag === 'veranstaltung' && form.veranstaltung_datum
+            ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null,
+          veranstaltungOrt: form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? 'Fehler')
+      setPosts(prev => prev.map(p => p.id === editingId ? { ...p, titel: form.titel, inhalt: form.inhalt, tag: form.tag, status: 'pending' } : p))
       closeForm()
     } catch (e: unknown) { toast.error('Fehler beim Speichern: ' + (e instanceof Error ? e.message : JSON.stringify(e))) }
     finally { setLoading(false) }
@@ -171,14 +209,59 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
         <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">{role === 'organisation' ? 'Organisationsbereich' : 'Vereinsbereich'}</p>
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">{vereinName ?? 'Meine Beiträge'}</h1>
-          <button onClick={openNew}
-            className="flex items-center gap-2 bg-primary-500 text-white font-bold px-4 py-2 rounded-xl text-sm">
-            <Plus className="w-4 h-4" /> Neuer Beitrag
-          </button>
+          <div className="flex items-center gap-2">
+            {vereinProfil && (
+              <button onClick={() => setShowProfilForm(v => !v)}
+                className="flex items-center gap-2 bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl text-sm">
+                <Pencil className="w-4 h-4" /> Profil
+              </button>
+            )}
+            <button onClick={openNew} disabled={!vereinProfil}
+              className="flex items-center gap-2 bg-primary-500 text-white font-bold px-4 py-2 rounded-xl text-sm disabled:opacity-40">
+              <Plus className="w-4 h-4" /> Neuer Beitrag
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="px-8 py-6">
+        {/* Profil noch nicht angelegt */}
+        {!vereinProfil && (
+          <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
+            <h2 className="font-bold text-gray-900 mb-1">Profil anlegen</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              Bitte legen Sie zuerst Ihr {role === 'organisation' ? 'Organisations' : 'Vereins'}profil an.
+            </p>
+            <VereinProfilForm
+              verein={emptyVereinProfil}
+              kategorien={kategorien}
+              onUpdated={updated => setVereinProfil(updated)}
+            />
+          </div>
+        )}
+
+        {/* Abonnenten-Stats */}
+        {abonnentenStats && (
+          <div className="mb-6">
+            <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Abonnenten</p>
+            <AbonnentenStats {...abonnentenStats} color={accentColor} />
+          </div>
+        )}
+
+        {/* Profil bearbeiten (aufklappbar via Header-Button) */}
+        {vereinProfil && showProfilForm && (
+          <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold text-gray-900">Profil bearbeiten</h2>
+              <button onClick={() => setShowProfilForm(false)}><X className="w-5 h-5 text-gray-400" /></button>
+            </div>
+            <VereinProfilForm
+              verein={vereinProfil}
+              kategorien={kategorien}
+              onUpdated={updated => { setVereinProfil(updated); setShowProfilForm(false) }}
+            />
+          </div>
+        )}
         {/* Formular */}
         {showForm && (
           <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">

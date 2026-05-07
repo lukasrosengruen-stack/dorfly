@@ -3,7 +3,8 @@
 
 import { toast } from 'sonner'
 import { useState } from 'react'
-import { Check, X, Loader2, CalendarClock } from 'lucide-react'
+import { Check, X, Loader2, CalendarClock, Globe, Lock } from 'lucide-react'
+// Globe = für alle sichtbar, Lock = nur Abonnenten
 
 interface PendingPost {
   id: string
@@ -19,14 +20,24 @@ interface PendingPost {
 export default function PostFreigabe({ pendingPosts }: { pendingPosts: PendingPost[] }) {
   const [posts, setPosts] = useState(pendingPosts)
   const [loading, setLoading] = useState<string | null>(null)
+  // sichtbarkeit-Auswahl pro Post (nur relevant für Verein/Organisation)
+  const [sichtbarkeit, setSichtbarkeit] = useState<Record<string, 'alle' | 'abonnenten'>>({})
+
+  const isVereinPost = (post: PendingPost) =>
+    post.channel === 'verein' || post.profiles?.role === 'verein' || post.profiles?.role === 'organisation'
 
   async function handle(postId: string, action: 'publish' | 'reject') {
     setLoading(postId)
     try {
+      const post = posts.find(p => p.id === postId)
+      const body: Record<string, unknown> = { postId, action }
+      if (action === 'publish' && post && isVereinPost(post)) {
+        body.sichtbarkeit = sichtbarkeit[postId] ?? 'abonnenten'
+      }
       const res = await fetch('/api/posts/freigeben', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postId, action }),
+        body: JSON.stringify(body),
       })
       if (!res.ok) throw new Error()
       setPosts(prev => prev.filter(p => p.id !== postId))
@@ -74,6 +85,31 @@ export default function PostFreigabe({ pendingPosts }: { pendingPosts: PendingPo
                   <div className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-lg mt-1.5 w-fit">
                     <CalendarClock className="w-3 h-3" />
                     Geplant: {new Date(post.publish_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} Uhr
+                  </div>
+                )}
+                {/* Sichtbarkeits-Auswahl für Verein/Organisation-Posts */}
+                {isVereinPost(post) && (
+                  <div className="flex items-center gap-1.5 mt-2">
+                    <button
+                      onClick={() => setSichtbarkeit(prev => ({ ...prev, [post.id]: 'abonnenten' }))}
+                      className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border transition-colors ${
+                        (sichtbarkeit[post.id] ?? 'abonnenten') === 'abonnenten'
+                          ? 'bg-violet-100 text-violet-700 border-violet-300'
+                          : 'bg-gray-50 text-gray-500 border-gray-200'
+                      }`}
+                    >
+                      <Lock className="w-3 h-3" /> Nur Abonnenten
+                    </button>
+                    <button
+                      onClick={() => setSichtbarkeit(prev => ({ ...prev, [post.id]: 'alle' }))}
+                      className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border transition-colors ${
+                        sichtbarkeit[post.id] === 'alle'
+                          ? 'bg-green-100 text-green-700 border-green-300'
+                          : 'bg-gray-50 text-gray-500 border-gray-200'
+                      }`}
+                    >
+                      <Globe className="w-3 h-3" /> Für Alle
+                    </button>
                   </div>
                 )}
               </div>
