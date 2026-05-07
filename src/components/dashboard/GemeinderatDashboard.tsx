@@ -16,6 +16,7 @@ interface Post {
   tag: string | null
   status: string
   published_at: string
+  rejection_reason?: string | null
 }
 
 interface Frage {
@@ -296,30 +297,40 @@ export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profil
               </div>
             )}
             {localPosts.map(post => (
-              <div key={post.id} className="bg-white rounded-2xl shadow-sm p-4 flex items-center gap-4">
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-gray-900 text-sm truncate">{post.titel}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {format(new Date(post.published_at), 'dd. MMM yyyy', { locale: de })}
-                    {post.tag && ` · ${post.tag.charAt(0).toUpperCase() + post.tag.slice(1)}`}
-                  </p>
+              <div key={post.id} className="bg-white rounded-2xl shadow-sm p-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-gray-900 text-sm truncate">{post.titel}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {format(new Date(post.published_at), 'dd. MMM yyyy', { locale: de })}
+                      {post.tag && ` · ${post.tag.charAt(0).toUpperCase() + post.tag.slice(1)}`}
+                    </p>
+                  </div>
+                  <span className={clsx(
+                    'text-xs px-2 py-0.5 rounded-full font-medium shrink-0',
+                    post.status === 'published' ? 'bg-green-100 text-green-700' :
+                    post.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                    'bg-amber-100 text-amber-700'
+                  )}>
+                    {post.status === 'published' ? 'Veröffentlicht' :
+                     post.status === 'rejected' ? 'Abgelehnt' : 'Ausstehend'}
+                  </span>
+                  <button onClick={() => openEdit(post)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => deletePost(post.id)}
+                    disabled={deletingId === post.id}
+                    className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
+                  >
+                    {deletingId === post.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                  </button>
                 </div>
-                <span className={clsx(
-                  'text-xs px-2 py-0.5 rounded-full font-medium shrink-0',
-                  post.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-                )}>
-                  {post.status === 'published' ? 'Veröffentlicht' : 'Ausstehend'}
-                </span>
-                <button onClick={() => openEdit(post)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
-                  <Pencil className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => deletePost(post.id)}
-                  disabled={deletingId === post.id}
-                  className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
-                >
-                  {deletingId === post.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                </button>
+                {post.status === 'rejected' && post.rejection_reason && (
+                  <div className="mt-2 text-xs text-red-700 bg-red-50 border border-red-100 rounded-xl px-3 py-2">
+                    <span className="font-bold">Ablehnungsgrund: </span>{post.rejection_reason}
+                  </div>
+                )}
               </div>
             ))}
           </div>

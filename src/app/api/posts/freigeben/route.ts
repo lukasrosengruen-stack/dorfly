@@ -23,6 +23,7 @@ export const POST = withAuth(
     const { error } = await service.from('posts').update({
       status: action === 'publish' ? 'published' : 'rejected',
       published_at: action === 'publish' ? publishedAt : undefined,
+      ...(action === 'reject' ? { rejection_reason: v.data.rejectionReason ?? null } : {}),
       ...(action === 'publish' && v.data.sichtbarkeit
         ? { sichtbarkeit: v.data.sichtbarkeit }
         : {}),

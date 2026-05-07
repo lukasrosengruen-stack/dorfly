@@ -316,6 +316,7 @@ export interface Database {
           publish_at: string | null
           published_at: string
           sichtbarkeit: string | null
+          rejection_reason: string | null
           created_at: string
         }
         Insert: {
@@ -336,6 +337,7 @@ export interface Database {
           publish_at?: string | null
           published_at?: string
           sichtbarkeit?: string | null
+          rejection_reason?: string | null
           created_at?: string
         }
         Update: {
@@ -356,6 +358,7 @@ export interface Database {
           publish_at?: string | null
           published_at?: string
           sichtbarkeit?: string | null
+          rejection_reason?: string | null
           created_at?: string
         }
         Relationships: [

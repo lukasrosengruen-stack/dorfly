@@ -21,6 +21,7 @@ interface Post {
   tag: string | null
   bild_url?: string | null
   publish_at?: string | null
+  rejection_reason?: string | null
 }
 
 interface Props {
@@ -368,6 +369,11 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
                       </span>
                     )}
                   </div>
+                  {post.status === 'rejected' && post.rejection_reason && (
+                    <div className="mt-2 text-xs text-red-700 bg-red-50 border border-red-100 rounded-xl px-3 py-2">
+                      <span className="font-bold">Ablehnungsgrund: </span>{post.rejection_reason}
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className={clsx('flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full', meta.color)}>

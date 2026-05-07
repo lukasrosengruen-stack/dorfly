@@ -110,6 +110,7 @@ export const postFreigebenSchema = z.object({
   postId: uuid,
   action: z.enum(['publish', 'reject']),
   sichtbarkeit: z.enum(['alle', 'abonnenten']).optional(),
+  rejectionReason: z.string().min(1).max(1000).optional(),
 })
 
 export const postDeleteSchema = z.object({
