@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Plus, Trash2, Send, Search, UserCheck, Mail, Clock, CheckCircle, XCircle, RefreshCw, Loader2 } from 'lucide-react'
 
-type EinladungRolle = 'buerger' | 'verein' | 'organisation' | 'gewerbe'
+type EinladungRolle = 'buerger' | 'verein' | 'organisation' | 'gewerbe' | 'gemeinderat'
 type EinladungStatus = 'offen' | 'angenommen' | 'abgelaufen' | 'widerrufen'
 
 const ROLLEN: { value: EinladungRolle; label: string }[] = [
@@ -12,6 +12,7 @@ const ROLLEN: { value: EinladungRolle; label: string }[] = [
   { value: 'verein',       label: 'Vereinsverantwortliche:r' },
   { value: 'organisation', label: 'Organisationsverantwortliche:r' },
   { value: 'gewerbe',      label: 'Gewerbetreibende:r' },
+  { value: 'gemeinderat',  label: 'Gemeinderat/rätin' },
 ]
 
 const ROLLEN_LABEL: Record<string, string> = Object.fromEntries(ROLLEN.map(r => [r.value, r.label]))

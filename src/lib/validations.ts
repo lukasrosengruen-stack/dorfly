@@ -266,7 +266,7 @@ export const vereinAbonnierenSchema = z.object({
 
 // ── Rollenverwaltung ──────────────────────────────────────────────────────────
 
-const einladungRolle = z.enum(['buerger', 'verein', 'organisation', 'gewerbe'])
+const einladungRolle = z.enum(['buerger', 'verein', 'organisation', 'gewerbe', 'gemeinderat'])
 
 export const einladungenSendenSchema = z.object({
   einladungen: z

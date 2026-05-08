@@ -7,6 +7,7 @@ const ROLLEN_LABEL: Record<string, string> = {
   verein: 'Vereinsverantwortliche:r',
   organisation: 'Organisationsverantwortliche:r',
   gewerbe: 'Gewerbetreibende:r',
+  gemeinderat: 'Gemeinderat/rätin',
 }
 
 function resend() {
