@@ -67,7 +67,7 @@ export type AbfallkalenderPraeferenz  = Row<'abfallkalender_praeferenzen'>
 export type Einladung    = Row<'einladungen'>
 export type RollenLog    = Row<'rollen_log'>
 
-export type EinladungRolle  = 'buerger' | 'verein' | 'organisation' | 'gewerbe'
+export type EinladungRolle  = 'buerger' | 'verein' | 'organisation' | 'gewerbe' | 'gemeinderat'
 export type EinladungStatus = 'offen' | 'angenommen' | 'abgelaufen' | 'widerrufen'
 
 export type EinladungMitEinlader = Einladung & {

@@ -998,7 +998,7 @@ export interface Database {
           id: string
           gemeinde_id: string
           email: string
-          rolle: 'buerger' | 'verein' | 'organisation' | 'gewerbe'
+          rolle: 'buerger' | 'verein' | 'organisation' | 'gewerbe' | 'gemeinderat'
           organisation_name: string | null
           verein_id: string | null
           org_id: string | null
@@ -1014,7 +1014,7 @@ export interface Database {
           id?: string
           gemeinde_id: string
           email: string
-          rolle: 'buerger' | 'verein' | 'organisation' | 'gewerbe'
+          rolle: 'buerger' | 'verein' | 'organisation' | 'gewerbe' | 'gemeinderat'
           organisation_name?: string | null
           verein_id?: string | null
           org_id?: string | null
