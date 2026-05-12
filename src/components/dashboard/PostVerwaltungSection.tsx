@@ -7,6 +7,7 @@ import { Pencil, Trash2, Loader2, X, ImagePlus, Newspaper, CalendarClock } from 
 import { RichTextEditor } from '@/lib/richText'
 import { createClient } from '@/lib/supabase/client'
 import { clsx } from 'clsx'
+import PostErstellenButton from './PostErstellenButton'
 
 const TAGS = ['nachricht', 'veranstaltung', 'bekanntmachung'] as const
 const TAG_LABELS = { nachricht: 'Nachricht', veranstaltung: 'Veranstaltung', bekanntmachung: 'Bekanntmachung' }
@@ -28,6 +29,10 @@ interface Post {
 
 interface Props {
   posts: Post[]
+  gemeindeId: string
+  profileId: string
+  canPin?: boolean
+  canPush?: boolean
 }
 
 type FormState = {
@@ -57,7 +62,7 @@ function getChannelKey(post: Post): string {
   return post.channel
 }
 
-export default function PostVerwaltungSection({ posts: initialPosts }: Props) {
+export default function PostVerwaltungSection({ posts: initialPosts, gemeindeId, profileId, canPin = false, canPush = false }: Props) {
   const [posts, setPosts] = useState(initialPosts)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -152,8 +157,9 @@ export default function PostVerwaltungSection({ posts: initialPosts }: Props) {
         <h2 className="font-bold text-gray-900 flex items-center gap-2">
           <Newspaper className="w-4 h-4 text-primary-500" />
           Beiträge verwalten
+          <span className="text-xs text-gray-400 font-normal">({posts.length})</span>
         </h2>
-        <span className="text-xs text-gray-400">{posts.length} Beiträge</span>
+        <PostErstellenButton gemeindeId={gemeindeId} profileId={profileId} defaultChannel="gemeinde" canPin={canPin} canPush={canPush} />
       </div>
 
       {/* Edit-Formular */}

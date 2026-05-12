@@ -1,16 +1,15 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { BarChart2, Star, Users, Home, TrendingUp, AlertTriangle, Clock, MessageCircleQuestion } from 'lucide-react'
+import { Users, Home, TrendingUp, AlertTriangle, Clock, MessageCircleQuestion } from 'lucide-react'
 import { FrageErgebnis } from '@/types/umfrage'
 import AbfallkalenderSection from '@/components/dashboard/AbfallkalenderSection'
 import EinladungenSection from '@/components/dashboard/EinladungenSection'
 import GemeindeEinstellungen from '@/components/dashboard/GemeindeEinstellungen'
 import PostFreigabe from '@/components/dashboard/PostFreigabe'
-import PostErstellenButton from '@/components/dashboard/PostErstellenButton'
 import PostVerwaltungSection from '@/components/dashboard/PostVerwaltungSection'
 import BuergerfrageSection from '@/components/dashboard/BuergerfrageSection'
 import MaengelSection from '@/components/dashboard/MaengelSection'
-import UmfrageErstellenButton from '@/components/dashboard/UmfrageErstellenButton'
+import UmfragenSection from '@/components/dashboard/UmfragenSection'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -208,9 +207,6 @@ export default async function DashboardPage() {
                 initialHaushalte={gemeinde?.haushalte ?? null}
               />
             )}
-            {gemeindeId && user && (
-              <PostErstellenButton gemeindeId={gemeindeId} profileId={user.id} defaultChannel="gemeinde" canPin={['verwaltung', 'super_admin'].includes(profile.role)} canPush={['verwaltung', 'super_admin'].includes(profile.role)} />
-            )}
           </div>
         </div>
       </div>
@@ -230,117 +226,40 @@ export default async function DashboardPage() {
         {/* Beiträge zur Freigabe */}
         <PostFreigabe pendingPosts={pendingPosts as unknown as Parameters<typeof PostFreigabe>[0]['pendingPosts']} />
 
-        {/* Hauptinhalt: 3 Spalten auf großen Screens */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Hauptinhalt */}
+        <div className="space-y-6">
 
-          {/* Linke 2 Spalten: Mängel + Fragen + Beiträge */}
-          <div className="lg:col-span-2 space-y-6">
+          <MaengelSection
+            maengel={maengel as unknown as Parameters<typeof MaengelSection>[0]['maengel']}
+            offeneMaengel={offeneMaengel}
+            inBearbeitung={inBearbeitung}
+            erledigteMaengel={erledigteMaengel}
+          />
 
-            <MaengelSection
-              maengel={maengel as unknown as Parameters<typeof MaengelSection>[0]['maengel']}
-              offeneMaengel={offeneMaengel}
-              inBearbeitung={inBearbeitung}
-              erledigteMaengel={erledigteMaengel}
+          <BuergerfrageSection fragen={fragen as unknown as Parameters<typeof BuergerfrageSection>[0]['fragen']} />
+
+          {wasteFeatureAktiv && (
+            <AbfallkalenderSection einstellungen={abfallEinstellungen} />
+          )}
+
+          {gemeindeId && user && (
+            <PostVerwaltungSection
+              posts={posts as unknown as Parameters<typeof PostVerwaltungSection>[0]['posts']}
+              gemeindeId={gemeindeId}
+              profileId={user.id}
+              canPin={['verwaltung', 'super_admin'].includes(profile.role)}
+              canPush={['verwaltung', 'super_admin'].includes(profile.role)}
             />
+          )}
 
-            <BuergerfrageSection fragen={fragen as unknown as Parameters<typeof BuergerfrageSection>[0]['fragen']} />
+          {gemeindeId && (
+            <UmfragenSection
+              umfragen={umfragenMitErgebnissen as unknown as Parameters<typeof UmfragenSection>[0]['umfragen']}
+              gemeindeId={gemeindeId}
+              haushalte={gemeinde?.haushalte ?? null}
+            />
+          )}
 
-            {wasteFeatureAktiv && (
-              <AbfallkalenderSection einstellungen={abfallEinstellungen} />
-            )}
-
-            <PostVerwaltungSection posts={posts as unknown as Parameters<typeof PostVerwaltungSection>[0]['posts']} />
-          </div>
-
-          {/* Rechte Spalte: Umfragen */}
-          <div className="space-y-6">
-            <section>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-bold text-gray-900 flex items-center gap-2">
-                  <BarChart2 className="w-4 h-4 text-primary-500" />
-                  Umfragen
-                </h2>
-                {gemeindeId && <UmfrageErstellenButton gemeindeId={gemeindeId} />}
-              </div>
-
-              {umfragenMitErgebnissen.length === 0 && (
-                <div className="bg-white rounded-2xl shadow-sm px-5 py-8 text-center text-gray-400 text-sm">
-                  Noch keine Umfragen erstellt
-                </div>
-              )}
-
-              <div className="space-y-5">
-                {umfragenMitErgebnissen.map(({ umfrage, ergebnisse, teilnehmer }) => {
-                  const abgelaufen = new Date(umfrage.enddatum) < new Date()
-                  const beteiligung = gemeinde?.haushalte
-                    ? Math.min(100, Math.round((teilnehmer / gemeinde.haushalte) * 100))
-                    : null
-
-                  return (
-                    <div key={umfrage.id} className="bg-white rounded-2xl shadow-sm p-5 space-y-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-gray-900 truncate">{umfrage.titel}</h3>
-                          <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
-                            <span>{teilnehmer} Teilnehmer</span>
-                            {beteiligung !== null && <span className="text-primary-500 font-medium">{beteiligung}% der Haushalte</span>}
-                            <span>{new Date(umfrage.enddatum).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
-                          </div>
-                        </div>
-                        <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 font-medium ${abgelaufen ? 'bg-gray-100 text-gray-500' : 'bg-primary-100 text-primary-600'}`}>
-                          {abgelaufen ? 'Beendet' : 'Aktiv'}
-                        </span>
-                      </div>
-
-                      {ergebnisse.map(ergebnis => (
-                        <div key={ergebnis.frage_id} className="border-t border-gray-100 pt-3">
-                          <p className="text-xs font-semibold text-gray-700 mb-2">{ergebnis.frage_text}</p>
-
-                          {ergebnis.typ === 'bewertung' ? (
-                            <div className="space-y-1.5">
-                              <div className="flex items-center gap-2">
-                                <div className="flex gap-0.5">
-                                  {[1,2,3,4,5].map(i => (
-                                    <Star key={i} className={`w-3.5 h-3.5 ${i <= Math.round(ergebnis.durchschnitt ?? 0) ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />
-                                  ))}
-                                </div>
-                                <span className="text-sm font-bold text-gray-700">{ergebnis.durchschnitt?.toFixed(1)} / 5</span>
-                                <span className="text-xs text-gray-400">({ergebnis.gesamt_antworten} Antworten)</span>
-                              </div>
-                              {ergebnis.optionen.map(o => (
-                                <div key={o.label} className="flex items-center gap-2">
-                                  <span className="text-xs text-gray-500 w-4">{o.label}</span>
-                                  <div className="flex-1 bg-gray-100 rounded-full h-1.5">
-                                    <div className="bg-amber-400 h-1.5 rounded-full transition-all" style={{ width: `${o.prozent}%` }} />
-                                  </div>
-                                  <span className="text-xs text-gray-500 w-8 text-right">{o.prozent}%</span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="space-y-1.5">
-                              {ergebnis.optionen.map(o => (
-                                <div key={o.label}>
-                                  <div className="flex justify-between text-xs mb-0.5">
-                                    <span className="text-gray-700">{o.label}</span>
-                                    <span className="text-gray-400">{o.anzahl} ({o.prozent}%)</span>
-                                  </div>
-                                  <div className="bg-gray-100 rounded-full h-2">
-                                    <div className="bg-primary-500 h-2 rounded-full transition-all" style={{ width: `${o.prozent}%` }} />
-                                  </div>
-                                </div>
-                              ))}
-                              <p className="text-xs text-gray-400 pt-0.5">{ergebnis.gesamt_antworten} Antworten gesamt</p>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )
-                })}
-              </div>
-            </section>
-          </div>
         </div>
 
         {/* Nutzer & Rollen */}
