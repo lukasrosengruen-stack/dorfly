@@ -91,8 +91,16 @@ export default function LoginPage() {
     setLoading(true)
     try {
       if (mode === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user?.id ?? '')
+          .single()
+        router.push(profile?.role === 'super_admin' ? '/admin/dashboard' : '/home')
+        router.refresh()
+        return
       } else {
         const { data, error } = await supabase.auth.signUp({ email, password })
         if (error) throw error
@@ -112,8 +120,6 @@ export default function LoginPage() {
         setRegistered(true)
         return
       }
-      router.push('/home')
-      router.refresh()
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Fehler'
       if (msg.includes('Invalid login')) setError('E-Mail oder Passwort falsch')
