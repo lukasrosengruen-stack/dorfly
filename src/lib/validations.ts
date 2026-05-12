@@ -267,13 +267,15 @@ export const vereinAbonnierenSchema = z.object({
 // ── Rollenverwaltung ──────────────────────────────────────────────────────────
 
 const einladungRolle = z.enum(['buerger', 'verein', 'organisation', 'gewerbe', 'gemeinderat'])
+const einladungRolleMitVerwaltung = z.enum(['buerger', 'verein', 'organisation', 'gewerbe', 'gemeinderat', 'verwaltung'])
 
 export const einladungenSendenSchema = z.object({
+  gemeinde_id: z.string().uuid().optional(),
   einladungen: z
     .array(
       z.object({
         email: z.email('Ungültige E-Mail'),
-        rolle: einladungRolle,
+        rolle: einladungRolleMitVerwaltung,
         organisation_name: z.string().max(200).optional(),
         hinweis: z.string().max(500).optional(),
         verein_id: uuid.optional(),
@@ -285,8 +287,9 @@ export const einladungenSendenSchema = z.object({
 })
 
 export const rolleZuweisenSchema = z.object({
+  gemeinde_id: z.string().uuid().optional(),
   email: z.email('Ungültige E-Mail'),
-  neueRolle: einladungRolle,
+  neueRolle: einladungRolleMitVerwaltung,
   organisation_name: z.string().max(200).optional(),
   verein_id: uuid.optional(),
   org_id: uuid.optional(),

@@ -8,16 +8,14 @@ export const DELETE = withAuth(
   async (req: NextRequest, { profile }) => {
     const id = req.nextUrl.pathname.split('/').at(-1)
     if (!id) return apiError('ID fehlt', 400)
-    if (!profile.gemeinde_id) return apiError('Keine Gemeinde zugewiesen', 400)
 
     const supabase = await createServiceClient()
 
-    const { data: einladung } = await supabase
-      .from('einladungen')
-      .select('id, status, email, rolle')
-      .eq('id', id)
-      .eq('gemeinde_id', profile.gemeinde_id)
-      .single()
+    const gemeindeFilter = profile.role === 'super_admin'
+      ? supabase.from('einladungen').select('id, status, email, rolle, gemeinde_id').eq('id', id).single()
+      : supabase.from('einladungen').select('id, status, email, rolle, gemeinde_id').eq('id', id).eq('gemeinde_id', profile.gemeinde_id!).single()
+
+    const { data: einladung } = await gemeindeFilter
 
     if (!einladung) return apiError('Einladung nicht gefunden', 404)
     if (einladung.status !== 'offen') return apiError('Nur offene Einladungen können widerrufen werden', 400)
@@ -30,7 +28,7 @@ export const DELETE = withAuth(
     if (error) return apiError(error.message)
 
     await supabase.from('rollen_log').insert({
-      gemeinde_id: profile.gemeinde_id,
+      gemeinde_id: einladung.gemeinde_id,
       aktion: 'widerrufen',
       ziel_email: einladung.email,
       alte_rolle: einladung.rolle,
@@ -48,16 +46,14 @@ export const POST = withAuth(
   async (req: NextRequest, { profile }) => {
     const id = req.nextUrl.pathname.split('/').at(-1)
     if (!id) return apiError('ID fehlt', 400)
-    if (!profile.gemeinde_id) return apiError('Keine Gemeinde zugewiesen', 400)
 
     const supabase = await createServiceClient()
 
-    const { data: einladung } = await supabase
-      .from('einladungen')
-      .select('*')
-      .eq('id', id)
-      .eq('gemeinde_id', profile.gemeinde_id)
-      .single()
+    const einladungQuery = profile.role === 'super_admin'
+      ? supabase.from('einladungen').select('*').eq('id', id).single()
+      : supabase.from('einladungen').select('*').eq('id', id).eq('gemeinde_id', profile.gemeinde_id!).single()
+
+    const { data: einladung } = await einladungQuery
 
     if (!einladung) return apiError('Einladung nicht gefunden', 404)
     if (einladung.status === 'angenommen') return apiError('Einladung bereits angenommen', 400)
@@ -72,7 +68,7 @@ export const POST = withAuth(
     const { data: gemeinde } = await supabase
       .from('gemeinden')
       .select('name')
-      .eq('id', profile.gemeinde_id)
+      .eq('id', einladung.gemeinde_id)
       .single()
 
     const { error: mailError } = await sendeEinladungsEmail({

@@ -7,7 +7,11 @@ export const GET = withAuth(
   async (req: NextRequest, { profile }) => {
     const email = req.nextUrl.searchParams.get('email')?.toLowerCase().trim()
     if (!email) return apiError('E-Mail fehlt', 400)
-    if (!profile.gemeinde_id) return apiError('Keine Gemeinde zugewiesen', 400)
+    const queryGemeindeId = req.nextUrl.searchParams.get('gemeinde_id')
+    const gemeindeId = (profile.role === 'super_admin' && queryGemeindeId)
+      ? queryGemeindeId
+      : profile.gemeinde_id
+    if (!gemeindeId) return apiError('Keine Gemeinde zugewiesen', 400)
 
     const supabase = await createServiceClient()
 
@@ -27,7 +31,7 @@ export const GET = withAuth(
       .from('profiles')
       .select('id, display_name, vorname, nachname, role, gemeinde_id, created_at')
       .eq('id', authUser.id)
-      .eq('gemeinde_id', profile.gemeinde_id)
+      .eq('gemeinde_id', gemeindeId)
       .single()
 
     if (!nutzerProfil) return NextResponse.json({ nutzer: null, grund: 'andere_gemeinde' })

@@ -8,6 +8,7 @@ import HealthScoreCard from './HealthScoreCard'
 import KpiKacheln from './KpiKacheln'
 import RollenTabelle from './RollenTabelle'
 import ProduzentenTab from './ProduzentenTab'
+import AdminEinladungSection from './AdminEinladungSection'
 
 export default function AdminDashboardClient({ data }: { data: DashboardData }) {
   const router = useRouter()
@@ -112,6 +113,9 @@ export default function AdminDashboardClient({ data }: { data: DashboardData }) 
             ))}
           </div>
         </div>
+
+        {/* Einladungen */}
+        <AdminEinladungSection gemeinden={data.gemeinden} />
 
       </div>
     </div>

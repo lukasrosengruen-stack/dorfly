@@ -10,14 +10,23 @@ export const POST = withAuth(
     const v = validate(einladungenSendenSchema, body)
     if (!v.success) return v.error
 
-    if (!profile.gemeinde_id) return apiError('Keine Gemeinde zugewiesen', 400)
+    const gemeindeId = (profile.role === 'super_admin' && v.data.gemeinde_id)
+      ? v.data.gemeinde_id
+      : profile.gemeinde_id
+    if (!gemeindeId) return apiError('Keine Gemeinde zugewiesen', 400)
+
+    for (const einladung of v.data.einladungen) {
+      if (einladung.rolle === 'verwaltung' && profile.role !== 'super_admin') {
+        return apiError('Nur Super-Admins können Verwaltungs-Rollen vergeben', 403)
+      }
+    }
 
     const supabase = await createServiceClient()
 
     const { data: gemeinde } = await supabase
       .from('gemeinden')
       .select('name')
-      .eq('id', profile.gemeinde_id)
+      .eq('id', gemeindeId)
       .single()
 
     if (!gemeinde) return apiError('Gemeinde nicht gefunden', 404)
@@ -30,13 +39,13 @@ export const POST = withAuth(
         .from('einladungen')
         .update({ status: 'widerrufen' })
         .eq('email', einladung.email.toLowerCase())
-        .eq('gemeinde_id', profile.gemeinde_id)
+        .eq('gemeinde_id', gemeindeId)
         .eq('status', 'offen')
 
       const { data: neu, error } = await supabase
         .from('einladungen')
         .insert({
-          gemeinde_id: profile.gemeinde_id,
+          gemeinde_id: gemeindeId,
           email: einladung.email.toLowerCase(),
           rolle: einladung.rolle,
           organisation_name: einladung.organisation_name ?? null,
@@ -55,7 +64,7 @@ export const POST = withAuth(
 
       // Audit-Log
       await supabase.from('rollen_log').insert({
-        gemeinde_id: profile.gemeinde_id,
+        gemeinde_id: gemeindeId,
         aktion: 'eingeladen',
         ziel_email: einladung.email.toLowerCase(),
         neue_rolle: einladung.rolle,
@@ -85,8 +94,12 @@ export const POST = withAuth(
 )
 
 export const GET = withAuth(
-  async (_req: NextRequest, { profile }) => {
-    if (!profile.gemeinde_id) return apiError('Keine Gemeinde zugewiesen', 400)
+  async (req: NextRequest, { profile }) => {
+    const queryGemeindeId = req.nextUrl.searchParams.get('gemeinde_id')
+    const gemeindeId = (profile.role === 'super_admin' && queryGemeindeId)
+      ? queryGemeindeId
+      : profile.gemeinde_id
+    if (!gemeindeId) return apiError('Keine Gemeinde zugewiesen', 400)
 
     const supabase = await createServiceClient()
 
@@ -96,7 +109,7 @@ export const GET = withAuth(
     const { data, error } = await supabase
       .from('einladungen')
       .select('*, eingeladen_von_profil:profiles!eingeladen_von(display_name)')
-      .eq('gemeinde_id', profile.gemeinde_id)
+      .eq('gemeinde_id', gemeindeId)
       .order('erstellt_am', { ascending: false })
       .limit(200)
 

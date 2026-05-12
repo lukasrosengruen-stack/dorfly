@@ -12,7 +12,14 @@ export const PATCH = withAuth(
     const v = validate(rolleZuweisenSchema, body)
     if (!v.success) return v.error
 
-    if (!profile.gemeinde_id) return apiError('Keine Gemeinde zugewiesen', 400)
+    const gemeindeId = (profile.role === 'super_admin' && v.data.gemeinde_id)
+      ? v.data.gemeinde_id
+      : gemeindeId
+    if (!gemeindeId) return apiError('Keine Gemeinde zugewiesen', 400)
+
+    if (v.data.neueRolle === 'verwaltung' && profile.role !== 'super_admin') {
+      return apiError('Nur Super-Admins können die Verwaltungs-Rolle vergeben', 403)
+    }
 
     const { email, neueRolle, organisation_name, verein_id, org_id } = v.data
     const supabase = await createServiceClient()
@@ -31,7 +38,7 @@ export const PATCH = withAuth(
       .from('profiles')
       .select('id, display_name, role, gemeinde_id')
       .eq('id', authUser.id)
-      .eq('gemeinde_id', profile.gemeinde_id)
+      .eq('gemeinde_id', gemeindeId)
       .single()
 
     if (!zielProfil) return apiError('Nutzer gehört nicht zu dieser Gemeinde', 404)
@@ -40,7 +47,7 @@ export const PATCH = withAuth(
     const { data: gemeinde } = await supabase
       .from('gemeinden')
       .select('name')
-      .eq('id', profile.gemeinde_id)
+      .eq('id', gemeindeId)
       .single()
 
     const alteRolle = zielProfil.role
@@ -53,7 +60,7 @@ export const PATCH = withAuth(
         .from('vereine')
         .select('profile_id, verein_name, profiles!inner(id, display_name, role)')
         .eq('id', verein_id)
-        .eq('gemeinde_id', profile.gemeinde_id)
+        .eq('gemeinde_id', gemeindeId)
         .single()
 
       if (alterVerein?.profile_id && alterVerein.profile_id !== zielProfil.id) {
@@ -71,7 +78,7 @@ export const PATCH = withAuth(
             })
           }
           await supabase.from('rollen_log').insert({
-            gemeinde_id: profile.gemeinde_id,
+            gemeinde_id: gemeindeId,
             aktion: 'rolle_transfer',
             ziel_profile_id: alterVerein.profile_id,
             ziel_email: alterAuthUser?.user?.email ?? '',
@@ -90,7 +97,7 @@ export const PATCH = withAuth(
         .from('organisationen')
         .select('profile_id, name, profiles!inner(id, display_name, role)')
         .eq('id', org_id)
-        .eq('gemeinde_id', profile.gemeinde_id)
+        .eq('gemeinde_id', gemeindeId)
         .single()
 
       if (alteOrg?.profile_id && alteOrg.profile_id !== zielProfil.id) {
@@ -108,7 +115,7 @@ export const PATCH = withAuth(
             })
           }
           await supabase.from('rollen_log').insert({
-            gemeinde_id: profile.gemeinde_id,
+            gemeinde_id: gemeindeId,
             aktion: 'rolle_transfer',
             ziel_profile_id: alteOrg.profile_id,
             ziel_email: alterAuthUser?.user?.email ?? '',
@@ -125,14 +132,14 @@ export const PATCH = withAuth(
     } else if (neueRolle === 'verein' && organisation_name) {
       await supabase.from('vereine').insert({
         profile_id: zielProfil.id,
-        gemeinde_id: profile.gemeinde_id,
+        gemeinde_id: gemeindeId,
         verein_name: organisation_name,
         typ: 'verein',
       })
     } else if (['organisation', 'gewerbe'].includes(neueRolle) && organisation_name) {
       await supabase.from('organisationen').insert({
         profile_id: zielProfil.id,
-        gemeinde_id: profile.gemeinde_id,
+        gemeinde_id: gemeindeId,
         name: organisation_name,
         typ: neueRolle as 'gewerbe' | 'verein' | 'institution',
       })
@@ -151,12 +158,12 @@ export const PATCH = withAuth(
       .from('einladungen')
       .update({ status: 'widerrufen' })
       .eq('email', email.toLowerCase())
-      .eq('gemeinde_id', profile.gemeinde_id)
+      .eq('gemeinde_id', gemeindeId)
       .eq('status', 'offen')
 
     // Audit-Log für den Ziel-Nutzer
     await supabase.from('rollen_log').insert({
-      gemeinde_id: profile.gemeinde_id,
+      gemeinde_id: gemeindeId,
       aktion: alteRolle !== 'buerger' ? 'rolle_transfer' : 'rolle_gesetzt',
       ziel_profile_id: zielProfil.id,
       ziel_email: email.toLowerCase(),
