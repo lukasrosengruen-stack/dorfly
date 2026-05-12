@@ -14,7 +14,7 @@ export const PATCH = withAuth(
 
     const gemeindeId = (profile.role === 'super_admin' && v.data.gemeinde_id)
       ? v.data.gemeinde_id
-      : gemeindeId
+      : profile.gemeinde_id
     if (!gemeindeId) return apiError('Keine Gemeinde zugewiesen', 400)
 
     if (v.data.neueRolle === 'verwaltung' && profile.role !== 'super_admin') {
