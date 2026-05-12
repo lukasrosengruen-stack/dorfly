@@ -238,10 +238,6 @@ export default async function DashboardPage() {
 
           <BuergerfrageSection fragen={fragen as unknown as Parameters<typeof BuergerfrageSection>[0]['fragen']} />
 
-          {wasteFeatureAktiv && (
-            <AbfallkalenderSection einstellungen={abfallEinstellungen} />
-          )}
-
           {gemeindeId && user && (
             <PostVerwaltungSection
               posts={posts as unknown as Parameters<typeof PostVerwaltungSection>[0]['posts']}
@@ -258,6 +254,10 @@ export default async function DashboardPage() {
               gemeindeId={gemeindeId}
               haushalte={gemeinde?.haushalte ?? null}
             />
+          )}
+
+          {wasteFeatureAktiv && (
+            <AbfallkalenderSection einstellungen={abfallEinstellungen} />
           )}
 
         </div>
