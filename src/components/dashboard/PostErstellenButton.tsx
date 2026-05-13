@@ -81,7 +81,7 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
         })
         if (!res.ok) throw new Error('API error')
       } else {
-        const { data: newPost, error } = await supabase.from('posts').insert({
+        const { error } = await supabase.from('posts').insert({
           gemeinde_id: gemeindeId, author_id: profileId,
           channel: form.channel, titel: form.titel, inhalt: form.inhalt,
           tag: form.tag, status: 'published', pinned: form.pinned,
@@ -125,18 +125,20 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
               <button onClick={reset}><X className="w-5 h-5 text-gray-400" /></button>
             </div>
             <div className="p-6 space-y-4">
-              <div>
-                <p className="text-xs font-bold text-gray-500 mb-2 uppercase">Kategorie</p>
-                <div className="flex gap-2 flex-wrap">
-                  {TAGS.map(tag => (
-                    <button key={tag} onClick={() => setForm(f => ({ ...f, tag }))}
-                      className={clsx('px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-colors',
-                        form.tag === tag ? 'border-primary-500 bg-primary-50 text-primary-600' : 'border-gray-200 text-gray-500')}>
-                      {TAG_LABELS[tag]}
-                    </button>
-                  ))}
+              {defaultChannel !== 'gemeinderat' && (
+                <div>
+                  <p className="text-xs font-bold text-gray-500 mb-2 uppercase">Kategorie</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {TAGS.map(tag => (
+                      <button key={tag} onClick={() => setForm(f => ({ ...f, tag }))}
+                        className={clsx('px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-colors',
+                          form.tag === tag ? 'border-primary-500 bg-primary-50 text-primary-600' : 'border-gray-200 text-gray-500')}>
+                        {TAG_LABELS[tag]}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
               <input type="text" placeholder="Titel" value={form.titel}
                 onChange={e => setForm(f => ({ ...f, titel: e.target.value }))}
                 className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 font-bold" />

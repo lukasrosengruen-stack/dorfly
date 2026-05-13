@@ -1,4 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Dorfly
+
+Kommunale Bürger-App für deutsche Gemeinden. Gebaut mit Next.js 16, Supabase und TypeScript.
+
+---
+
+## Datenbankkonventionen (Supabase)
+
+**Jede neue Migration muss explizite GRANTs enthalten.** Ab Oktober 2026 vergibt Supabase keine automatischen Grants mehr auf `public`-Tabellen — ohne expliziten GRANT gibt PostgREST einen `42501`-Fehler zurück und die Tabelle ist über `supabase-js` unsichtbar.
+
+### Template für neue Migrations
+
+```sql
+-- Tabelle anlegen
+create table public.meine_tabelle (
+  id uuid primary key default gen_random_uuid(),
+  -- ...
+);
+
+-- RLS aktivieren
+alter table public.meine_tabelle enable row level security;
+
+-- GRANTs (immer explizit angeben)
+-- Nur anon hinzufügen wenn die Tabelle wirklich ohne Login erreichbar sein soll
+grant select on public.meine_tabelle to anon;                          -- optional
+grant select, insert, update, delete on public.meine_tabelle to authenticated;
+
+-- RLS-Policies
+create policy "..." on public.meine_tabelle for select using (...);
+-- ...
+```
+
+### Wann welche Rolle?
+
+| Rolle | Wann |
+|---|---|
+| `anon` | Nur wenn die Tabelle ohne Login erreichbar sein muss (z.B. gemeinden für Slug-Routing, posts für OG-Sharing) |
+| `authenticated` | Alle Tabellen die im eingeloggten Bereich genutzt werden |
+| `service_role` | Kein expliziter Grant nötig — service_role umgeht RLS und hat immer Zugriff |
+
+### Bestehende Grants
+
+Alle bestehenden Tabellen sind in [supabase/migrations/012_explicit_grants.sql](supabase/migrations/012_explicit_grants.sql) abgedeckt.
+
+> **Hinweis:** Die `einladungen`-Tabelle wurde manuell im Supabase-Dashboard angelegt und fehlt noch als Migration. Sie wird ausschließlich über `service_role` in API-Routen zugegriffen — kein Client-GRANT nötig.
+
+---
 
 ## Getting Started
 
