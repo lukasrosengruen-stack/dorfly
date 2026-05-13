@@ -44,11 +44,12 @@ interface Props {
   raete: Rat[]
   meineFragen: MeineFrage[]
   profileId: string
+  profileDisplayName: string | null
   gemeindeId: string
   gemeindeName: string
 }
 
-export default function GemeinderatClient({ posts, raete, meineFragen, profileId, gemeindeId, gemeindeName }: Props) {
+export default function GemeinderatClient({ posts, raete, meineFragen, gemeindeId, gemeindeName, profileDisplayName }: Props) {
   const [activeTab, setActiveTab] = useState<'beitraege' | 'raete' | 'meine-fragen'>('beitraege')
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [selectedRat, setSelectedRat] = useState<Rat | null>(null)
@@ -66,7 +67,7 @@ export default function GemeinderatClient({ posts, raete, meineFragen, profileId
   const [sent, setSent] = useState<string | null>(null)
 
   async function sendFrage() {
-    if (!frage.trim() || !selectedRat) return
+    if (!frage.trim() || !selectedRat || !profileDisplayName) return
     setSending(true)
     const res = await fetch('/api/gemeinderat/frage', {
       method: 'POST',
@@ -317,6 +318,11 @@ export default function GemeinderatClient({ posts, raete, meineFragen, profileId
               <div className="bg-primary-50 rounded-xl px-3 py-2 text-xs text-primary-700 font-medium">
                 🔒 Diese Frage ist privat — nur du und der Gemeinderat sehen sie.
               </div>
+              {!profileDisplayName && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 text-sm text-amber-700">
+                  Bitte fülle zuerst deinen <Link href="/profil" className="font-bold underline">Namen im Profil</Link> aus, bevor du eine Frage stellst.
+                </div>
+              )}
               <textarea
                 value={frage}
                 onChange={e => setFrage(e.target.value)}
@@ -326,7 +332,7 @@ export default function GemeinderatClient({ posts, raete, meineFragen, profileId
               />
               <button
                 onClick={sendFrage}
-                disabled={sending || !frage.trim()}
+                disabled={sending || !frage.trim() || !profileDisplayName}
                 className="w-full bg-primary-500 text-white font-bold py-3 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2">
                 {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 Frage absenden

@@ -9,7 +9,7 @@ export default async function GemeinderatPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, role, gemeinde_id, gemeinden(name)')
+    .select('id, role, gemeinde_id, display_name, gemeinden(name)')
     .eq('id', user.id)
     .single()
 
@@ -45,6 +45,7 @@ export default async function GemeinderatPage() {
       raete={raeteResult.data ?? []}
       meineFragen={(fragenResult.data ?? []) as unknown as Parameters<typeof GemeinderatClient>[0]['meineFragen']}
       profileId={user.id}
+      profileDisplayName={profile?.display_name ?? null}
       gemeindeId={gemeindeId}
       gemeindeName={(profile?.gemeinden as unknown as { name: string } | null)?.name ?? 'Ehningen'}
     />

@@ -110,6 +110,11 @@ export default function BuergermeisterClient({ fragen: initialFragen, profile }:
         ) : (
           <div className="bg-white rounded-2xl shadow-sm p-4 space-y-3">
             <h3 className="font-semibold text-gray-900">Deine Frage</h3>
+            {!profile?.display_name && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 text-sm text-amber-700">
+                Bitte fülle zuerst deinen <Link href="/profil" className="font-bold underline">Namen im Profil</Link> aus, bevor du eine Frage stellst.
+              </div>
+            )}
             <textarea
               placeholder="Was möchtest du wissen?"
               value={frageText}
@@ -151,7 +156,7 @@ export default function BuergermeisterClient({ fragen: initialFragen, profile }:
               </button>
               <button
                 onClick={submitFrage}
-                disabled={loading || !frageText.trim()}
+                disabled={loading || !frageText.trim() || !profile?.display_name}
                 className="flex-1 bg-primary-500 text-white py-2.5 rounded-xl text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {loading && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -198,7 +203,7 @@ export default function BuergermeisterClient({ fragen: initialFragen, profile }:
                       {f.frage}
                     </p>
                     <p className="text-xs text-gray-400 mt-1">
-                      {f.profiles?.display_name ?? 'Bürger'} · {formatDistanceToNow(new Date(f.created_at), { addSuffix: true, locale: de })}
+                      {canAnswer ? (f.profiles?.display_name ?? 'Bürger') : 'Bürger'} · {formatDistanceToNow(new Date(f.created_at), { addSuffix: true, locale: de })}
                     </p>
                   </div>
                   {expanded ? <ChevronUp className="w-4 h-4 text-gray-400 shrink-0 mt-1" /> : <ChevronDown className="w-4 h-4 text-gray-400 shrink-0 mt-1" />}

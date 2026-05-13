@@ -12,6 +12,7 @@ interface Frage {
   status: string
   created_at: string
   antwort?: string | null
+  profiles?: { display_name: string | null } | null
 }
 
 export default function BuergerfrageSection({ fragen: initialFragen }: { fragen: Frage[] }) {
@@ -110,7 +111,10 @@ export default function BuergerfrageSection({ fragen: initialFragen }: { fragen:
 
               {expanded && (
                 <div className="px-5 pb-4 space-y-2 bg-gray-50">
-                  <p className="text-sm text-gray-700 pt-2 italic">„{f.frage}"</p>
+                  {f.profiles?.display_name && (
+                    <p className="text-xs text-gray-400 pt-2">Von: <span className="font-medium text-gray-600">{f.profiles.display_name}</span></p>
+                  )}
+                  <p className="text-sm text-gray-700 pt-1 italic">„{f.frage}"</p>
                   {f.antwort && !isEditing ? (
                     <div className="bg-primary-50 rounded-xl p-3 border border-primary-100">
                       <div className="flex items-center justify-between mb-1">
