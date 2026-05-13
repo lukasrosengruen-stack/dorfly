@@ -57,6 +57,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
   const [deleting, setDeleting] = useState<string | null>(null)
   const [bildFiles, setBildFiles] = useState<File[]>([])
   const [bildPreviews, setBildPreviews] = useState<string[]>([])
+  const [bildrechteBestaetigt, setBildrechteBestaetigt] = useState(false)
   const [form, setForm] = useState<FormState>(emptyForm)
   const supabase = createClient()
 
@@ -92,7 +93,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
   function openNew() {
     setEditingId(null)
     setForm(emptyForm)
-    setBildFiles([]); setBildPreviews([])
+    setBildFiles([]); setBildPreviews([]); setBildrechteBestaetigt(false)
     setShowNewForm(true)
   }
 
@@ -107,7 +108,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
       scheduled_date: hasFutureSchedule ? post.publish_at!.split('T')[0] : '',
       scheduled_time: hasFutureSchedule ? (post.publish_at!.split('T')[1]?.slice(0, 5) ?? '') : '',
     })
-    setBildFiles([])
+    setBildFiles([]); setBildrechteBestaetigt(false)
     setBildPreviews(post.bild_url ? [post.bild_url] : [])
   }
 
@@ -115,7 +116,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
     setShowNewForm(false)
     setEditingId(null)
     setForm(emptyForm)
-    setBildFiles([]); setBildPreviews([])
+    setBildFiles([]); setBildPreviews([]); setBildrechteBestaetigt(false)
   }
 
   async function deletePost(id: string, titel: string) {
@@ -292,6 +293,19 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
                 rows={4}
               />
               <BilderUpload id="verein-bilder" previews={bildPreviews} onAdd={addBilder} onRemove={removeBild} />
+              {bildFiles.length > 0 && (
+                <label className="flex items-start gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={bildrechteBestaetigt}
+                    onChange={e => setBildrechteBestaetigt(e.target.checked)}
+                    className="mt-0.5 rounded shrink-0"
+                  />
+                  <span className="text-xs text-gray-600 leading-relaxed">
+                    Ich bestätige, dass ich die erforderlichen Nutzungsrechte an diesem Bild besitze und es für die Veröffentlichung durch die Kommune freigebe.
+                  </span>
+                </label>
+              )}
               {form.tag === 'veranstaltung' && (
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
@@ -333,7 +347,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
                 </p>
               )}
               <button onClick={isEditing ? submitEdit : submitNew}
-                disabled={loading || !form.titel || !form.inhalt || (form.geplant && !form.scheduled_date)}
+                disabled={loading || !form.titel || !form.inhalt || (form.geplant && !form.scheduled_date) || (bildFiles.length > 0 && !bildrechteBestaetigt)}
                 className="w-full bg-primary-500 text-white font-bold py-3 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2">
                 {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                 {isEditing ? 'Änderungen einreichen' : 'Zur Prüfung einreichen'}

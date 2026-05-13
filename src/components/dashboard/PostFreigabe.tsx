@@ -24,6 +24,7 @@ export default function PostFreigabe({ pendingPosts }: { pendingPosts: PendingPo
   const [sichtbarkeit, setSichtbarkeit] = useState<Record<string, 'alle' | 'abonnenten'>>({})
   const [rejectingId, setRejectingId] = useState<string | null>(null)
   const [rejectReasons, setRejectReasons] = useState<Record<string, string>>({})
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
 
   const isVereinPost = (post: PendingPost) =>
     post.channel === 'verein' || post.profiles?.role === 'verein' || post.profiles?.role === 'organisation'
@@ -67,6 +68,7 @@ export default function PostFreigabe({ pendingPosts }: { pendingPosts: PendingPo
   if (posts.length === 0) return null
 
   return (
+    <>
     <section className="bg-white rounded-2xl shadow-sm overflow-hidden">
       <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
         <span className="w-2 h-2 rounded-full bg-amber-400" />
@@ -106,7 +108,8 @@ export default function PostFreigabe({ pendingPosts }: { pendingPosts: PendingPo
                     return bilder.length > 0 ? (
                       <div className="flex gap-1.5 mt-2 flex-wrap">
                         {bilder.map((url, i) => (
-                          <img key={i} src={url} alt="" className="h-16 w-16 object-cover rounded-lg border border-gray-100" />
+                          <img key={i} src={url} alt="" onClick={() => setLightboxUrl(url)}
+                            className="h-16 w-16 object-cover rounded-lg border border-gray-100 cursor-pointer hover:opacity-80 transition-opacity" />
                         ))}
                       </div>
                     ) : null
@@ -201,5 +204,12 @@ export default function PostFreigabe({ pendingPosts }: { pendingPosts: PendingPo
         })}
       </div>
     </section>
+
+    {lightboxUrl && (
+      <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setLightboxUrl(null)}>
+        <img src={lightboxUrl} alt="" className="max-w-full max-h-full rounded-xl object-contain shadow-2xl" />
+      </div>
+    )}
+    </>
   )
 }
