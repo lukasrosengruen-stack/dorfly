@@ -19,7 +19,7 @@ export default async function GemeinderatPage() {
   const service = await createServiceClient()
 
   const [postsResult, raeteResult, fragenResult] = await Promise.all([
-    supabase
+    service
       .from('posts')
       .select('id, titel, inhalt, bild_url, bilder_urls, tag, published_at, profiles(display_name, verein_name)')
       .eq('gemeinde_id', gemeindeId)

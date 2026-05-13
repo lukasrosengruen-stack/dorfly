@@ -26,6 +26,7 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
   const [loading, setLoading] = useState(false)
   const [bildFiles, setBildFiles] = useState<File[]>([])
   const [bildPreviews, setBildPreviews] = useState<string[]>([])
+  const [bildrechteBestaetigt, setBildrechteBestaetigt] = useState(false)
   const [form, setForm] = useState({ titel: '', inhalt: '', tag: 'nachricht' as typeof TAGS[number], channel: (defaultChannel ?? 'gemeinde') as 'gemeinde' | 'verein' | 'gewerbe' | 'gemeinderat', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', pinned: false, push: false, geplant: false, scheduled_date: '', scheduled_time: '' })
   const supabase = createClient()
 
@@ -52,7 +53,7 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
   function reset() {
     setShowForm(false)
     setForm({ titel: '', inhalt: '', tag: 'nachricht', channel: (defaultChannel ?? 'gemeinde') as 'gemeinde' | 'verein' | 'gewerbe' | 'gemeinderat', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', pinned: false, push: false, geplant: false, scheduled_date: '', scheduled_time: '' })
-    setBildFiles([]); setBildPreviews([])
+    setBildFiles([]); setBildPreviews([]); setBildrechteBestaetigt(false)
   }
 
   async function submit() {
@@ -149,6 +150,19 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
                 rows={5}
               />
               <BilderUpload id="post-bilder" previews={bildPreviews} onAdd={addBilder} onRemove={removeBild} />
+              {bildPreviews.length > 0 && (
+                <label className="flex items-start gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={bildrechteBestaetigt}
+                    onChange={e => setBildrechteBestaetigt(e.target.checked)}
+                    className="mt-0.5 rounded shrink-0"
+                  />
+                  <span className="text-xs text-gray-600 leading-relaxed">
+                    Ich bestätige, dass ich die erforderlichen Nutzungsrechte an diesem Bild besitze und es für die Veröffentlichung durch die Kommune freigebe.
+                  </span>
+                </label>
+              )}
               {form.tag === 'veranstaltung' && (
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
@@ -201,7 +215,7 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
                   ⏳ Dein Beitrag wird erst nach Freigabe durch die Verwaltung veröffentlicht.
                 </p>
               )}
-              <button onClick={submit} disabled={loading || !form.titel || !form.inhalt || (form.geplant && !form.scheduled_date)}
+              <button onClick={submit} disabled={loading || !form.titel || !form.inhalt || (form.geplant && !form.scheduled_date) || (bildPreviews.length > 0 && !bildrechteBestaetigt)}
                 className="w-full bg-primary-500 text-white font-bold py-3 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2">
                 {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                 {form.channel === 'gemeinderat' ? 'Zur Freigabe einreichen' : 'Veröffentlichen'}

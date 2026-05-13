@@ -13,6 +13,8 @@ interface PendingPost {
   tag: string | null
   created_at: string
   publish_at?: string | null
+  bild_url?: string | null
+  bilder_urls?: string[] | null
   profiles?: { display_name: string | null; verein_name?: string | null; role?: string | null } | null
 }
 
@@ -97,6 +99,18 @@ export default function PostFreigabe({ pendingPosts }: { pendingPosts: PendingPo
                   </div>
                   <p className="font-semibold text-gray-900 text-sm">{post.titel}</p>
                   <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{post.inhalt}</p>
+                  {(() => {
+                    const bilder = (post.bilder_urls as string[] | null)?.length
+                      ? post.bilder_urls as string[]
+                      : post.bild_url ? [post.bild_url] : []
+                    return bilder.length > 0 ? (
+                      <div className="flex gap-1.5 mt-2 flex-wrap">
+                        {bilder.map((url, i) => (
+                          <img key={i} src={url} alt="" className="h-16 w-16 object-cover rounded-lg border border-gray-100" />
+                        ))}
+                      </div>
+                    ) : null
+                  })()}
                   {post.publish_at && new Date(post.publish_at) > new Date() && (
                     <div className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-lg mt-1.5 w-fit">
                       <CalendarClock className="w-3 h-3" />
