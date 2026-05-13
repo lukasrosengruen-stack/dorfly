@@ -6,7 +6,8 @@ import { Profile } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
 import { updateProfil } from '@/app/actions/profil'
 import { useRouter } from 'next/navigation'
-import { LogOut, Shield, Pencil, X, Check, Loader2, User, MapPin, Trash2, KeyRound, Eye, EyeOff, Bell } from 'lucide-react'
+import { LogOut, Shield, Pencil, X, Check, Loader2, User, MapPin, KeyRound, Eye, EyeOff, Bell } from 'lucide-react'
+import Link from 'next/link'
 
 const ROLE_LABELS: Record<string, string> = {
   buerger:      'Bürger',
@@ -102,18 +103,6 @@ export default function ProfilClient({ profile }: { profile: FullProfile | null 
       toast.error('Push konnte nicht aktiviert werden')
     } finally {
       setPushLoading(false)
-    }
-  }
-
-  async function deleteAccount() {
-    if (!confirm('Konto wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.')) return
-    const res = await fetch('/api/auth/loeschen', { method: 'DELETE' })
-    if (res.ok) {
-      await supabase.auth.signOut()
-      router.push('/login')
-    } else {
-      const body = await res.json().catch(() => ({}))
-      toast.error('Fehler: ' + (body.error ?? res.status))
     }
   }
 
@@ -292,6 +281,11 @@ export default function ProfilClient({ profile }: { profile: FullProfile | null 
               <span className="text-sm font-medium text-gray-700 flex-1">Impressum</span>
               <span className="text-gray-300">›</span>
             </a>
+            <Link href="/profil/datenschutz-daten" className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors">
+              <Shield className="w-4 h-4 text-gray-400 shrink-0" />
+              <span className="text-sm font-medium text-gray-700 flex-1">Datenschutz & Daten</span>
+              <span className="text-gray-300">›</span>
+            </Link>
           </div>
         </div>
 
@@ -301,14 +295,6 @@ export default function ProfilClient({ profile }: { profile: FullProfile | null 
         >
           <LogOut className="w-4 h-4" />
           Abmelden
-        </button>
-
-        <button
-          onClick={deleteAccount}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-red-400 text-sm font-medium hover:text-red-600 transition-colors"
-        >
-          <Trash2 className="w-4 h-4" />
-          Konto löschen
         </button>
       </div>
     </div>
