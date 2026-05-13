@@ -25,7 +25,7 @@ export const POST = withAuth(
     const v = validate(gewerbePostSchema, body)
     if (!v.success) return v.error
 
-    const { gewerbeId, text, bildUrl, ablaufdatum } = v.data
+    const { gewerbeId, titel, text, bildUrl, ablaufdatum } = v.data
 
     const supabase = await createClient()
 
@@ -68,7 +68,7 @@ export const POST = withAuth(
         org_id: gewerbeId,
         channel: 'gewerbe',
         status: 'published',
-        titel: text.slice(0, 100),
+        titel: titel?.trim() || text.slice(0, 100),
         inhalt: text,
         bild_url: bildUrl ?? null,
         tag: 'nachricht',
@@ -90,7 +90,7 @@ export const PATCH = withAuth(
     const v = validate(gewerbePostUpdateSchema, body)
     if (!v.success) return v.error
 
-    const { postId, text, bildUrl, ablaufdatum } = v.data
+    const { postId, titel, text, bildUrl, ablaufdatum } = v.data
 
     const supabase = await createClient()
 
@@ -110,7 +110,7 @@ export const PATCH = withAuth(
       .from('posts')
       .update({
         inhalt: text,
-        titel: text.slice(0, 100),
+        titel: titel?.trim() || text.slice(0, 100),
         ...(bildUrl !== undefined ? { bild_url: bildUrl } : {}),
         ...(ablaufdatum !== undefined ? { publish_at: ablaufdatum } : {}),
       })

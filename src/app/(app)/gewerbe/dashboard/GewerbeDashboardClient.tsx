@@ -29,7 +29,8 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
   const [profilOpen, setProfilOpen] = useState(!initialBetrieb)
 
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState<{ text: string; bildUrl: string | null; ablaufdatum: string }>({ text: '', bildUrl: null, ablaufdatum: '' })
+  const [editForm, setEditForm] = useState<{ titel: string; text: string; bildUrl: string | null; ablaufdatum: string; neuesBild: boolean }>({ titel: '', text: '', bildUrl: null, ablaufdatum: '', neuesBild: false })
+  const [editBildrechte, setEditBildrechte] = useState(false)
   const [editUploading, setEditUploading] = useState(false)
   const [editSaving, setEditSaving] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
@@ -50,16 +51,20 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
 
   function openEdit(post: Post) {
     setEditingId(post.id)
+    setEditBildrechte(false)
     setEditForm({
+      titel: post.titel ?? '',
       text: post.inhalt,
       bildUrl: post.bild_url ?? null,
       ablaufdatum: post.publish_at ? post.publish_at.split('T')[0] : '',
+      neuesBild: false,
     })
   }
 
   function closeEdit() {
     setEditingId(null)
-    setEditForm({ text: '', bildUrl: null, ablaufdatum: '' })
+    setEditBildrechte(false)
+    setEditForm({ titel: '', text: '', bildUrl: null, ablaufdatum: '', neuesBild: false })
   }
 
   async function handleEditBildChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -73,7 +78,8 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
       const { error } = await supabase.storage.from('dorfly-media').upload(path, compressed)
       if (error) throw error
       const { data: { publicUrl } } = supabase.storage.from('dorfly-media').getPublicUrl(path)
-      setEditForm(f => ({ ...f, bildUrl: publicUrl }))
+      setEditForm(f => ({ ...f, bildUrl: publicUrl, neuesBild: true }))
+      setEditBildrechte(false)
     } catch {
       toast.error('Bild-Upload fehlgeschlagen')
     } finally {
@@ -90,6 +96,7 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           postId: editingId,
+          titel: editForm.titel.trim() || undefined,
           text: editForm.text.trim(),
           bildUrl: editForm.bildUrl ?? null,
           ablaufdatum: editForm.ablaufdatum || null,
@@ -205,6 +212,13 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
                       </button>
                     </div>
                     <div className="space-y-3">
+                      <input
+                        type="text"
+                        placeholder="Überschrift"
+                        value={editForm.titel}
+                        onChange={e => setEditForm(f => ({ ...f, titel: e.target.value }))}
+                        className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      />
                       <RichTextEditor
                         value={editForm.text}
                         onChange={v => setEditForm(f => ({ ...f, text: v }))}
@@ -242,7 +256,20 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
                         </div>
                       </div>
 
-                      <Button onClick={submitEdit} fullWidth loading={editSaving || editUploading}>
+                      {editForm.neuesBild && (
+                        <label className="flex items-start gap-2.5 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={editBildrechte}
+                            onChange={e => setEditBildrechte(e.target.checked)}
+                            className="mt-0.5 rounded shrink-0"
+                          />
+                          <span className="text-xs text-gray-600 leading-relaxed">
+                            Ich bestätige, dass ich die erforderlichen Nutzungsrechte an diesem Bild besitze und es für die Veröffentlichung durch die Kommune freigebe.
+                          </span>
+                        </label>
+                      )}
+                      <Button onClick={submitEdit} fullWidth loading={editSaving || editUploading} disabled={editSaving || editUploading || (editForm.neuesBild && !editBildrechte)}>
                         Änderungen speichern
                       </Button>
                     </div>

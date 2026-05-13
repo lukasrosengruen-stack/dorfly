@@ -17,8 +17,10 @@ interface GewerbePostFormProps {
 }
 
 export function GewerbePostForm({ gewerbeId, naechsterMontag, onCreated }: GewerbePostFormProps) {
+  const [titel, setTitel] = useState('')
   const [text, setText] = useState('')
   const [bildUrl, setBildUrl] = useState<string | null>(null)
+  const [bildrechteBestaetigt, setBildrechteBestaetigt] = useState(false)
   const [ablaufdatum, setAblaufdatum] = useState('')
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -55,6 +57,7 @@ export function GewerbePostForm({ gewerbeId, naechsterMontag, onCreated }: Gewer
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           gewerbeId,
+          titel: titel.trim() || undefined,
           text: text.trim(),
           bildUrl: bildUrl ?? undefined,
           ablaufdatum: ablaufdatum || undefined,
@@ -73,8 +76,10 @@ export function GewerbePostForm({ gewerbeId, naechsterMontag, onCreated }: Gewer
           body: JSON.stringify({ title: 'Neues Angebot', message: text.trim().slice(0, 150), url: '/feed' }),
         })
       }
+      setTitel('')
       setText('')
       setBildUrl(null)
+      setBildrechteBestaetigt(false)
       setAblaufdatum('')
       setSendPush(false)
       toast.success('Beitrag veröffentlicht')
@@ -104,6 +109,13 @@ export function GewerbePostForm({ gewerbeId, naechsterMontag, onCreated }: Gewer
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
+      <input
+        type="text"
+        placeholder="Überschrift"
+        value={titel}
+        onChange={e => setTitel(e.target.value)}
+        className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary-500"
+      />
       <RichTextEditor
         value={text}
         onChange={setText}
@@ -152,12 +164,25 @@ export function GewerbePostForm({ gewerbeId, naechsterMontag, onCreated }: Gewer
         </div>
       </div>
 
+      {bildUrl && (
+        <label className="flex items-start gap-2.5 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={bildrechteBestaetigt}
+            onChange={e => setBildrechteBestaetigt(e.target.checked)}
+            className="mt-0.5 rounded shrink-0"
+          />
+          <span className="text-xs text-gray-600 leading-relaxed">
+            Ich bestätige, dass ich die erforderlichen Nutzungsrechte an diesem Bild besitze und es für die Veröffentlichung durch die Kommune freigebe.
+          </span>
+        </label>
+      )}
       <label className="flex items-center gap-2 text-sm font-bold text-red-700 cursor-pointer bg-red-50 px-3 py-2.5 rounded-xl border border-red-200">
         <input type="checkbox" checked={sendPush} onChange={e => setSendPush(e.target.checked)} className="rounded accent-red-600" />
         🔔 Push-Benachrichtigung senden (alle Nutzer)
       </label>
 
-      <Button type="submit" fullWidth loading={saving || uploading}>
+      <Button type="submit" fullWidth loading={saving || uploading} disabled={saving || uploading || (!!bildUrl && !bildrechteBestaetigt)}>
         Beitrag veröffentlichen
       </Button>
     </form>

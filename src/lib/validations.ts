@@ -193,6 +193,7 @@ export const gewerbeProfilSchema = z.object({
 
 export const gewerbePostSchema = z.object({
   gewerbeId: uuid,
+  titel: z.string().max(200).optional(),
   text: nonEmpty.max(5000),
   bildUrl: z.url().optional(),
   ablaufdatum: z.string().optional(),
@@ -200,6 +201,7 @@ export const gewerbePostSchema = z.object({
 
 export const gewerbePostUpdateSchema = z.object({
   postId: uuid,
+  titel: z.string().max(200).optional(),
   text: nonEmpty.max(5000),
   bildUrl: z.union([z.url(), z.null()]).optional(),
   ablaufdatum: z.string().nullable().optional(),
