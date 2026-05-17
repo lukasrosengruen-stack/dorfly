@@ -9,6 +9,7 @@ import KpiKacheln from './KpiKacheln'
 import RollenTabelle from './RollenTabelle'
 import ProduzentenTab from './ProduzentenTab'
 import AdminEinladungSection from './AdminEinladungSection'
+import GemeindenSection from './GemeindenSection'
 
 export default function AdminDashboardClient({ data }: { data: DashboardData }) {
   const router = useRouter()
@@ -116,6 +117,9 @@ export default function AdminDashboardClient({ data }: { data: DashboardData }) 
 
         {/* Einladungen */}
         <AdminEinladungSection gemeinden={data.gemeinden} />
+
+        {/* Gemeinden */}
+        <GemeindenSection gemeinden={data.gemeinden} />
 
       </div>
     </div>

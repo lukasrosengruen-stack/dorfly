@@ -43,6 +43,10 @@ export type HealthComponents = {
 export type Gemeinde = {
   id: string
   name: string
+  slug: string
+  bundesland: string
+  plz: string | null
+  einwohner: number | null
 }
 
 export type DashboardData = {

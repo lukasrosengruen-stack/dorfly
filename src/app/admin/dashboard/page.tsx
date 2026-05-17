@@ -94,7 +94,7 @@ export default async function SuperAdminDashboardPage({
     gewerbeResult,
     gemeinderatResult,
   ] = await Promise.all([
-    service.from('gemeinden').select('id, name').order('name'),
+    service.from('gemeinden').select('id, name, slug, bundesland, plz, einwohner').order('name'),
     svc.rpc('superadmin_buerger_stats',      { p_gemeinde_id: gemeindeId }),
     svc.rpc('superadmin_rollen_stats',        { p_gemeinde_id: gemeindeId }),
     svc.rpc('superadmin_maengel_stats',       { p_gemeinde_id: gemeindeId }),
@@ -123,7 +123,7 @@ export default async function SuperAdminDashboardPage({
     computeHealthScore(buergerStats, rollenStats, maengelStats, postsStats)
 
   const data: DashboardData = {
-    gemeinden:          (gemeindenResult.data ?? []) as { id: string; name: string }[],
+    gemeinden:          (gemeindenResult.data ?? []) as import('./types').Gemeinde[],
     activeGemeindeId:   gemeindeId,
     buergerStats,
     rollenStats,

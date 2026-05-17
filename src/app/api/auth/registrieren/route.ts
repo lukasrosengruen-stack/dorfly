@@ -49,8 +49,6 @@ export async function POST(request: Request) {
       id: userId,
       role: rolle as UserRole,
       gemeinde_id: gemeinde?.id ?? null,
-      vorname: vorname || null,
-      nachname: nachname || null,
       display_name: [vorname, nachname].filter(Boolean).join(' ') || null,
     })
 

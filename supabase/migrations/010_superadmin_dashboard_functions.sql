@@ -36,7 +36,7 @@ AS $$
       COUNT(*) FILTER (WHERE published_at > NOW() - INTERVAL '7 days')  AS cnt_7d,
       COUNT(*) FILTER (WHERE published_at > NOW() - INTERVAL '30 days') AS cnt_30d
     FROM public.posts
-    WHERE status::text = 'published'
+    WHERE sichtbarkeit::text = 'published'
       AND (p_gemeinde_id IS NULL OR gemeinde_id = p_gemeinde_id)
     GROUP BY author_id
   )
@@ -85,7 +85,7 @@ AS $$
     'posts_30d', COUNT(*) FILTER (WHERE published_at > NOW() - INTERVAL '30 days')
   )
   FROM public.posts
-  WHERE status::text = 'published'
+  WHERE sichtbarkeit::text = 'published'
     AND (p_gemeinde_id IS NULL OR gemeinde_id = p_gemeinde_id);
 $$;
 
@@ -105,7 +105,7 @@ AS $$
       COUNT(*) FILTER (WHERE published_at > NOW() - INTERVAL '7 days')  AS cnt_7d,
       COUNT(*) FILTER (WHERE published_at > NOW() - INTERVAL '30 days') AS cnt_30d
     FROM public.posts
-    WHERE status::text = 'published'
+    WHERE sichtbarkeit::text = 'published'
       AND (p_gemeinde_id IS NULL OR gemeinde_id = p_gemeinde_id)
     GROUP BY author_id
   ),
@@ -143,7 +143,6 @@ AS $$
                        NULLIF(TRIM(COALESCE(gd.org_name,    '')), ''),
                        NULLIF(TRIM(COALESCE(od.org_name,    '')), ''),
                        NULLIF(TRIM(COALESCE(p.display_name, '')), ''),
-                       NULLIF(TRIM(CONCAT(COALESCE(p.vorname, ''), ' ', COALESCE(p.nachname, ''))), ''),
                        '–'
                      ),
       'posts_7d',    COALESCE(pc.cnt_7d,  0),
