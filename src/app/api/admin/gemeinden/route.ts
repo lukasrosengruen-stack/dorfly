@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withAuth, apiError } from '@/lib/api'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 function toSlug(name: string): string {
   return name
@@ -25,7 +25,7 @@ export const POST = withAuth(
       return apiError('Slug darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten', 400)
     }
 
-    const supabase = await createServiceClient()
+    const supabase = await createClient()
 
     const { data: existing } = await supabase
       .from('gemeinden')
