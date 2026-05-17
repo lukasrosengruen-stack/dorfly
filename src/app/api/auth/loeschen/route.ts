@@ -3,7 +3,7 @@ import { withAuth } from '@/lib/api'
 import { createServiceClient } from '@/lib/supabase/server'
 
 // BUGFIX: Falsche Spaltennamen wurden korrigiert (erstellt_von → author_id, author_id → fragesteller_id)
-export const DELETE = withAuth(async (req, { user, profile }) => {
+export const DELETE = withAuth(async (_req, { user }) => {
   const service = await createServiceClient()
 
   // Reihenfolge wichtig wegen FK-Constraints
@@ -17,7 +17,6 @@ export const DELETE = withAuth(async (req, { user, profile }) => {
   await service.from('gemeinderat_fragen').delete().eq('gemeinderat_id', user.id)
   await service.from('gewerbe_abonnements').delete().eq('user_id', user.id)
   await service.from('organisationen').delete().eq('profile_id', user.id)
-  await service.from('sms_verifications').delete().eq('phone', profile.phone) // BUGFIX: kein user_id, lösche per phone
   await service.from('profiles').delete().eq('id', user.id)
 
   const { error } = await service.auth.admin.deleteUser(user.id)

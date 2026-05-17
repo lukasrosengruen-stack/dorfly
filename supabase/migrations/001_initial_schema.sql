@@ -28,11 +28,9 @@ create table gemeinden (
 create table profiles (
   id            uuid primary key references auth.users(id) on delete cascade,
   gemeinde_id   uuid references gemeinden(id),
-  phone         text unique not null,
   display_name  text,
   role          user_role not null default 'buerger',
   avatar_url    text,
-  phone_verified boolean default false,
   created_at    timestamptz default now(),
   updated_at    timestamptz default now()
 );
