@@ -42,11 +42,7 @@ export async function updateProfil(input: UpdateProfilInput): Promise<UpdateProf
 
     const { error } = await supabase
       .from('profiles')
-      .update({
-        vorname:      input.vorname || null,
-        nachname:     input.nachname || null,
-        display_name: displayName,
-      })
+      .update({ display_name: displayName })
       .eq('id', user.id)
 
     if (error) {

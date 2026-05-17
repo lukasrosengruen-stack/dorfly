@@ -29,7 +29,7 @@ export const GET = withAuth(
     // Profil in der richtigen Gemeinde prüfen
     const { data: nutzerProfil } = await supabase
       .from('profiles')
-      .select('id, display_name, vorname, nachname, role, gemeinde_id, created_at')
+      .select('id, display_name, role, gemeinde_id, created_at')
       .eq('id', authUser.id)
       .eq('gemeinde_id', gemeindeId)
       .single()
@@ -41,8 +41,8 @@ export const GET = withAuth(
         id: nutzerProfil.id,
         email: authUser.email,
         display_name: nutzerProfil.display_name,
-        vorname: nutzerProfil.vorname,
-        nachname: nutzerProfil.nachname,
+        vorname: null,
+        nachname: null,
         role: nutzerProfil.role,
         erstellt_am: nutzerProfil.created_at,
       },
