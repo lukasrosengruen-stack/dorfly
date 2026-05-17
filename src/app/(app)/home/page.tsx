@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getGemeinde } from '@/lib/gemeinde'
-import { Newspaper, AlertTriangle, BarChart2, MessageCircleQuestion, LayoutDashboard, CalendarDays, ExternalLink, ScrollText, Scale, UserCircle, Store, Trash2, Users, LucideIcon } from 'lucide-react'
+import { Newspaper, AlertTriangle, BarChart2, MessageCircleQuestion, LayoutDashboard, CalendarDays, ExternalLink, ScrollText, Scale, UserCircle, Store, Trash2, Users, Phone, LucideIcon } from 'lucide-react'
 import Link from 'next/link'
 
 interface Tile {
@@ -103,25 +103,43 @@ export default async function HomePage() {
           ))}
         </div>
 
-        {/* Externe Links – nur anzeigen wenn ratsinformation_url in DB gesetzt */}
-        {gemeinde?.ratsinformation_url && (
+        {/* Externe Links – nur anzeigen wenn mind. eine URL in DB gesetzt */}
+        {(gemeinde?.ratsinformation_url || gemeinde?.notfallnummern_url) && (
           <div>
             <p className="text-[11px] font-bold text-[#64748b] tracking-[1px] uppercase mb-2 px-1">Online-Dienste</p>
             <div className="grid grid-cols-2 gap-2.5">
-              <a href={gemeinde.ratsinformation_url} target="_blank" rel="noopener noreferrer"
-                className="bg-white rounded-[18px] p-[15px_14px] shadow-[0_2px_14px_rgba(15,45,107,0.08)] flex flex-col gap-3 active:opacity-90">
-                <div className="flex items-start justify-between">
-                  <div className="w-[58px] h-[58px] rounded-[18px] flex items-center justify-center"
-                    style={{ background: 'rgba(15,45,107,0.08)' }}>
-                    <ScrollText className="w-[30px] h-[30px]" style={{ color: '#0f2d6b' }} strokeWidth={1.5} />
+              {gemeinde?.ratsinformation_url && (
+                <a href={gemeinde.ratsinformation_url} target="_blank" rel="noopener noreferrer"
+                  className="bg-white rounded-[18px] p-[15px_14px] shadow-[0_2px_14px_rgba(15,45,107,0.08)] flex flex-col gap-3 active:opacity-90">
+                  <div className="flex items-start justify-between">
+                    <div className="w-[58px] h-[58px] rounded-[18px] flex items-center justify-center"
+                      style={{ background: 'rgba(15,45,107,0.08)' }}>
+                      <ScrollText className="w-[30px] h-[30px]" style={{ color: '#0f2d6b' }} strokeWidth={1.5} />
+                    </div>
+                    <ExternalLink className="w-3.5 h-3.5 text-[#64748b] mt-1" strokeWidth={1.5} />
                   </div>
-                  <ExternalLink className="w-3.5 h-3.5 text-[#64748b] mt-1" strokeWidth={1.5} />
-                </div>
-                <div>
-                  <p className="font-bold text-[13px] text-[#0f172a] leading-tight">Ratsinformationssystem</p>
-                  <p className="text-[11px] text-[#64748b] mt-0.5 leading-snug">Sitzungen & Beschlüsse</p>
-                </div>
-              </a>
+                  <div>
+                    <p className="font-bold text-[13px] text-[#0f172a] leading-tight">Ratsinformationssystem</p>
+                    <p className="text-[11px] text-[#64748b] mt-0.5 leading-snug">Sitzungen & Beschlüsse</p>
+                  </div>
+                </a>
+              )}
+              {gemeinde?.notfallnummern_url && (
+                <a href={gemeinde.notfallnummern_url} target="_blank" rel="noopener noreferrer"
+                  className="bg-white rounded-[18px] p-[15px_14px] shadow-[0_2px_14px_rgba(15,45,107,0.08)] flex flex-col gap-3 active:opacity-90">
+                  <div className="flex items-start justify-between">
+                    <div className="w-[58px] h-[58px] rounded-[18px] flex items-center justify-center"
+                      style={{ background: 'rgba(196,30,30,0.08)' }}>
+                      <Phone className="w-[30px] h-[30px]" style={{ color: '#c41e1e' }} strokeWidth={1.5} />
+                    </div>
+                    <ExternalLink className="w-3.5 h-3.5 text-[#64748b] mt-1" strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-[13px] text-[#0f172a] leading-tight">Notfallnummern</p>
+                    <p className="text-[11px] text-[#64748b] mt-0.5 leading-snug">Wichtige Rufnummern</p>
+                  </div>
+                </a>
+              )}
             </div>
           </div>
         )}

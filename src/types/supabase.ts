@@ -62,6 +62,7 @@ export interface Database {
           logo_url: string | null
           primary_color: string | null
           ratsinformation_url: string | null
+          notfallnummern_url: string | null
           features: Json
           created_at: string
         }
@@ -76,6 +77,7 @@ export interface Database {
           logo_url?: string | null
           primary_color?: string | null
           ratsinformation_url?: string | null
+          notfallnummern_url?: string | null
           features?: Json
           created_at?: string
         }
@@ -90,6 +92,7 @@ export interface Database {
           logo_url?: string | null
           primary_color?: string | null
           ratsinformation_url?: string | null
+          notfallnummern_url?: string | null
           features?: Json
           created_at?: string
         }
