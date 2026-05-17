@@ -45,18 +45,16 @@ export default function ProfilClient({ profile }: { profile: FullProfile | null 
       setPushPermission(Notification.permission)
     }
   }, [])
+  const nameParts = (profile?.display_name ?? '').trim().split(/\s+/)
   const [form, setForm] = useState({
-    vorname:      profile?.vorname ?? '',
-    nachname:     profile?.nachname ?? '',
+    vorname:  nameParts[0] ?? '',
+    nachname: nameParts.slice(1).join(' '),
   })
 
-  const initials = profile?.vorname && profile?.nachname
-    ? `${profile.vorname[0]}${profile.nachname[0]}`.toUpperCase()
-    : profile?.display_name?.[0]?.toUpperCase() ?? '?'
-
-  const displayName = [profile?.vorname, profile?.nachname].filter(Boolean).join(' ')
-    || profile?.display_name
-    || 'Kein Name'
+  const displayName = profile?.display_name || 'Kein Name'
+  const initials = displayName !== 'Kein Name'
+    ? displayName.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase()
+    : '?'
 
   async function save() {
     setSaving(true)
