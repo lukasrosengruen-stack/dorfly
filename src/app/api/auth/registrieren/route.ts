@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient, createClient } from '@/lib/supabase/server'
 import { validate, registrierenSchema } from '@/lib/validations'
 import { getGemeindeSlug } from '@/lib/gemeinde'
 import type { UserRole } from '@/types/supabase'
@@ -14,7 +14,9 @@ export async function POST(request: Request) {
     const supabase = await createServiceClient()
 
     const slug = await getGemeindeSlug()
-    const { data: gemeinde } = await supabase
+    // Gemeinden-Lookup mit normalem Client (public data, kein service_role nötig)
+    const publicClient = await createClient()
+    const { data: gemeinde } = await publicClient
       .from('gemeinden')
       .select('id')
       .eq('slug', slug)
