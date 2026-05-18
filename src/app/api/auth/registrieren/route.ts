@@ -112,6 +112,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true, _debug: { slug, gemeindeId: gemeinde?.id ?? null } })
   } catch (e: unknown) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : 'Fehler' }, { status: 500 })
+    const msg = e instanceof Error ? e.message : JSON.stringify(e)
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
