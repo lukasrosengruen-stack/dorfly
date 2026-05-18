@@ -3,6 +3,6 @@
 -- NULL-Werte in UNIQUE-Spalten sind in PostgreSQL kein Problem (NULLs gelten nicht als gleich).
 ALTER TABLE profiles ALTER COLUMN phone DROP NOT NULL;
 
--- gemeinden: service_role braucht INSERT/UPDATE/DELETE für den Super-Admin-Dashboard-API-Endpunkt.
--- In neuen Supabase-Projekten (ab Mai 2026) keine automatischen Grants mehr.
+-- service_role braucht explizite Grants in neuen Supabase-Projekten (ab Mai 2026).
 GRANT INSERT, UPDATE, DELETE ON public.gemeinden TO service_role;
+GRANT SELECT, INSERT, UPDATE ON public.profiles TO service_role;
