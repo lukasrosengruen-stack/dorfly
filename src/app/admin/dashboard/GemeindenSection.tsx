@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Plus, ExternalLink, Loader2, Building2, X } from 'lucide-react'
 import type { Gemeinde } from './types'
@@ -27,6 +28,7 @@ function toSlug(name: string): string {
 type Props = { gemeinden: Gemeinde[] }
 
 export default function GemeindenSection({ gemeinden: initial }: Props) {
+  const router = useRouter()
   const [gemeinden, setGemeinden] = useState<Gemeinde[]>(initial)
   const [formOffen, setFormOffen] = useState(false)
   const [laden, setLaden] = useState(false)
@@ -69,6 +71,7 @@ export default function GemeindenSection({ gemeinden: initial }: Props) {
       setGemeinden(prev => [...prev, data.gemeinde].sort((a, b) => a.name.localeCompare(b.name)))
       toast.success(`Gemeinde "${data.gemeinde.name}" angelegt`)
       formZuruecksetzen()
+      router.refresh()
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Fehler beim Anlegen')
     } finally {
