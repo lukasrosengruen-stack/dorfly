@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { LogOut } from 'lucide-react'
 import type { DashboardData } from './types'
 import { PRODUZENTEN_ROLLEN } from './types'
 import HealthScoreCard from './HealthScoreCard'
@@ -13,7 +15,13 @@ import GemeindenSection from './GemeindenSection'
 
 export default function AdminDashboardClient({ data }: { data: DashboardData }) {
   const router = useRouter()
+  const supabase = createClient()
   const [activeTab, setActiveTab] = useState<string>(PRODUZENTEN_ROLLEN[0].key)
+
+  async function signOut() {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
 
   function handleGemeindeChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const val = e.target.value
@@ -35,7 +43,10 @@ export default function AdminDashboardClient({ data }: { data: DashboardData }) 
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <button onClick={signOut} className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-700 font-medium transition-colors">
+              <LogOut className="w-4 h-4" /> Abmelden
+            </button>
             <label htmlFor="gemeinde-select" className="text-sm text-gray-500 whitespace-nowrap">
               Gemeinde:
             </label>
