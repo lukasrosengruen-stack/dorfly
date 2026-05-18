@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getGemeinde } from '@/lib/gemeinde'
-import { Newspaper, AlertTriangle, BarChart2, MessageCircleQuestion, LayoutDashboard, CalendarDays, ExternalLink, ScrollText, Scale, UserCircle, Store, Trash2, Users, Phone, LucideIcon } from 'lucide-react'
+import { Newspaper, AlertTriangle, BarChart2, MessageCircleQuestion, LayoutDashboard, CalendarDays, ExternalLink, ScrollText, Scale, UserCircle, Store, Trash2, Users, Phone, Globe, BookOpen, LucideIcon } from 'lucide-react'
 import Link from 'next/link'
 
 interface Tile {
@@ -22,16 +22,8 @@ const BASE_TILES: Tile[] = [
   { href: '/buergermeister',  label: 'Frag den BM',      icon: MessageCircleQuestion, color: '#1a5cbf', bg: 'rgba(26,92,191,0.1)',  desc: 'An die Verwaltung' },
   { href: '/gemeinderat',     label: 'Gemeinderat',      icon: Scale,                 color: '#0f2d6b', bg: 'rgba(15,45,107,0.1)',  desc: 'Politik & Fragen' },
   { href: '/profil',          label: 'Mein Profil',      icon: UserCircle,            color: '#475569', bg: 'rgba(71,85,105,0.1)',  desc: 'Einstellungen & Konto' },
+  { href: '/abfallkalender',  label: 'Abfallkalender',   icon: Trash2,                color: '#16a34a', bg: 'rgba(22,163,74,0.1)',  desc: 'Abfuhrtermine' },
 ]
-
-const ABFALL_TILE: Tile = {
-  href: '/abfallkalender',
-  label: 'Abfallkalender',
-  icon: Trash2,
-  color: '#16a34a',
-  bg: 'rgba(22,163,74,0.1)',
-  desc: 'Abfuhrtermine',
-}
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -52,8 +44,7 @@ export default async function HomePage() {
   const gemeindeName = gemeinde?.name ?? ''
   const vorname = profile?.display_name?.split(' ')[0] ?? 'Hallo'
 
-  const wasteFeatureAktiv = (gemeinde?.features as { wasteCalendarEnabled?: boolean } | null)?.wasteCalendarEnabled ?? false
-  const tiles = wasteFeatureAktiv ? [...BASE_TILES, ABFALL_TILE] : BASE_TILES
+  const tiles = BASE_TILES
 
   return (
     <div className="min-h-screen bg-[#f5f7fc]">
@@ -103,17 +94,31 @@ export default async function HomePage() {
           ))}
         </div>
 
-        {/* Externe Links – nur anzeigen wenn mind. eine URL in DB gesetzt */}
-        {(gemeinde?.ratsinformation_url || gemeinde?.notfallnummern_url) && (
+        {/* Online-Dienste – nur anzeigen wenn mind. eine URL gesetzt */}
+        {(gemeinde?.ratsinformation_url || gemeinde?.notfallnummern_url || (gemeinde as any)?.homepage_url || (gemeinde as any)?.mitteilungsblatt_url) && (
           <div>
             <p className="text-[11px] font-bold text-[#64748b] tracking-[1px] uppercase mb-2 px-1">Online-Dienste</p>
             <div className="grid grid-cols-2 gap-2.5">
+              {(gemeinde as any)?.homepage_url && (
+                <a href={(gemeinde as any).homepage_url} target="_blank" rel="noopener noreferrer"
+                  className="bg-white rounded-[18px] p-[15px_14px] shadow-[0_2px_14px_rgba(15,45,107,0.08)] flex flex-col gap-3 active:opacity-90">
+                  <div className="flex items-start justify-between">
+                    <div className="w-[58px] h-[58px] rounded-[18px] flex items-center justify-center" style={{ background: 'rgba(26,92,191,0.08)' }}>
+                      <Globe className="w-[30px] h-[30px]" style={{ color: '#1a5cbf' }} strokeWidth={1.5} />
+                    </div>
+                    <ExternalLink className="w-3.5 h-3.5 text-[#64748b] mt-1" strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-[13px] text-[#0f172a] leading-tight">Homepage</p>
+                    <p className="text-[11px] text-[#64748b] mt-0.5 leading-snug">Gemeinde-Website</p>
+                  </div>
+                </a>
+              )}
               {gemeinde?.ratsinformation_url && (
                 <a href={gemeinde.ratsinformation_url} target="_blank" rel="noopener noreferrer"
                   className="bg-white rounded-[18px] p-[15px_14px] shadow-[0_2px_14px_rgba(15,45,107,0.08)] flex flex-col gap-3 active:opacity-90">
                   <div className="flex items-start justify-between">
-                    <div className="w-[58px] h-[58px] rounded-[18px] flex items-center justify-center"
-                      style={{ background: 'rgba(15,45,107,0.08)' }}>
+                    <div className="w-[58px] h-[58px] rounded-[18px] flex items-center justify-center" style={{ background: 'rgba(15,45,107,0.08)' }}>
                       <ScrollText className="w-[30px] h-[30px]" style={{ color: '#0f2d6b' }} strokeWidth={1.5} />
                     </div>
                     <ExternalLink className="w-3.5 h-3.5 text-[#64748b] mt-1" strokeWidth={1.5} />
@@ -128,8 +133,7 @@ export default async function HomePage() {
                 <a href={gemeinde.notfallnummern_url} target="_blank" rel="noopener noreferrer"
                   className="bg-white rounded-[18px] p-[15px_14px] shadow-[0_2px_14px_rgba(15,45,107,0.08)] flex flex-col gap-3 active:opacity-90">
                   <div className="flex items-start justify-between">
-                    <div className="w-[58px] h-[58px] rounded-[18px] flex items-center justify-center"
-                      style={{ background: 'rgba(196,30,30,0.08)' }}>
+                    <div className="w-[58px] h-[58px] rounded-[18px] flex items-center justify-center" style={{ background: 'rgba(196,30,30,0.08)' }}>
                       <Phone className="w-[30px] h-[30px]" style={{ color: '#c41e1e' }} strokeWidth={1.5} />
                     </div>
                     <ExternalLink className="w-3.5 h-3.5 text-[#64748b] mt-1" strokeWidth={1.5} />
@@ -137,6 +141,21 @@ export default async function HomePage() {
                   <div>
                     <p className="font-bold text-[13px] text-[#0f172a] leading-tight">Notfallnummern</p>
                     <p className="text-[11px] text-[#64748b] mt-0.5 leading-snug">Wichtige Rufnummern</p>
+                  </div>
+                </a>
+              )}
+              {(gemeinde as any)?.mitteilungsblatt_url && (
+                <a href={(gemeinde as any).mitteilungsblatt_url} target="_blank" rel="noopener noreferrer"
+                  className="bg-white rounded-[18px] p-[15px_14px] shadow-[0_2px_14px_rgba(15,45,107,0.08)] flex flex-col gap-3 active:opacity-90">
+                  <div className="flex items-start justify-between">
+                    <div className="w-[58px] h-[58px] rounded-[18px] flex items-center justify-center" style={{ background: 'rgba(124,58,237,0.08)' }}>
+                      <BookOpen className="w-[30px] h-[30px]" style={{ color: '#7c3aed' }} strokeWidth={1.5} />
+                    </div>
+                    <ExternalLink className="w-3.5 h-3.5 text-[#64748b] mt-1" strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-[13px] text-[#0f172a] leading-tight">Mitteilungsblatt</p>
+                    <p className="text-[11px] text-[#64748b] mt-0.5 leading-snug">Amtliche Bekanntmachungen</p>
                   </div>
                 </a>
               )}

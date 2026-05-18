@@ -66,10 +66,16 @@ export const frageDeleteSchema = z.object({
 
 // ── Gemeinde ──────────────────────────────────────────────────────────────────
 
+const urlOrEmpty = z.string().max(500).transform(v => v.trim() || null).nullable().optional()
+
 export const gemeindeAktualisierenSchema = z.object({
   gemeindeId: uuid,
   einwohner: z.number().int().positive().nullable(),
   haushalte: z.number().int().positive().nullable(),
+  ratsinformation_url:  urlOrEmpty,
+  notfallnummern_url:   urlOrEmpty,
+  homepage_url:         urlOrEmpty,
+  mitteilungsblatt_url: urlOrEmpty,
 })
 
 // ── Gemeinderat ───────────────────────────────────────────────────────────────

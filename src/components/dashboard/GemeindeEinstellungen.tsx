@@ -1,6 +1,5 @@
 'use client'
 
-
 import { toast } from 'sonner'
 import { useState } from 'react'
 import { Settings, Check, X, Loader2 } from 'lucide-react'
@@ -9,12 +8,37 @@ interface Props {
   gemeindeId: string
   initialEinwohner: number | null
   initialHaushalte: number | null
+  initialRatsinformationUrl: string | null
+  initialNotfallnummernUrl: string | null
+  initialHomepageUrl: string | null
+  initialMitteilungsblattUrl: string | null
 }
 
-export default function GemeindeEinstellungen({ gemeindeId, initialEinwohner, initialHaushalte }: Props) {
+const DIENSTE = [
+  { key: 'ratsinformation_url',  label: 'Ratsinformationssystem', placeholder: 'https://ris.gemeinde.de' },
+  { key: 'notfallnummern_url',   label: 'Notfallnummern',         placeholder: 'https://...' },
+  { key: 'homepage_url',         label: 'Homepage',               placeholder: 'https://www.gemeinde.de' },
+  { key: 'mitteilungsblatt_url', label: 'Mitteilungsblatt',       placeholder: 'https://...' },
+] as const
+
+export default function GemeindeEinstellungen({
+  gemeindeId,
+  initialEinwohner,
+  initialHaushalte,
+  initialRatsinformationUrl,
+  initialNotfallnummernUrl,
+  initialHomepageUrl,
+  initialMitteilungsblattUrl,
+}: Props) {
   const [open, setOpen] = useState(false)
   const [einwohner, setEinwohner] = useState(String(initialEinwohner ?? ''))
   const [haushalte, setHaushalte] = useState(String(initialHaushalte ?? ''))
+  const [urls, setUrls] = useState({
+    ratsinformation_url:  initialRatsinformationUrl  ?? '',
+    notfallnummern_url:   initialNotfallnummernUrl   ?? '',
+    homepage_url:         initialHomepageUrl         ?? '',
+    mitteilungsblatt_url: initialMitteilungsblattUrl ?? '',
+  })
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -28,6 +52,7 @@ export default function GemeindeEinstellungen({ gemeindeId, initialEinwohner, in
           gemeindeId,
           einwohner: einwohner ? parseInt(einwohner) : null,
           haushalte: haushalte ? parseInt(haushalte) : null,
+          ...urls,
         }),
       })
       const data = await res.json()
@@ -52,28 +77,52 @@ export default function GemeindeEinstellungen({ gemeindeId, initialEinwohner, in
       </button>
 
       {open && (
-        <div className="mt-3 bg-white border border-gray-200 rounded-xl p-4 flex flex-wrap items-end gap-4">
-          <div>
-            <label className="text-xs text-gray-500 block mb-1">Einwohnerzahl</label>
-            <input
-              type="number"
-              value={einwohner}
-              onChange={e => setEinwohner(e.target.value)}
-              placeholder="z.B. 7500"
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-36 focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
+        <div className="mt-3 bg-white border border-gray-200 rounded-xl p-4 space-y-4">
+          {/* Statistiken */}
+          <div className="flex flex-wrap items-end gap-4">
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Einwohnerzahl</label>
+              <input
+                type="number"
+                value={einwohner}
+                onChange={e => setEinwohner(e.target.value)}
+                placeholder="z.B. 7500"
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-36 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Anzahl Haushalte</label>
+              <input
+                type="number"
+                value={haushalte}
+                onChange={e => setHaushalte(e.target.value)}
+                placeholder="z.B. 3200"
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-36 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
           </div>
+
+          {/* Online-Dienste */}
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Anzahl Haushalte</label>
-            <input
-              type="number"
-              value={haushalte}
-              onChange={e => setHaushalte(e.target.value)}
-              placeholder="z.B. 3200"
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-36 focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Online-Dienste</p>
+            <div className="space-y-2">
+              {DIENSTE.map(({ key, label, placeholder }) => (
+                <div key={key}>
+                  <label className="text-xs text-gray-500 block mb-1">{label}</label>
+                  <input
+                    type="url"
+                    value={urls[key]}
+                    onChange={e => setUrls(u => ({ ...u, [key]: e.target.value }))}
+                    placeholder={placeholder}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400 mt-1.5">Leer lassen = Kachel wird nicht angezeigt</p>
           </div>
-          <div className="flex gap-2">
+
+          <div className="flex gap-2 pt-1">
             <button
               onClick={save}
               disabled={loading || saved}
@@ -91,4 +140,3 @@ export default function GemeindeEinstellungen({ gemeindeId, initialEinwohner, in
     </div>
   )
 }
-

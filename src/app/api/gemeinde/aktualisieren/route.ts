@@ -15,9 +15,17 @@ export const POST = withAuth(
     }
 
     const service = await createServiceClient()
-    const { error } = await service
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (service as any)
       .from('gemeinden')
-      .update({ einwohner: v.data.einwohner, haushalte: v.data.haushalte })
+      .update({
+        einwohner:            v.data.einwohner,
+        haushalte:            v.data.haushalte,
+        ratsinformation_url:  v.data.ratsinformation_url  ?? null,
+        notfallnummern_url:   v.data.notfallnummern_url   ?? null,
+        homepage_url:         v.data.homepage_url         ?? null,
+        mitteilungsblatt_url: v.data.mitteilungsblatt_url ?? null,
+      })
       .eq('id', v.data.gemeindeId)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
