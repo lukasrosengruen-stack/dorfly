@@ -6,7 +6,7 @@ import { Profile } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
 import { updateProfil } from '@/app/actions/profil'
 import { useRouter } from 'next/navigation'
-import { LogOut, Shield, Pencil, X, Check, Loader2, User, MapPin, KeyRound, Eye, EyeOff, Bell } from 'lucide-react'
+import { LogOut, Shield, Pencil, X, Check, Loader2, User, MapPin, KeyRound, Eye, EyeOff, Bell, Mail } from 'lucide-react'
 import Link from 'next/link'
 
 const ROLE_LABELS: Record<string, string> = {
@@ -26,7 +26,7 @@ type FullProfile = Profile & {
   verein_name?: string | null
 }
 
-export default function ProfilClient({ profile }: { profile: FullProfile | null }) {
+export default function ProfilClient({ profile, email }: { profile: FullProfile | null; email: string | null }) {
   const router = useRouter()
   const supabase = createClient()
   const [editing, setEditing] = useState(false)
@@ -177,6 +177,7 @@ export default function ProfilClient({ profile }: { profile: FullProfile | null 
             <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Konto</h3>
           </div>
           <div className="divide-y divide-gray-50">
+            <InfoRow icon={Mail} label="E-Mail" value={email} placeholder="Nicht verfügbar" />
             <InfoRow icon={Shield} label="Rolle" value={ROLE_LABELS[profile?.role ?? 'buerger']} />
             <InfoRow icon={MapPin} label="Gemeinde" value={profile?.gemeinden?.name ?? null} placeholder="Keine Gemeinde" />
           </div>

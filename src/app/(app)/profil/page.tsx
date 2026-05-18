@@ -13,5 +13,5 @@ export default async function ProfilPage() {
     .eq('id', user.id)
     .single()
 
-  return <ProfilClient profile={profile} />
+  return <ProfilClient profile={profile} email={user.email ?? null} />
 }
