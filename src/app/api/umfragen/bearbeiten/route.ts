@@ -8,7 +8,7 @@ const bearbeitenSchema = umfrageBearbeitenSchema.extend({
 })
 
 export const POST = withAuth(
-  async (req) => {
+  async (req, { profile }) => {
     const body = await req.json()
     const v = validate(bearbeitenSchema, body)
     if (!v.success) return v.error
@@ -16,11 +16,12 @@ export const POST = withAuth(
     const { id: umfrageId, titel, beschreibung, enddatum, fragen } = v.data
     const service = await createServiceClient()
 
-    // Basisdaten aktualisieren
+    // Basisdaten aktualisieren — nur Umfragen der eigenen Gemeinde
     const { error: updateError } = await service
       .from('umfragen')
       .update({ titel, beschreibung: beschreibung ?? null, enddatum })
       .eq('id', umfrageId)
+      .eq('gemeinde_id', profile.gemeinde_id!)
 
     if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
 

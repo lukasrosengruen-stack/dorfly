@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withAuth, apiError } from '@/lib/api'
 import { validate, einladungenSendenSchema } from '@/lib/validations'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient, createClient } from '@/lib/supabase/server'
 import { sendeEinladungsEmail } from '@/lib/email'
 
 export const POST = withAuth(
@@ -21,15 +21,20 @@ export const POST = withAuth(
       }
     }
 
-    const supabase = await createServiceClient()
-
-    const { data: gemeinde } = await supabase
+    // gemeinden ist öffentlich lesbar → normaler Client reicht, kein Service-Role nötig
+    const publicClient = await createClient()
+    const { data: gemeinde, error: gemeindeError } = await publicClient
       .from('gemeinden')
       .select('name')
       .eq('id', gemeindeId)
       .single()
 
+    if (gemeindeError) {
+      console.error('[einladungen] Gemeinde-Lookup fehlgeschlagen:', { gemeindeId, error: gemeindeError.message })
+    }
     if (!gemeinde) return apiError('Gemeinde nicht gefunden', 404)
+
+    const supabase = await createServiceClient()
 
     const ergebnisse: { email: string; ok: boolean; fehler?: string }[] = []
 

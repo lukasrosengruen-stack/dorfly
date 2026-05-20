@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { profilAnlegen, type RegistrierungsDaten } from '@/lib/profil-anlegen'
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
@@ -26,8 +27,21 @@ export async function GET(request: NextRequest) {
       }
     )
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) return response
+    const { error, data } = await supabase.auth.exchangeCodeForSession(code)
+    if (!error && data.user) {
+      let regDaten: RegistrierungsDaten = {}
+      const regCookie = cookieStore.get('dorfly_reg')
+      if (regCookie?.value) {
+        try {
+          regDaten = JSON.parse(decodeURIComponent(regCookie.value))
+        } catch { /* ungültiges Cookie ignorieren */ }
+        response.cookies.set('dorfly_reg', '', { expires: new Date(0), path: '/' })
+      }
+
+      await profilAnlegen(data.user.id, { email: data.user.email ?? undefined, ...regDaten }).catch(console.error)
+
+      return response
+    }
   }
 
   return NextResponse.redirect(new URL('/login?error=confirmation_failed', origin))

@@ -29,7 +29,7 @@ function extractSlug(hostname: string): string {
   return hostname.replace(`.${ROOT_DOMAIN}`, '')
 }
 
-export function proxy(request: NextRequest) {
+export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const hostname = request.headers.get('host') ?? ''
   const slug = extractSlug(hostname)

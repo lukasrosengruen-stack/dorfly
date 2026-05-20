@@ -102,21 +102,15 @@ export default function LoginPage() {
         router.refresh()
         return
       } else {
-        const { data, error } = await supabase.auth.signUp({ email, password })
+        const { error } = await supabase.auth.signUp({ email, password })
         if (error) throw error
 
-        if (data.user) {
-          await fetch('/api/auth/registrieren', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: data.user.id,
-              vorname,
-              nachname,
-              ...(einladungsToken ? { token: einladungsToken } : {}),
-            }),
-          })
-        }
+        const regDaten: Record<string, string> = {}
+        if (vorname) regDaten.vorname = vorname
+        if (nachname) regDaten.nachname = nachname
+        if (einladungsToken) regDaten.token = einladungsToken
+        document.cookie = `dorfly_reg=${encodeURIComponent(JSON.stringify(regDaten))}; path=/; max-age=1800; SameSite=Lax`
+
         setRegistered(true)
         return
       }

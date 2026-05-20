@@ -103,6 +103,7 @@ export interface Database {
       profiles: {
         Row: {
           id: string
+          email: string | null
           gemeinde_id: string | null
           phone: string
           display_name: string | null
@@ -123,6 +124,7 @@ export interface Database {
         }
         Insert: {
           id: string
+          email?: string | null
           gemeinde_id?: string | null
           phone?: string          // optional beim Insert (kann via DB-Default oder später gesetzt werden)
           display_name?: string | null
@@ -143,6 +145,7 @@ export interface Database {
         }
         Update: {
           id?: string
+          email?: string | null
           gemeinde_id?: string | null
           phone?: string
           display_name?: string | null

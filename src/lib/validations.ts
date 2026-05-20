@@ -47,7 +47,6 @@ export function validate<T>(
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
 export const registrierenSchema = z.object({
-  userId: uuid,
   vorname: z.string().optional(),
   nachname: z.string().optional(),
   token: z.string().optional(),

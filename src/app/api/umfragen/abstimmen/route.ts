@@ -3,7 +3,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { withAuth } from '@/lib/api'
 import { validate, umfrageAbstimmenSchema } from '@/lib/validations'
 
-export const POST = withAuth(async (req, { user }) => {
+export const POST = withAuth(async (req, { user, profile }) => {
   const body = await req.json()
   const v = validate(umfrageAbstimmenSchema, body)
   if (!v.success) return v.error
@@ -21,15 +21,19 @@ export const POST = withAuth(async (req, { user }) => {
 
   if (existing) return NextResponse.json({ error: 'Bereits abgestimmt' }, { status: 409 })
 
-  // Umfrage noch aktiv?
+  // Umfrage aktiv und zur eigenen Gemeinde gehörig?
   const { data: umfrage } = await service
     .from('umfragen')
-    .select('enddatum')
+    .select('enddatum, gemeinde_id')
     .eq('id', umfrageId)
     .single()
 
   if (!umfrage || new Date(umfrage.enddatum) < new Date()) {
     return NextResponse.json({ error: 'Umfrage bereits beendet' }, { status: 400 })
+  }
+
+  if (umfrage.gemeinde_id !== profile.gemeinde_id) {
+    return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
   }
 
   // Antworten speichern

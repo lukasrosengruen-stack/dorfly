@@ -24,20 +24,10 @@ export const PATCH = withAuth(
     const { email, neueRolle, organisation_name, verein_id, org_id } = v.data
     const supabase = await createServiceClient()
 
-    // Ziel-Nutzer per E-Mail finden
-    const { data: { users }, error: authError } = await supabase.auth.admin.listUsers({
-      page: 1,
-      perPage: 1000,
-    })
-    if (authError) return apiError(authError.message)
-
-    const authUser = users.find(u => u.email?.toLowerCase() === email.toLowerCase())
-    if (!authUser) return apiError('Nutzer nicht gefunden', 404)
-
     const { data: zielProfil } = await supabase
       .from('profiles')
       .select('id, display_name, role, gemeinde_id')
-      .eq('id', authUser.id)
+      .eq('email', email.toLowerCase())
       .eq('gemeinde_id', gemeindeId)
       .single()
 
@@ -58,20 +48,19 @@ export const PATCH = withAuth(
     if (neueRolle === 'verein' && verein_id) {
       const { data: alterVerein } = await supabase
         .from('vereine')
-        .select('profile_id, verein_name, profiles!inner(id, display_name, role)')
+        .select('profile_id, verein_name, profiles!inner(id, display_name, role, email)')
         .eq('id', verein_id)
         .eq('gemeinde_id', gemeindeId)
         .single()
 
       if (alterVerein?.profile_id && alterVerein.profile_id !== zielProfil.id) {
-        const alterInhaber = alterVerein.profiles as unknown as { id: string; display_name: string | null; role: string } | null
+        const alterInhaber = alterVerein.profiles as unknown as { id: string; display_name: string | null; role: string; email: string | null } | null
         if (alterInhaber && alterInhaber.role === 'verein') {
           await supabase.from('profiles').update({ role: 'buerger' }).eq('id', alterVerein.profile_id)
 
-          const { data: alterAuthUser } = await supabase.auth.admin.getUserById(alterVerein.profile_id)
-          if (alterAuthUser?.user?.email) {
+          if (alterInhaber.email) {
             await sendeRollenentzugEmail({
-              to: alterAuthUser.user.email,
+              to: alterInhaber.email,
               name: alterInhaber.display_name,
               gemeindeName,
               alteRolle: 'verein',
@@ -81,7 +70,7 @@ export const PATCH = withAuth(
             gemeinde_id: gemeindeId,
             aktion: 'rolle_transfer',
             ziel_profile_id: alterVerein.profile_id,
-            ziel_email: alterAuthUser?.user?.email ?? '',
+            ziel_email: alterInhaber.email ?? '',
             alte_rolle: 'verein',
             neue_rolle: 'buerger',
             ausgefuehrt_von: profile.id,
@@ -95,20 +84,19 @@ export const PATCH = withAuth(
     } else if (['organisation', 'gewerbe'].includes(neueRolle) && org_id) {
       const { data: alteOrg } = await supabase
         .from('organisationen')
-        .select('profile_id, name, profiles!inner(id, display_name, role)')
+        .select('profile_id, name, profiles!inner(id, display_name, role, email)')
         .eq('id', org_id)
         .eq('gemeinde_id', gemeindeId)
         .single()
 
       if (alteOrg?.profile_id && alteOrg.profile_id !== zielProfil.id) {
-        const alterInhaber = alteOrg.profiles as unknown as { id: string; display_name: string | null; role: string } | null
+        const alterInhaber = alteOrg.profiles as unknown as { id: string; display_name: string | null; role: string; email: string | null } | null
         if (alterInhaber && ['organisation', 'gewerbe'].includes(alterInhaber.role)) {
           await supabase.from('profiles').update({ role: 'buerger' }).eq('id', alteOrg.profile_id)
 
-          const { data: alterAuthUser } = await supabase.auth.admin.getUserById(alteOrg.profile_id)
-          if (alterAuthUser?.user?.email) {
+          if (alterInhaber.email) {
             await sendeRollenentzugEmail({
-              to: alterAuthUser.user.email,
+              to: alterInhaber.email,
               name: alterInhaber.display_name,
               gemeindeName,
               alteRolle: alterInhaber.role,
@@ -118,7 +106,7 @@ export const PATCH = withAuth(
             gemeinde_id: gemeindeId,
             aktion: 'rolle_transfer',
             ziel_profile_id: alteOrg.profile_id,
-            ziel_email: alterAuthUser?.user?.email ?? '',
+            ziel_email: alterInhaber.email ?? '',
             alte_rolle: alterInhaber.role,
             neue_rolle: 'buerger',
             ausgefuehrt_von: profile.id,

@@ -1,7 +1,7 @@
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronLeft, User, MapPin, Shield, FileText, Store, Users, AlertTriangle, BarChart2 } from 'lucide-react'
+import { ChevronLeft, User, MapPin, Shield, Store, Users, AlertTriangle, BarChart2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { de } from 'date-fns/locale'
 
@@ -19,8 +19,6 @@ export default async function MeineDatenPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const service = await createServiceClient()
-
   const [
     { data: profile },
     { data: posts },
@@ -31,8 +29,8 @@ export default async function MeineDatenPage() {
   ] = await Promise.all([
     supabase.from('profiles').select('*, gemeinden(name)').eq('id', user.id).single(),
     supabase.from('posts').select('id, titel, channel, created_at').eq('author_id', user.id).order('created_at', { ascending: false }),
-    service.from('gewerbe_abonnements').select('organisationen(name)').eq('user_id', user.id),
-    service.from('verein_abonnements').select('vereine(verein_name)').eq('user_id', user.id),
+    supabase.from('gewerbe_abonnements').select('organisationen(name)').eq('user_id', user.id),
+    supabase.from('verein_abonnements').select('vereine(verein_name)').eq('user_id', user.id),
     supabase.from('maengel').select('id, titel, status, created_at').eq('melder_id', user.id).order('created_at', { ascending: false }),
     supabase.from('umfrage_teilnahmen').select('umfrage_id, created_at').eq('user_id', user.id),
   ])

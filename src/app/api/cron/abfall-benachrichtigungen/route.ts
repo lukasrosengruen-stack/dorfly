@@ -57,17 +57,13 @@ export async function GET(req: NextRequest) {
     termineByGemeinde.set(t.gemeinde_id, [...existing, t.typ])
   }
 
-  // Display-Namen und verifizierte Auth-E-Mails laden
   const userIds = praeferenzen.map(p => p.user_id)
   const { data: profiles } = await service
     .from('profiles')
-    .select('id, display_name')
+    .select('id, display_name, email')
     .in('id', userIds)
 
   const profileMap = new Map((profiles ?? []).map(p => [p.id, p]))
-
-  const { data: { users: authUsers } } = await service.auth.admin.listUsers({ perPage: 1000 })
-  const emailMap = new Map(authUsers.map(u => [u.id, u.email]))
 
   let versendet = 0
   const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
@@ -95,7 +91,7 @@ export async function GET(req: NextRequest) {
 
     // ── E-Mail ───────────────────────────────────────────────────────────────
     if (pref.email_aktiviert && resend) {
-      const email = emailMap.get(pref.user_id)
+      const email = profileMap.get(pref.user_id)?.email
       const displayName = profileMap.get(pref.user_id)?.display_name ?? 'Hallo'
       if (email) {
         await sendEmail(resend, email, displayName, typLabels)

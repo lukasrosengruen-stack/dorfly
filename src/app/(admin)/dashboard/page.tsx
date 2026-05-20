@@ -148,15 +148,22 @@ export default async function DashboardPage() {
   const erledigteMaengel = maengel.filter(m => m.status === 'erledigt').length
   const offeneFragen = fragen.filter(f => f.status === 'offen').length
 
-  // Umfragen-Ergebnisse
-  const umfragenMitErgebnissen = await Promise.all(
-    umfragen.map(async (umfrage) => {
-      const [antwortenResult, teilnahmenResult] = await Promise.all([
-        supabase.from('umfrage_antworten').select('frage_id, antwort_text, option_id').eq('umfrage_id', umfrage.id),
-        supabase.from('umfrage_teilnahmen').select('*', { count: 'exact', head: true }).eq('umfrage_id', umfrage.id),
+  // Umfragen-Ergebnisse — N+1-Fix: 2 Bulk-Queries statt 2n Einzelabfragen
+  const umfragenIds = umfragen.map(u => u.id)
+  const [alleAntwortenResult, alleTeilnahmenResult] = umfragenIds.length > 0
+    ? await Promise.all([
+        supabase.from('umfrage_antworten').select('umfrage_id, frage_id, antwort_text, option_id').in('umfrage_id', umfragenIds),
+        supabase.from('umfrage_teilnahmen').select('umfrage_id').in('umfrage_id', umfragenIds),
       ])
-      const antworten = antwortenResult.data ?? []
-      const teilnehmer = teilnahmenResult.count ?? 0
+    : [{ data: [] as { umfrage_id: string; frage_id: string; antwort_text: string | null; option_id: string | null }[] },
+       { data: [] as { umfrage_id: string }[] }]
+
+  const alleAntworten = alleAntwortenResult.data ?? []
+  const alleTeilnahmen = alleTeilnahmenResult.data ?? []
+
+  const umfragenMitErgebnissen = umfragen.map((umfrage) => {
+      const antworten = alleAntworten.filter(a => a.umfrage_id === umfrage.id)
+      const teilnehmer = alleTeilnahmen.filter(t => t.umfrage_id === umfrage.id).length
 
       const ergebnisse: FrageErgebnis[] = (umfrage.umfrage_fragen ?? []).map((frage: {
         id: string; frage_text: string; typ: string;
@@ -184,7 +191,6 @@ export default async function DashboardPage() {
       })
       return { umfrage, ergebnisse, teilnehmer }
     })
-  )
 
   const reichweite = gemeinde?.haushalte
     ? Math.min(100, Math.round((nutzerAnzahl / gemeinde.haushalte) * 100))

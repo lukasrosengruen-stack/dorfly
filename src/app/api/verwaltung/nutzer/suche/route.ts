@@ -15,31 +15,19 @@ export const GET = withAuth(
 
     const supabase = await createServiceClient()
 
-    // Auth-User per E-Mail suchen (service_role kann auth.users abfragen)
-    const { data: { users }, error: authError } = await supabase.auth.admin.listUsers({
-      page: 1,
-      perPage: 1000,
-    })
-
-    if (authError) return apiError(authError.message)
-
-    const authUser = users.find(u => u.email?.toLowerCase() === email)
-    if (!authUser) return NextResponse.json({ nutzer: null })
-
-    // Profil in der richtigen Gemeinde prüfen
     const { data: nutzerProfil } = await supabase
       .from('profiles')
-      .select('id, display_name, role, gemeinde_id, created_at')
-      .eq('id', authUser.id)
+      .select('id, email, display_name, role, gemeinde_id, created_at')
+      .eq('email', email)
       .eq('gemeinde_id', gemeindeId)
       .single()
 
-    if (!nutzerProfil) return NextResponse.json({ nutzer: null, grund: 'andere_gemeinde' })
+    if (!nutzerProfil) return NextResponse.json({ nutzer: null })
 
     return NextResponse.json({
       nutzer: {
         id: nutzerProfil.id,
-        email: authUser.email,
+        email: nutzerProfil.email,
         display_name: nutzerProfil.display_name,
         vorname: null,
         nachname: null,

@@ -1,4 +1,4 @@
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import GemeinderatClient from './GemeinderatClient'
 
@@ -16,10 +16,8 @@ export default async function GemeinderatPage() {
   const gemeindeId = profile?.gemeinde_id
   if (!gemeindeId) redirect('/home')
 
-  const service = await createServiceClient()
-
   const [postsResult, raeteResult, fragenResult] = await Promise.all([
-    service
+    supabase
       .from('posts')
       .select('id, titel, inhalt, bild_url, bilder_urls, tag, published_at, profiles(display_name, verein_name)')
       .eq('gemeinde_id', gemeindeId)
@@ -27,7 +25,7 @@ export default async function GemeinderatPage() {
       .eq('status', 'published')
       .order('published_at', { ascending: false })
       .limit(50),
-    service
+    supabase
       .from('profiles')
       .select('id, display_name, verein_name, fraktion, ueber_mich, kontakt_email')
       .eq('gemeinde_id', gemeindeId)
