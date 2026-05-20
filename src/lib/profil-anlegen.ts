@@ -11,9 +11,10 @@ export interface RegistrierungsDaten {
 
 export async function profilAnlegen(userId: string, daten: RegistrierungsDaten = {}) {
   const { email, vorname, nachname, token } = daten
-  const supabase = await createServiceClient()
+  const serviceClient = await createServiceClient()
+  const publicClient  = await createClient()
 
-  const { data: bestehendesProfil } = await supabase
+  const { data: bestehendesProfil } = await serviceClient
     .from('profiles')
     .select('id')
     .eq('id', userId)
@@ -21,94 +22,106 @@ export async function profilAnlegen(userId: string, daten: RegistrierungsDaten =
 
   if (bestehendesProfil) return
 
-  const slug = await getGemeindeSlug()
-  const publicClient = await createClient()
-  const { data: gemeinde } = await publicClient
-    .from('gemeinden')
-    .select('id')
-    .eq('slug', slug)
-    .single()
-
+  let gemeindeId: string | null = null
   let rolle: string = 'buerger'
   let einladungId: string | null = null
+  let einladungDetails: {
+    rolle: string
+    verein_id: string | null
+    org_id: string | null
+    organisation_name: string | null
+    gemeinde_id: string
+  } | null = null
 
   if (token) {
-    await supabase.rpc('einladungen_ablauf_aktualisieren')
+    // SECURITY DEFINER-Funktion: kein service_role nötig, funktioniert für anon/authenticated
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: einladungData } = await (publicClient as any).rpc('get_einladung_by_token', { p_token: token })
 
-    const { data: einladung } = await supabase
-      .from('einladungen')
-      .select('id, rolle, status, verein_id, org_id, organisation_name, gemeinde_id')
-      .eq('token', token)
-      .single()
+    if (einladungData && einladungData.status === 'offen') {
+      // Gemeinde-ID direkt aus der Einladung – zuverlässiger als Slug-Lookup
+      gemeindeId = einladungData.gemeinde_id
+      rolle      = einladungData.rolle
 
-    if (einladung && einladung.status === 'offen' && einladung.gemeinde_id === gemeinde?.id) {
-      rolle = einladung.rolle
-      einladungId = einladung.id
-
-      await supabase
+      // Einladung als angenommen markieren (braucht service_role für Schreibzugriff)
+      const { data: einladungRow } = await serviceClient
         .from('einladungen')
-        .update({ status: 'angenommen', angenommen_am: new Date().toISOString() })
-        .eq('id', einladung.id)
+        .select('id, rolle, verein_id, org_id, organisation_name, gemeinde_id')
+        .eq('token', token)
+        .single()
+
+      if (einladungRow) {
+        einladungId     = einladungRow.id
+        einladungDetails = einladungRow
+
+        await serviceClient
+          .from('einladungen')
+          .update({ status: 'angenommen', angenommen_am: new Date().toISOString() })
+          .eq('id', einladungRow.id)
+      }
     }
   }
 
-  const { error } = await supabase.from('profiles').insert({
+  // Kein Token oder Einladung ungültig: Gemeinde per Subdomain-Slug ermitteln
+  if (!gemeindeId) {
+    const slug = await getGemeindeSlug()
+    const { data: gemeinde } = await publicClient
+      .from('gemeinden')
+      .select('id')
+      .eq('slug', slug)
+      .single()
+    gemeindeId = gemeinde?.id ?? null
+  }
+
+  const { error } = await serviceClient.from('profiles').insert({
     id: userId,
     email: email ?? null,
     role: rolle as UserRole,
-    gemeinde_id: gemeinde?.id ?? null,
+    gemeinde_id: gemeindeId,
     display_name: [vorname, nachname].filter(Boolean).join(' ') || null,
   })
 
   if (error) throw error
 
-  if (einladungId) {
-    const { data: einladung } = await supabase
-      .from('einladungen')
-      .select('rolle, verein_id, org_id, organisation_name, gemeinde_id')
-      .eq('id', einladungId)
-      .single()
-
-    if (einladung) {
-      if (einladung.rolle === 'verein') {
-        if (einladung.verein_id) {
-          await supabase
-            .from('vereine')
-            .update({ profile_id: userId })
-            .eq('id', einladung.verein_id)
-        } else if (einladung.organisation_name) {
-          await supabase.from('vereine').insert({
-            profile_id: userId,
-            gemeinde_id: einladung.gemeinde_id,
-            verein_name: einladung.organisation_name,
-            typ: 'verein',
-          })
-        }
-      } else if (['organisation', 'gewerbe'].includes(einladung.rolle)) {
-        if (einladung.org_id) {
-          await supabase
-            .from('organisationen')
-            .update({ profile_id: userId })
-            .eq('id', einladung.org_id)
-        } else if (einladung.organisation_name) {
-          await supabase.from('organisationen').insert({
-            profile_id: userId,
-            gemeinde_id: einladung.gemeinde_id,
-            name: einladung.organisation_name,
-            typ: einladung.rolle as 'gewerbe' | 'verein' | 'institution',
-          })
-        }
+  if (einladungId && einladungDetails) {
+    if (einladungDetails.rolle === 'verein') {
+      if (einladungDetails.verein_id) {
+        await serviceClient
+          .from('vereine')
+          .update({ profile_id: userId })
+          .eq('id', einladungDetails.verein_id)
+      } else if (einladungDetails.organisation_name) {
+        await serviceClient.from('vereine').insert({
+          profile_id: userId,
+          gemeinde_id: einladungDetails.gemeinde_id,
+          verein_name: einladungDetails.organisation_name,
+          typ: 'verein',
+        })
       }
-
-      await supabase.from('rollen_log').insert({
-        gemeinde_id: einladung.gemeinde_id,
-        aktion: 'eingeladen',
-        ziel_profile_id: userId,
-        ziel_email: '',
-        neue_rolle: einladung.rolle,
-        einladung_id: einladungId,
-        ausgefuehrt_von: userId,
-      })
+    } else if (['organisation', 'gewerbe'].includes(einladungDetails.rolle ?? '')) {
+      if (einladungDetails.org_id) {
+        await serviceClient
+          .from('organisationen')
+          .update({ profile_id: userId })
+          .eq('id', einladungDetails.org_id)
+      } else if (einladungDetails.organisation_name) {
+        await serviceClient.from('organisationen').insert({
+          profile_id: userId,
+          gemeinde_id: einladungDetails.gemeinde_id,
+          name: einladungDetails.organisation_name,
+          typ: einladungDetails.rolle as 'gewerbe' | 'verein' | 'institution',
+        })
+      }
     }
+
+    await serviceClient.from('rollen_log').insert({
+      gemeinde_id: einladungDetails.gemeinde_id,
+      aktion: 'eingeladen',
+      ziel_profile_id: userId,
+      ziel_email: '',
+      neue_rolle: einladungDetails.rolle,
+      einladung_id: einladungId,
+      ausgefuehrt_von: userId,
+    })
   }
 }
