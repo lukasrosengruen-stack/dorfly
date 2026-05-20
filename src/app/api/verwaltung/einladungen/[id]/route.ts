@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withAuth, apiError } from '@/lib/api'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { sendeEinladungsEmail } from '@/lib/email'
 
 // DELETE /api/verwaltung/einladungen/[id] – Einladung widerrufen
@@ -9,7 +9,7 @@ export const DELETE = withAuth(
     const id = req.nextUrl.pathname.split('/').at(-1)
     if (!id) return apiError('ID fehlt', 400)
 
-    const supabase = await createServiceClient()
+    const supabase = await createClient()
 
     const gemeindeFilter = profile.role === 'super_admin'
       ? supabase.from('einladungen').select('id, status, email, rolle, gemeinde_id').eq('id', id).single()
@@ -47,7 +47,7 @@ export const POST = withAuth(
     const id = req.nextUrl.pathname.split('/').at(-1)
     if (!id) return apiError('ID fehlt', 400)
 
-    const supabase = await createServiceClient()
+    const supabase = await createClient()
 
     const einladungQuery = profile.role === 'super_admin'
       ? supabase.from('einladungen').select('*').eq('id', id).single()

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withAuth, apiError } from '@/lib/api'
 import { validate, einladungenSendenSchema } from '@/lib/validations'
-import { createServiceClient, createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { sendeEinladungsEmail } from '@/lib/email'
 
 export const POST = withAuth(
@@ -34,7 +34,7 @@ export const POST = withAuth(
     }
     if (!gemeinde) return apiError('Gemeinde nicht gefunden', 404)
 
-    const supabase = await createServiceClient()
+    const supabase = publicClient
 
     const ergebnisse: { email: string; ok: boolean; fehler?: string }[] = []
 
@@ -106,7 +106,7 @@ export const GET = withAuth(
       : profile.gemeinde_id
     if (!gemeindeId) return apiError('Keine Gemeinde zugewiesen', 400)
 
-    const supabase = await createServiceClient()
+    const supabase = await createClient()
 
     // Abgelaufene Einladungen aktualisieren
     await supabase.rpc('einladungen_ablauf_aktualisieren')
