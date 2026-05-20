@@ -29,13 +29,11 @@ export async function GET(request: NextRequest) {
 
     const { error, data } = await supabase.auth.exchangeCodeForSession(code)
     if (!error && data.user) {
-      let regDaten: RegistrierungsDaten = {}
-      const regCookie = cookieStore.get('dorfly_reg')
-      if (regCookie?.value) {
-        try {
-          regDaten = JSON.parse(decodeURIComponent(regCookie.value))
-        } catch { /* ungültiges Cookie ignorieren */ }
-        response.cookies.set('dorfly_reg', '', { expires: new Date(0), path: '/' })
+      const meta = data.user.user_metadata ?? {}
+      const regDaten: RegistrierungsDaten = {
+        vorname: meta.vorname,
+        nachname: meta.nachname,
+        token: meta.einladungs_token,
       }
 
       await profilAnlegen(data.user.id, { email: data.user.email ?? undefined, ...regDaten }).catch(console.error)

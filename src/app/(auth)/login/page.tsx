@@ -102,14 +102,21 @@ export default function LoginPage() {
         router.refresh()
         return
       } else {
-        const { error } = await supabase.auth.signUp({ email, password })
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            // Redirect zur aktuellen Subdomain statt zur konfigurierten Site URL
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+            // Registrierungsdaten in user_metadata – funktioniert domain-übergreifend
+            data: {
+              vorname: vorname || undefined,
+              nachname: nachname || undefined,
+              einladungs_token: einladungsToken || undefined,
+            },
+          },
+        })
         if (error) throw error
-
-        const regDaten: Record<string, string> = {}
-        if (vorname) regDaten.vorname = vorname
-        if (nachname) regDaten.nachname = nachname
-        if (einladungsToken) regDaten.token = einladungsToken
-        document.cookie = `dorfly_reg=${encodeURIComponent(JSON.stringify(regDaten))}; path=/; max-age=1800; SameSite=Lax`
 
         setRegistered(true)
         return
