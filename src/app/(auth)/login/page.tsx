@@ -95,11 +95,23 @@ export default function LoginPage() {
         if (error) throw error
         const { data: profile } = await supabase
           .from('profiles')
-          .select('role')
+          .select('role, gemeinden(slug)')
           .eq('id', data.user?.id ?? '')
           .single()
-        router.push(profile?.role === 'super_admin' ? '/admin/dashboard' : '/home')
-        router.refresh()
+        if (profile?.role === 'super_admin') {
+          router.push('/admin/dashboard')
+          router.refresh()
+        } else {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const slug = (profile as any)?.gemeinden?.slug as string | undefined
+          const currentHost = window.location.hostname
+          if (slug && currentHost !== `${slug}.dorfly.de`) {
+            window.location.href = `https://${slug}.dorfly.de/home`
+          } else {
+            router.push('/home')
+            router.refresh()
+          }
+        }
         return
       } else {
         const { error } = await supabase.auth.signUp({
