@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 // GET /api/einladung/[token] – Öffentlicher Endpunkt, liefert Einladungsdetails für die Registrierungsseite
 export async function GET(req: NextRequest) {
@@ -8,19 +8,29 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Ungültiger Token' }, { status: 400 })
   }
 
-  const supabase = await createServiceClient()
+  // Anon-kompatibler Lookup via SECURITY DEFINER-Funktion (kein service_role nötig)
+  const supabase = await createClient()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any).rpc('get_einladung_by_token', { p_token: token })
 
-  // Abgelaufene Einladungen aktualisieren
-  await supabase.rpc('einladungen_ablauf_aktualisieren')
-
-  const { data: einladung } = await supabase
-    .from('einladungen')
-    .select('email, rolle, organisation_name, hinweis, status, ablauft_am, gemeinde_id')
-    .eq('token', token)
-    .single()
-
-  if (!einladung) {
+  if (error) {
+    console.error('[einladung/token] RPC-Fehler:', error.message)
     return NextResponse.json({ error: 'Einladung nicht gefunden' }, { status: 404 })
+  }
+
+  if (!data) {
+    return NextResponse.json({ error: 'Einladung nicht gefunden' }, { status: 404 })
+  }
+
+  const einladung = data as {
+    email: string
+    rolle: string
+    organisation_name: string | null
+    hinweis: string | null
+    status: string
+    ablauft_am: string
+    gemeinde_id: string
+    gemeinde_name: string
   }
 
   if (einladung.status !== 'offen') {
@@ -30,18 +40,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Einladung nicht mehr gültig', grund }, { status: 410 })
   }
 
-  const { data: gemeinde } = await supabase
-    .from('gemeinden')
-    .select('name')
-    .eq('id', einladung.gemeinde_id)
-    .single()
-
   return NextResponse.json({
-    email: einladung.email,
-    rolle: einladung.rolle,
+    email:             einladung.email,
+    rolle:             einladung.rolle,
     organisation_name: einladung.organisation_name,
-    hinweis: einladung.hinweis,
-    gemeinde_name: gemeinde?.name ?? '',
-    ablauft_am: einladung.ablauft_am,
+    hinweis:           einladung.hinweis,
+    gemeinde_name:     einladung.gemeinde_name,
+    ablauft_am:        einladung.ablauft_am,
   })
 }
