@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import {
   Newspaper, MapPin, MessageCircle, BarChart2, Landmark,
   ShoppingBag, Shield, Menu, X, Check, ChevronRight,
+  AlertTriangle, Trash2, Bell,
 } from 'lucide-react'
 
 // ── Brand tokens ──────────────────────────────────────────────────────────────
@@ -142,7 +143,7 @@ function PhoneMockup() {
                 </div>
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 600, color: C.navy }}>Sperrung Hauptstraße</div>
-                  <div style={{ fontSize: 10, color: C.muted }}>15.–17. Mai</div>
+                  <div style={{ fontSize: 10, color: C.muted }}>15. bis 17. Mai</div>
                 </div>
               </div>
             </div>
@@ -233,8 +234,8 @@ function DemoModal({ onClose }: { onClose: () => void }) {
             <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
               <Check size={28} color={C.green} />
             </div>
-            <h3 style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.03em', color: C.navy, marginBottom: 10 }}>Nachricht erhalten!</h3>
-            <p style={{ fontSize: 15, color: C.muted, lineHeight: 1.65 }}>Wir melden uns persönlich bei Ihnen. Danke für Ihr Interesse an Dorfly.</p>
+            <h3 style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.03em', color: C.navy, marginBottom: 10 }}>Nachricht erhalten.</h3>
+            <p style={{ fontSize: 15, color: C.muted, lineHeight: 1.65 }}>Ich melde mich gerne persönlich bei Ihnen.</p>
             <button
               onClick={onClose}
               style={{ marginTop: 24, padding: '12px 28px', background: C.blue, color: C.white, border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
@@ -246,7 +247,7 @@ function DemoModal({ onClose }: { onClose: () => void }) {
           <form onSubmit={handleSubmit}>
             <h3 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.04em', color: C.navy, marginBottom: 6 }}>Demo anfragen</h3>
             <p style={{ fontSize: 14, color: C.muted, marginBottom: 28, lineHeight: 1.6 }}>
-              Schreiben Sie uns kurz – wir melden uns persönlich bei Ihnen.
+              Schreiben Sie mir kurz. Ich melde mich gerne persönlich bei Ihnen.
             </p>
 
             {[
@@ -296,10 +297,155 @@ function DemoModal({ onClose }: { onClose: () => void }) {
                 letterSpacing: '-0.02em', transition: 'background .2s',
               }}
             >
-              {status === 'loading' ? 'Wird gesendet…' : 'Demo anfragen →'}
+              {status === 'loading' ? 'Wird gesendet...' : 'Senden'}
             </button>
             <p style={{ fontSize: 12, color: '#94A3B8', textAlign: 'center', marginTop: 12 }}>
-              Kein IT-Projekt. Kein langer Einführungsprozess. Persönlich begleitet.
+              Unverbindlich. Kein IT-Projekt. Kein langer Einführungsprozess.
+            </p>
+          </form>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Updates modal ─────────────────────────────────────────────────────────────
+function UpdatesModal({ onClose }: { onClose: () => void }) {
+  const [form, setForm] = useState({ vorname: '', nachname: '', email: '', gemeinde: '' })
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    document.body.style.overflow = 'hidden'
+    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = '' }
+  }, [onClose])
+
+  async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setStatus('loading')
+    try {
+      const res = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      if (!res.ok) throw new Error()
+      setStatus('success')
+    } catch {
+      setStatus('error')
+    }
+  }
+
+  const inputStyle = {
+    width: '100%', padding: '13px 16px', borderRadius: 10,
+    border: `1.5px solid ${C.border}`, fontFamily: 'inherit',
+    fontSize: 14, color: C.navy, outline: 'none',
+    background: C.bg, transition: 'border-color .2s', boxSizing: 'border-box' as const,
+  }
+
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 200,
+        background: 'rgba(13,27,42,0.6)', backdropFilter: 'blur(8px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '16px',
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div style={{
+        background: C.white, borderRadius: 24, padding: 'clamp(24px, 5vw, 36px)', maxWidth: 420, width: '100%',
+        boxShadow: '0 32px 80px rgba(13,27,42,.25)', position: 'relative',
+        maxHeight: '90vh', overflowY: 'auto',
+      }}>
+        <button
+          onClick={onClose}
+          style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', cursor: 'pointer', color: C.muted, padding: 4, display: 'flex', alignItems: 'center' }}
+        >
+          <X size={20} />
+        </button>
+
+        {status === 'success' ? (
+          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+              <Check size={28} color={C.green} />
+            </div>
+            <h3 style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.03em', color: C.navy, marginBottom: 10 }}>Eingetragen.</h3>
+            <p style={{ fontSize: 15, color: C.muted, lineHeight: 1.65 }}>Sie erhalten gleich eine E-Mail zur Bestätigung.</p>
+            <button
+              onClick={onClose}
+              style={{ marginTop: 24, padding: '12px 28px', background: C.blue, color: C.white, border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              Schließen
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <h3 style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.04em', color: C.navy, marginBottom: 6 }}>Auf dem Laufenden bleiben</h3>
+            <p style={{ fontSize: 14, color: C.muted, marginBottom: 24, lineHeight: 1.6 }}>
+              Ich informiere Sie, wenn es Wichtiges zu Dorfly gibt. Höchstens ein paar Mal im Jahr.
+            </p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+              {[
+                { id: 'vorname', label: 'Vorname', placeholder: 'Vorname' },
+                { id: 'nachname', label: 'Nachname', placeholder: 'Nachname' },
+              ].map(({ id, label, placeholder }) => (
+                <div key={id}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, letterSpacing: '.04em', textTransform: 'uppercase' as const }}>{label}</label>
+                  <input
+                    type="text"
+                    required
+                    value={form[id as keyof typeof form]}
+                    onChange={e => setForm(f => ({ ...f, [id]: e.target.value }))}
+                    placeholder={placeholder}
+                    style={inputStyle}
+                    onFocus={e => { e.currentTarget.style.borderColor = C.blue; e.currentTarget.style.background = C.white }}
+                    onBlur={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.background = C.bg }}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {[
+              { id: 'email',    label: 'E-Mail',             placeholder: 'ihre@email.de',  type: 'email', required: true  },
+              { id: 'gemeinde', label: 'Gemeinde (optional)', placeholder: 'z.B. Ehningen', type: 'text',  required: false },
+            ].map(({ id, label, placeholder, type, required }) => (
+              <div key={id} style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, letterSpacing: '.04em', textTransform: 'uppercase' as const }}>{label}</label>
+                <input
+                  type={type}
+                  required={required}
+                  value={form[id as keyof typeof form]}
+                  onChange={e => setForm(f => ({ ...f, [id]: e.target.value }))}
+                  placeholder={placeholder}
+                  style={inputStyle}
+                  onFocus={e => { e.currentTarget.style.borderColor = C.blue; e.currentTarget.style.background = C.white }}
+                  onBlur={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.background = C.bg }}
+                />
+              </div>
+            ))}
+
+            {status === 'error' && (
+              <p style={{ fontSize: 13, color: '#E11D48', marginBottom: 12 }}>Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={status === 'loading'}
+              style={{
+                width: '100%', padding: 14, background: status === 'loading' ? C.muted : C.navy,
+                color: C.white, border: 'none', borderRadius: 12, fontFamily: 'inherit',
+                fontSize: 15, fontWeight: 700, cursor: status === 'loading' ? 'default' : 'pointer',
+                letterSpacing: '-0.02em', transition: 'background .2s',
+              }}
+            >
+              {status === 'loading' ? 'Wird eingetragen...' : 'Eintragen'}
+            </button>
+            <p style={{ fontSize: 11, color: '#94A3B8', textAlign: 'center', marginTop: 12, lineHeight: 1.6 }}>
+              Mit dem Eintragen willigen Sie ein, dass wir Ihre E-Mail-Adresse zum Versand von Updates zu Dorfly verwenden. Sie können sich jederzeit per Link in jeder E-Mail abmelden.{' '}
+              <a href="/datenschutz" style={{ color: C.muted, textDecoration: 'underline' }}>Mehr in der Datenschutzerklärung.</a>
             </p>
           </form>
         )}
@@ -334,10 +480,10 @@ function Nav({ onDemo }: { onDemo: () => void }) {
   }, [])
 
   const links = [
-    { label: 'Für wen?',   href: '#zielgruppen' },
-    { label: 'Funktionen', href: '#features'     },
-    { label: 'Setup',      href: '#setup'        },
-    { label: 'Über uns',   href: '#about'        },
+    { label: 'Für wen?',    href: '#zielgruppen' },
+    { label: 'Funktionen',  href: '#features'     },
+    { label: 'Setup',       href: '#setup'        },
+    { label: 'Über Dorfly', href: '#about'        },
   ]
 
   return (
@@ -442,34 +588,27 @@ function Hero({ onDemo }: { onDemo: () => void }) {
         <div className="grid md:grid-cols-2 gap-16 items-center">
           {/* Left */}
           <div>
-            <R>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 28 }}>
-                <div style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 8,
-                  background: C.white, border: `1px solid ${C.border}`, borderRadius: 100,
-                  padding: '6px 14px 6px 8px', fontSize: 12, fontWeight: 700,
-                  color: C.blue, letterSpacing: '.06em', textTransform: 'uppercase',
-                }}>
-                  <span style={{ width: 8, height: 8, background: C.green, borderRadius: '50%', flexShrink: 0 }} />
-                  Pilotphase
-                </div>
-                <span style={{ fontSize: 14, fontWeight: 600, color: C.muted }}>Lokal vernetzt.</span>
-              </div>
-            </R>
-
             <R delay={0.1}>
               <h1 style={{
-                fontSize: 'clamp(36px, 5.5vw, 70px)', fontWeight: 800,
-                letterSpacing: '-0.04em', lineHeight: 1.06, color: C.navy, marginBottom: 24,
+                fontSize: 'clamp(40px, 6vw, 76px)', fontWeight: 800,
+                letterSpacing: '-0.04em', lineHeight: 1.04, color: C.navy, marginBottom: 12,
               }}>
-                Deine Gemeinde.<br />
-                <span style={{ color: C.blue }}>Dein Smartphone.</span>
+                Lokal vernetzt.
               </h1>
+            </R>
+
+            <R delay={0.15}>
+              <h2 style={{
+                fontSize: 'clamp(22px, 3vw, 38px)', fontWeight: 700,
+                letterSpacing: '-0.03em', lineHeight: 1.2, color: C.blue, marginBottom: 28,
+              }}>
+                Ihre Gemeinde. In einer App.
+              </h2>
             </R>
 
             <R delay={0.2}>
               <p style={{ fontSize: 17, lineHeight: 1.7, color: C.muted, maxWidth: 480, marginBottom: 40 }}>
-                Social Media erreicht nicht alle. Und wenn, dann entscheidet der Algorithmus. Dorfly ist anders. Der direkte, offizielle Kanal zwischen Ihrer Verwaltung und Ihrer Bürgerschaft. Für alle Lebensbereiche Ihrer Kommune. Entwickelt für Gemeinden und Ortsteile bis 15.000 Einwohner.
+                Dorfly ist der offizielle digitale Kanal Ihrer Gemeinde. Verwaltung, Kommunalpolitik, Vereine und lokales Gewerbe an einem Ort. Strukturiert. Direkt. Für alle, die hier leben. Entwickelt für kleine und mittlere Kommunen, mit Schwerpunkt auf Gemeinden und Ortsteilen bis 15.000 Einwohner.
               </p>
             </R>
 
@@ -517,25 +656,81 @@ function Hero({ onDemo }: { onDemo: () => void }) {
   )
 }
 
+// ── PROBLEM ───────────────────────────────────────────────────────────────────
+function Problem() {
+  return (
+    <section style={{ padding: 'clamp(64px, 10vw, 120px) 0', background: C.bg }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 clamp(20px, 5vw, 48px)' }}>
+        <R><Eyebrow>Das Problem</Eyebrow></R>
+        <R delay={0.1}>
+          <h2 style={{ fontSize: 'clamp(30px, 3.5vw, 52px)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.1, color: C.navy, marginBottom: 40 }}>
+            Viele Kanäle. Keine Heimat.
+          </h2>
+        </R>
+        <R delay={0.2}>
+          <div style={{ fontSize: 18, lineHeight: 1.8, color: C.muted }}>
+            <p style={{ marginBottom: 20 }}>
+              Sie kommunizieren über Homepage, Mitteilungsblatt, Social Media, E-Mail und Telefon. Jeder Kanal hat seinen Platz. Aber niemand weiß, wo etwas zu finden ist. Manches geht unter. Manches erreicht nicht die Richtigen. Auf Social Media entscheidet der Algorithmus, wer Ihre Nachricht sieht.
+            </p>
+            <p style={{ marginBottom: 20 }}>
+              Dorfly ersetzt diese Kanäle nicht. Dorfly bündelt das, was wirklich relevant ist, an einem Ort. Strukturiert. Offiziell. Für alle Lebensbereiche Ihrer Gemeinde.
+            </p>
+            <p style={{ marginBottom: 20 }}>
+              Nicht nur Sie zu Ihrer Bürgerschaft. Sondern auch Ihre Bürgerschaft zu Ihnen.
+            </p>
+            <p style={{ fontWeight: 700, color: C.navy, fontSize: 20 }}>Das ist Dorfly.</p>
+          </div>
+        </R>
+      </div>
+    </section>
+  )
+}
+
 // ── ZIELGRUPPEN ───────────────────────────────────────────────────────────────
 const zielgruppen = [
-  { icon: '🏛️', title: 'Für Bürgermeisterinnen und Bürgermeister', text: 'Endlich ein Kanal, der wirklich ankommt. Ohne Algorithmus. Ohne Streuverlust. Ohne Social Media.',      color: '#EFF6FF' },
-  { icon: '🏗️', title: 'Für die Kommunalpolitik',                   text: 'Zeigen Sie Haltung. Erklären Sie Entscheidungen. Bürgernähe wird sichtbar.',                            color: '#F0FDF4' },
-  { icon: '🤝', title: 'Für Vereine und Ehrenamt',                  text: 'Eure eigene Bühne. News und Veranstaltungen direkt zu euren Mitgliedern und der ganzen Gemeinde.',       color: '#FFF7ED' },
-  { icon: '⚙️', title: 'Für die Verwaltung',                        text: 'DSGVO-konform. In wenigen Tagen einsatzbereit. Kein IT-Projekt.',                                        color: '#F5F3FF' },
+  {
+    icon: '🏛️', color: '#EFF6FF',
+    title: 'Bürgermeisterinnen und Bürgermeister',
+    text: 'Endlich ein Kanal, der wirklich ankommt. Ohne Algorithmus. Ohne Streuverlust. Ohne Social Media. Auch im Ernstfall erreichen Sie Ihre Bürgerschaft direkt.',
+  },
+  {
+    icon: '🏗️', color: '#F0FDF4',
+    title: 'Gemeinderat',
+    text: 'Eine eigene Bühne für Fraktionen und einzelne Mandatsträger. Entscheidungen werden nachvollziehbar. Demokratie wird im Alltag sichtbar.',
+  },
+  {
+    icon: '⚙️', color: '#F5F3FF',
+    title: 'Verwaltung',
+    text: 'DSGVO-konform. In wenigen Tagen einsatzbereit. Kein IT-Projekt.',
+  },
+  {
+    icon: '👥', color: '#FFF7ED',
+    title: 'Bürgerinnen und Bürger',
+    text: 'Alles aus dem Ort in einer App. Vom Festle bis zur Erinnerung an die Mülltonne. Direkter Kontakt zu Mandatsträgern. Vereinsnachrichten und Angebote vom Hofladen direkt aufs Handy. Persönlich anpassbar. Nichts verpassen, was wirklich relevant ist.',
+  },
+  {
+    icon: '🤝', color: '#F0FDF4',
+    title: 'Vereine und Ehrenamt',
+    text: 'Sichtbarkeit für News und Veranstaltungen. Direkt zu Mitgliedern und der ganzen Gemeinde. Eine neue Bühne, auch für die Mitgliedergewinnung.',
+  },
+  {
+    icon: '🛒', color: '#EFF6FF',
+    title: 'Lokales Gewerbe',
+    text: 'Sichtbarkeit im Ort. Hyperlokal. Direkt bei den Menschen, die hier leben, arbeiten und einkaufen.',
+  },
 ]
 
 function Zielgruppen() {
   return (
     <section id="zielgruppen" style={{ background: C.white, padding: 'clamp(64px, 10vw, 120px) 0' }}>
       <div style={{ maxWidth: 1320, margin: '0 auto', padding: '0 clamp(20px, 5vw, 48px)' }}>
-        <R><Eyebrow>Für jeden in Ihrer Gemeinde</Eyebrow></R>
+        <R><Eyebrow>Für alle in Ihrer Gemeinde</Eyebrow></R>
         <R delay={0.1}>
           <h2 style={{ fontSize: 'clamp(30px, 3.5vw, 52px)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.1, color: C.navy, marginBottom: 64 }}>
-            Für jeden in Ihrer Gemeinde.
+            Für alle in Ihrer Gemeinde.
           </h2>
         </R>
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
           {zielgruppen.map(({ icon, title, text, color }, i) => (
             <R key={title} delay={i * 0.08}>
               <div
@@ -559,44 +754,56 @@ function Zielgruppen() {
   )
 }
 
-// ── PROBLEM ───────────────────────────────────────────────────────────────────
-function Problem() {
-  return (
-    <section style={{ padding: 'clamp(64px, 10vw, 120px) 0', background: C.bg }}>
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 clamp(20px, 5vw, 48px)' }}>
-        <R><Eyebrow>Das Problem</Eyebrow></R>
-        <R delay={0.1}>
-          <h2 style={{ fontSize: 'clamp(30px, 3.5vw, 52px)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.1, color: C.navy, marginBottom: 40 }}>
-            Das kennen Sie.
-          </h2>
-        </R>
-        <R delay={0.2}>
-          <div style={{ fontSize: 18, lineHeight: 1.8, color: C.muted }}>
-            <p style={{ marginBottom: 20 }}>
-              Social Media erreicht nicht alle. Wenn doch, entscheidet der Algorithmus, wer Ihre Nachricht sieht. Das Mitteilungsblatt ist langsam, kostenintensiv und einseitig. Ihre Gemeinde-Website liest niemand täglich.
-            </p>
-            <p style={{ marginBottom: 20 }}>
-              Sie wissen nicht, wen Sie erreichen. Ihre Bürgerschaft weiß nicht, wohin sie sich wenden soll.
-            </p>
-            <p style={{ marginBottom: 20 }}>
-              Dabei wäre es so einfach. Ein direkter, offizieller Kanal für alle Lebensbereiche Ihrer Kommune. Nicht nur Sie zu Ihrer Bürgerschaft. Sondern auch Ihre Bürgerschaft zu Ihnen.
-            </p>
-            <p style={{ fontWeight: 700, color: C.navy, fontSize: 20 }}>Das ist Dorfly.</p>
-          </div>
-        </R>
-      </div>
-    </section>
-  )
-}
-
 // ── FEATURES ──────────────────────────────────────────────────────────────────
 const features = [
-  { icon: <Newspaper size={22} color={C.blue}    />, iconBg: '#EFF6FF', title: 'Newsfeed',           text: 'Amtliche Mitteilungen, Vereinsnews und lokale Angebote. Strukturiert. Direkt aufs Smartphone. Ihre Bürgerschaft sieht nur, was sie wirklich interessiert.' },
-  { icon: <MapPin     size={22} color={C.green}   />, iconBg: '#F0FDF4', title: 'Mängelmelder',       text: 'Schäden melden mit GPS und Foto. Direkt an die Verwaltung. Kein Anruf. Kein Formular. Kein Umweg.' },
-  { icon: <MessageCircle size={22} color="#F59E0B" />, iconBg: '#FFF7ED', title: 'Frag die Gemeinde', text: 'Der direkte Draht zwischen Bürgerschaft und Verwaltung. Fragen werden gestellt, beantwortet und für alle sichtbar gemacht.' },
-  { icon: <BarChart2  size={22} color="#7C3AED"   />, iconBg: '#F5F3FF', title: 'Bürgerbeteiligung', text: 'Umfragen und Abstimmungen. Für alle oder nur für verifizierte Einwohnerinnen und Einwohner Ihrer Kommune. Sie entscheiden.' },
-  { icon: <Landmark   size={22} color="#E11D48"   />, iconBg: '#FFF1F2', title: 'Kommunalpolitik',   text: 'Gemeinderatsfraktionen kommunizieren direkt mit der Bürgerschaft. Entscheidungen werden nachvollziehbar.' },
-  { icon: <ShoppingBag size={22} color="#0EA5E9"  />, iconBg: '#F0F9FF', title: 'Lokale Angebote',   text: 'Vom Erdbeerbauern bis zum Friseur. Hyperlokale Angebote, die aktiv abonniert werden. Kein Spam. Kein Algorithmus.' },
+  {
+    icon: <Landmark     size={22} color="#E11D48"   />, iconBg: '#FFF1F2',
+    title: 'Kommunalpolitik',
+    text: 'Eine eigene Bühne für Gemeinderatsfraktionen und einzelne Mandatsträger. Entscheidungen werden erklärt. Positionen werden sichtbar. Bürger können gezielt Fragen an einzelne Ratsmitglieder stellen, direkt und nachvollziehbar. Demokratie findet im Alltag statt, nicht nur im Ratssaal.',
+    badge: true,
+  },
+  {
+    icon: <BarChart2    size={22} color="#7C3AED"   />, iconBg: '#F5F3FF',
+    title: 'Bürgerbeteiligung',
+    text: 'Umfragen und Abstimmungen. Für alle oder nur für verifizierte Einwohnerinnen und Einwohner Ihrer Kommune. Sie entscheiden, wer mitgestaltet.',
+    badge: false,
+  },
+  {
+    icon: <Newspaper    size={22} color={C.blue}    />, iconBg: '#EFF6FF',
+    title: 'Newsfeed',
+    text: 'Amtliche Mitteilungen, Vereinsnews, Veranstaltungen und Angebote aus dem lokalen Gewerbe. Strukturiert. Direkt aufs Smartphone. Ihre Bürgerschaft sieht nur, was sie wirklich interessiert.',
+    badge: false,
+  },
+  {
+    icon: <AlertTriangle size={22} color="#F59E0B"  />, iconBg: '#FFFBEB',
+    title: 'Krisenkommunikation',
+    text: 'Im Ernstfall sofort die richtige Information an die richtigen Menschen. Push-Benachrichtigung an die ganze Gemeinde oder gezielt an Ortsteile. Offizieller Absender. Keine Gerüchte.',
+    badge: false,
+  },
+  {
+    icon: <MessageCircle size={22} color="#0EA5E9"  />, iconBg: '#F0F9FF',
+    title: 'Frag den Bürgermeister',
+    text: 'Der direkte Draht zwischen Bürgerschaft und Verwaltung. Fragen werden gestellt, beantwortet und für alle sichtbar gemacht.',
+    badge: false,
+  },
+  {
+    icon: <MapPin        size={22} color={C.green}  />, iconBg: '#F0FDF4',
+    title: 'Mängelmelder',
+    text: 'Schäden melden mit GPS und Foto. Direkt an die Verwaltung. Kein Anruf. Kein Formular. Kein Umweg.',
+    badge: false,
+  },
+  {
+    icon: <Trash2        size={22} color="#64748B"  />, iconBg: '#F8FAFC',
+    title: 'Abfallkalender',
+    text: 'Termine für Restmüll, Bio, Papier und Gelben Sack. Personalisiert auf das, was bei Ihnen abgeholt wird. Mit Erinnerung am Vorabend. Schluss mit Suchen und Vergessen.',
+    badge: false,
+  },
+  {
+    icon: <ShoppingBag   size={22} color="#0EA5E9"  />, iconBg: '#F0F9FF',
+    title: 'Lokales Gewerbe',
+    text: 'Vom Erdbeerbauern bis zum Friseur. Hyperlokale Angebote, die aktiv abonniert werden. Sichtbarkeit für Ihre Wirtschaft. Kein Spam. Kein Algorithmus.',
+    badge: false,
+  },
 ]
 
 function Features() {
@@ -616,17 +823,28 @@ function Features() {
         </R>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {features.map(({ icon, iconBg, title, text }, i) => (
+          {features.map(({ icon, iconBg, title, text, badge }, i) => (
             <R key={title} delay={(i % 3) * 0.08}>
               <div
                 style={{
                   background: C.bg, borderRadius: 22, padding: 32,
                   border: `1.5px solid ${C.border}`, height: '100%',
+                  position: 'relative', overflow: 'hidden',
                   transition: 'border-color .25s, box-shadow .25s, transform .25s',
                 }}
                 onMouseEnter={e => { const el = e.currentTarget; el.style.borderColor = C.blue; el.style.boxShadow = '0 16px 48px rgba(0,87,168,.1)'; el.style.transform = 'translateY(-4px)' }}
                 onMouseLeave={e => { const el = e.currentTarget; el.style.borderColor = C.border; el.style.boxShadow = 'none'; el.style.transform = 'none' }}
               >
+                {badge && (
+                  <div style={{
+                    position: 'absolute', top: 16, right: 16,
+                    background: C.green, color: C.white,
+                    fontSize: 10, fontWeight: 700, letterSpacing: '.06em',
+                    padding: '4px 10px', borderRadius: 100,
+                  }}>
+                    Einzigartig in Dorfly
+                  </div>
+                )}
                 <div style={{ width: 48, height: 48, borderRadius: 14, background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>{icon}</div>
                 <h3 style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.03em', color: C.navy, marginBottom: 8 }}>{title}</h3>
                 <p style={{ fontSize: 15, lineHeight: 1.65, color: C.muted }}>{text}</p>
@@ -635,7 +853,7 @@ function Features() {
           ))}
         </div>
 
-        {/* DSGVO – featured full-width card */}
+        {/* Datenschutz – featured full-width card */}
         <R delay={0.1}>
           <div style={{
             marginTop: 20, background: C.navy, borderRadius: 22,
@@ -646,7 +864,7 @@ function Features() {
               <Shield size={26} color={C.blueL} />
             </div>
             <div style={{ flex: 1, minWidth: 260 }}>
-              <h3 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.03em', color: C.white, marginBottom: 10 }}>Datenschutz by Design</h3>
+              <h3 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.03em', color: C.white, marginBottom: 10 }}>Datenschutz</h3>
               <p style={{ fontSize: 15, lineHeight: 1.7, color: '#94A3B8' }}>
                 Bewusst schlankes Nutzerprofil. Kein Tracking. Keine Nutzeranalyse. Keine Weitergabe an Dritte. Alle Daten auf EU-Servern.{' '}
                 <span style={{ color: C.white, fontWeight: 600 }}>Das Argument, das Ihren Datenschutzbeauftragten überzeugt.</span>
@@ -662,7 +880,7 @@ function Features() {
 // ── SETUP & BEGLEITUNG ────────────────────────────────────────────────────────
 const steps = [
   { num: '01', title: 'Zugang erhalten.',    text: 'Ihre Gemeinde wird eingerichtet. Farben, Logo, Struktur. Alles auf Ihre Kommune zugeschnitten.',                                    accent: true  },
-  { num: '02', title: 'Alle einbinden.',     text: 'Vereine, Kirchen, Organisationen und Kommunalpolitik werden persönlich begleitet. Jeder bekommt seine Rolle.',                      accent: false },
+  { num: '02', title: 'Alle einbinden.',     text: 'Vereine, Kirchen, lokales Gewerbe und Kommunalpolitik werden persönlich begleitet. Jede Gruppe bekommt ihre Rolle.',                 accent: false },
   { num: '03', title: 'Reichweite aufbauen.', text: 'Wir entwickeln eine Strategie, damit Ihre Bürgerschaft die App wirklich nutzt. Nicht nur herunterlädt.',                           accent: false },
 ]
 
@@ -670,7 +888,7 @@ function Setup() {
   return (
     <section id="setup" style={{ background: C.bg, padding: 'clamp(64px, 10vw, 120px) 0' }}>
       <div style={{ maxWidth: 1320, margin: '0 auto', padding: '0 clamp(20px, 5vw, 48px)' }}>
-        <R><Eyebrow>Setup & Begleitung</Eyebrow></R>
+        <R><Eyebrow>Setup und Begleitung</Eyebrow></R>
         <R delay={0.1}>
           <h2 style={{ fontSize: 'clamp(30px, 3.5vw, 52px)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.1, color: C.navy, marginBottom: 12 }}>
             In wenigen Tagen live. Nicht in Monaten.
@@ -679,7 +897,7 @@ function Setup() {
         <R delay={0.2}>
           <p style={{ fontSize: 18, color: C.muted, lineHeight: 1.7, maxWidth: 700, marginBottom: 72 }}>
             Kommunale IT-Projekte dauern oft Jahre. Dorfly nicht.<br /><br />
-            Wir lassen Sie nicht allein. Unser Anspruch geht über die Software hinaus. Dorfly soll der reichweitenstärkste Kommunikationskanal in Ihrer Gemeinde werden. Für Verwaltung, Kommunalpolitik, Vereine, Organisationen und Kirchen. Diesen Weg gehen wir gemeinsam mit Ihnen.
+            Wir lassen Sie nicht allein. Unser Anspruch geht über die Software hinaus. Dorfly soll der reichweitenstärkste Kommunikationskanal in Ihrer Gemeinde werden. Für Verwaltung, Kommunalpolitik, Vereine, lokales Gewerbe und Kirchen. Diesen Weg gehen wir gemeinsam mit Ihnen.
           </p>
         </R>
 
@@ -708,7 +926,7 @@ function Setup() {
   )
 }
 
-// ── ÜBER UNS ──────────────────────────────────────────────────────────────────
+// ── ÜBER DORFLY ───────────────────────────────────────────────────────────────
 function About() {
   return (
     <section id="about" style={{ background: C.navy, padding: 'clamp(64px, 10vw, 120px) 0' }}>
@@ -719,23 +937,20 @@ function About() {
             <R><Eyebrow light>Über Dorfly</Eyebrow></R>
             <R delay={0.1}>
               <h2 style={{ fontSize: 'clamp(30px, 3.5vw, 52px)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.1, color: C.white, marginBottom: 32 }}>
-                Von einem Bürgermeister.<br />Für Bürgermeister.
+                Von einem amtierenden Bürgermeister. Für die Verwaltung und alle, die Teil ihrer Gemeinde sind.
               </h2>
             </R>
             <R delay={0.2}>
               <div style={{ fontSize: 17, lineHeight: 1.8, color: '#94A3B8' }}>
                 <p style={{ marginBottom: 20 }}>
                   Als ich 2020 Bürgermeister von Ehningen wurde, hatte ich einen klaren Wunsch.{' '}
-                  <strong style={{ color: C.white }}>Einen direkten, offiziellen Kanal zu meinen Bürgerinnen und Bürgern.</strong>
+                  <strong style={{ color: C.white }}>Einen direkten, offiziellen Kanal zu meiner Bürgerschaft.</strong>
                 </p>
                 <p style={{ marginBottom: 20 }}>
                   Ich habe den Markt analysiert. Es gibt viele gute Ansätze. Aber keiner hat wirklich das geboten, was wir als Gemeinde brauchen. Die einen wollen ein soziales Netzwerk sein. Die anderen denken vom Bürger her, aber nicht von der Verwaltung. Und so haben wir jahrelang Kompromisse gemacht.
                 </p>
                 <p style={{ marginBottom: 20 }}>
                   Irgendwann hatte ich genug. Das Gefühl, unter unseren Möglichkeiten zu bleiben, hat mich angetrieben. Ich kenne Verwaltung und kommunikative Herausforderungen täglich aus erster Hand. Und ich weiß genau, was eine Gemeinde-App wirklich leisten muss.
-                </p>
-                <p style={{ marginBottom: 20 }}>
-                  Dorfly ist in der Pilotphase. Wir suchen Bürgermeisterinnen und Bürgermeister, die von Anfang an dabei sind. Die ehrliches Feedback geben. Die mitgestalten. Denn Ihr Input von heute ist vielleicht das Feature von morgen.
                 </p>
                 <p style={{ color: C.white, fontWeight: 600 }}>
                   Seien Sie dabei. Gemeinsam bauen wir den reichweitenstärksten Kanal für Ihre Gemeinde.
@@ -760,9 +975,9 @@ function About() {
                 LR
               </div>
 
-              <p style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.03em', color: C.white, lineHeight: 1.5, marginBottom: 24, fontStyle: 'italic' }}>
-                <span style={{ color: C.green, fontSize: 32, lineHeight: 0, verticalAlign: '-10px', marginRight: 4 }}>„</span>
-                Jede Gemeinde verdient einen direkten Kanal zu ihren Bürgern. Nicht über Umwege. Direkt.
+              <p style={{ fontSize: 18, fontWeight: 600, letterSpacing: '-0.03em', color: C.white, lineHeight: 1.5, marginBottom: 24, fontStyle: 'italic' }}>
+                <span style={{ color: C.green, fontSize: 32, lineHeight: 0, verticalAlign: '-10px', marginRight: 4 }}>{'„'}</span>
+                Als Bürgermeister ist es meine Aufgabe, die Bedürfnisse aller Akteure in meiner Gemeinde zu verstehen. Daraus ist Dorfly entstanden.
               </p>
 
               <div style={{ borderTop: '1px solid rgba(255,255,255,.08)', paddingTop: 24, marginBottom: 28 }}>
@@ -772,12 +987,12 @@ function About() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {[
-                  'Bürger, die wirklich informiert sind',
-                  'Gemeinden, die weniger Arbeit haben',
-                  'Demokratie, die im Alltag spürbar ist',
+                  'Eine Bürgerschaft, die wirklich informiert ist.',
+                  'Eine Verwaltung, die weniger Arbeit hat.',
+                  'Eine Demokratie, die im Alltag spürbar ist.',
                 ].map(item => (
-                  <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: '#64748B' }}>
-                    <span style={{ color: C.green, fontWeight: 700, flexShrink: 0 }}>→</span>
+                  <div key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 14, color: '#64748B' }}>
+                    <span style={{ color: C.green, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>→</span>
                     {item}
                   </div>
                 ))}
@@ -791,7 +1006,7 @@ function About() {
 }
 
 // ── CTA ───────────────────────────────────────────────────────────────────────
-function CTA({ onDemo }: { onDemo: () => void }) {
+function CTA({ onDemo, onUpdates }: { onDemo: () => void; onUpdates: () => void }) {
   return (
     <section style={{ padding: 'clamp(40px, 8vw, 80px) clamp(20px, 5vw, 48px) clamp(64px, 10vw, 120px)' }}>
       <div style={{ maxWidth: 1224, margin: '0 auto' }}>
@@ -804,18 +1019,17 @@ function CTA({ onDemo }: { onDemo: () => void }) {
             <R>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: C.green, marginBottom: 20 }}>
                 <span style={{ display: 'block', width: 16, height: 2, background: C.green, borderRadius: 2 }} />
-                Pilotphase – jetzt einsteigen
+                Neugierig?
               </div>
             </R>
             <R delay={0.1}>
               <h2 style={{ fontSize: 'clamp(28px, 4vw, 56px)', fontWeight: 800, letterSpacing: '-0.04em', color: C.white, lineHeight: 1.08, margin: '0 0 18px' }}>
-                Bürgernähe, die kein Versprechen bleibt.
+                Lernen Sie Dorfly kennen.
               </h2>
             </R>
             <R delay={0.2}>
               <p style={{ fontSize: 17, lineHeight: 1.65, color: '#64748B', maxWidth: 560, margin: '0 auto 44px' }}>
-                Jede Bürgermeisterin und jeder Bürgermeister möchte nah an den Menschen sein. In die Gemeinde reinhören. Im echten Austausch mit der Bürgerschaft stehen.<br /><br />
-                Dorfly macht daraus mehr als ein Versprechen. Seien Sie eine der ersten Kommunen, die diesen Weg gehen.
+                Jede Bürgermeisterin und jeder Bürgermeister möchte nah an den Menschen sein. In die Gemeinde reinhören. Im echten Austausch mit der Bürgerschaft stehen. Dorfly macht daraus mehr als ein Versprechen. Schreiben Sie mir kurz, ich melde mich gerne persönlich bei Ihnen.
               </p>
             </R>
             <R delay={0.3}>
@@ -833,8 +1047,22 @@ function CTA({ onDemo }: { onDemo: () => void }) {
               >
                 Demo anfragen
               </button>
+              <div style={{ marginTop: 16 }}>
+                <button
+                  onClick={onUpdates}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                    fontSize: 14, color: '#64748B', textDecoration: 'underline',
+                    textUnderlineOffset: 3, transition: 'color .2s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.color = C.white)}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#64748B')}
+                >
+                  Erstmal nur informiert bleiben
+                </button>
+              </div>
               <p style={{ fontSize: 13, color: '#475569', marginTop: 16 }}>
-                Kein IT-Projekt. Kein langer Einführungsprozess. Persönlich begleitet.
+                Unverbindlich. Persönlich begleitet. Kein IT-Projekt.
               </p>
             </R>
           </div>
@@ -880,22 +1108,24 @@ function Footer() {
 
 // ── PAGE ──────────────────────────────────────────────────────────────────────
 export default function HomepagePage() {
-  const [modalOpen, setModalOpen] = useState(false)
+  const [demoOpen, setDemoOpen] = useState(false)
+  const [updatesOpen, setUpdatesOpen] = useState(false)
 
   return (
     <div className="mp" style={{ scrollBehavior: 'smooth' }}>
-      <Nav onDemo={() => setModalOpen(true)} />
+      <Nav onDemo={() => setDemoOpen(true)} />
       <main>
-        <Hero    onDemo={() => setModalOpen(true)} />
-        <Zielgruppen />
+        <Hero    onDemo={() => setDemoOpen(true)} />
         <Problem />
+        <Zielgruppen />
         <Features />
         <Setup />
         <About />
-        <CTA     onDemo={() => setModalOpen(true)} />
+        <CTA onDemo={() => setDemoOpen(true)} onUpdates={() => setUpdatesOpen(true)} />
       </main>
       <Footer />
-      {modalOpen && <DemoModal onClose={() => setModalOpen(false)} />}
+      {demoOpen    && <DemoModal    onClose={() => setDemoOpen(false)}    />}
+      {updatesOpen && <UpdatesModal onClose={() => setUpdatesOpen(false)} />}
     </div>
   )
 }
