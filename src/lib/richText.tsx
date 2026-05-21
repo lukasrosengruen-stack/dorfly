@@ -3,8 +3,9 @@ import { ReactNode, useEffect, useRef, useState } from 'react'
 // ── Display: **bold** → <strong> (for FeedCard) ──────────────────────────────
 
 export function renderRichText(text: string): ReactNode {
-  const parts = text.split(/(\*\*[^*]+\*\*)/)
-  if (parts.length === 1) return text
+  const decoded = text.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+  const parts = decoded.split(/(\*\*[^*]+\*\*)/)
+  if (parts.length === 1) return decoded
   return parts.map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
       return <strong key={i}>{part.slice(2, -2)}</strong>
@@ -35,7 +36,7 @@ function htmlToMd(html: string): string {
     .replace(/<\/p>/gi, '\n')
     .replace(/<\/div>/gi, '\n')
     .replace(/<[^>]+>/g, '')
-    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
     .replace(/\n+$/, '')
 }
 
