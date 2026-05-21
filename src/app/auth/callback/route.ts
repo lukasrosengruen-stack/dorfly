@@ -38,8 +38,29 @@ export async function GET(request: NextRequest) {
         nachname: meta.nachname,
         token: meta.einladungs_token,
       }
-      await profilAnlegen(data.user.id, { email: data.user.email ?? undefined, ...regDaten }).catch((err) => {
-        console.error('[auth/callback] profilAnlegen fehlgeschlagen:', err)
+      await profilAnlegen(data.user.id, { email: data.user.email ?? undefined, ...regDaten }).catch(async (err) => {
+        console.error('[auth/callback] profilAnlegen fehlgeschlagen, versuche Fallback:', err)
+
+        // Fallback: minimales Profil direkt per User-Session anlegen.
+        // Gemeinde aus der Callback-Domain ableiten (z.B. musterbach.dorfly.de → musterbach).
+        const callbackSlug = hostname.endsWith(ROOT_DOMAIN)
+          ? hostname.slice(0, -(ROOT_DOMAIN.length + 1))
+          : null
+
+        let gemeindeId: string | null = null
+        if (callbackSlug && callbackSlug !== 'www') {
+          const { data: gm } = await supabase
+            .from('gemeinden')
+            .select('id')
+            .eq('slug', callbackSlug)
+            .single()
+          gemeindeId = gm?.id ?? null
+        }
+
+        const { error: upsertError } = await supabase
+          .from('profiles')
+          .upsert({ id: data.user.id, role: 'buerger', gemeinde_id: gemeindeId, email: null }, { onConflict: 'id' })
+        if (upsertError) console.error('[auth/callback] Fallback-Profil fehlgeschlagen:', upsertError)
       })
 
       // Gemeinde-Subdomain des Users ermitteln für korrekten Redirect
