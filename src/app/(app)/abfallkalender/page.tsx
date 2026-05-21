@@ -1,7 +1,10 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getGemeinde } from '@/lib/gemeinde'
 import AbfallkalenderClient from './AbfallkalenderClient'
+
+export const metadata: Metadata = { title: 'Abfallkalender – Dorfly' }
 
 export default async function AbfallkalenderPage() {
   const gemeinde = await getGemeinde()

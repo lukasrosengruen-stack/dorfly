@@ -7,6 +7,7 @@ import { FrageMitProfil, FrageStatus, Profile } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
 import { Send, Lock, Globe, ChevronDown, ChevronUp, Loader2, CheckCircle2, Clock, Archive, User } from 'lucide-react'
 import Link from 'next/link'
+import ReportButton from '@/components/ReportButton'
 import { clsx } from 'clsx'
 import { formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
@@ -81,10 +82,14 @@ export default function BuergermeisterClient({ fragen: initialFragen, profile }:
           </Link>
         </div>
 
-        <div className="flex gap-2 mt-3">
+        <div role="tablist" aria-label="Fragen filtern" className="flex gap-2 mt-3">
           {(['alle', 'meine'] as const).map(tab => (
             <button
               key={tab}
+              role="tab"
+              aria-selected={activeTab === tab}
+              aria-controls={`tab-panel-${tab}`}
+              id={`tab-${tab}`}
               onClick={() => setActiveTab(tab)}
               className={clsx(
                 'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
@@ -104,7 +109,7 @@ export default function BuergermeisterClient({ fragen: initialFragen, profile }:
             onClick={() => setShowForm(true)}
             className="w-full bg-primary-50 border-2 border-primary-200 border-dashed rounded-2xl p-4 text-primary-500 font-medium flex items-center justify-center gap-2 hover:bg-primary-100 transition-colors"
           >
-            <Send className="w-4 h-4" />
+            <Send className="w-4 h-4" aria-hidden="true" />
             Neue Frage stellen
           </button>
         ) : (
@@ -115,11 +120,15 @@ export default function BuergermeisterClient({ fragen: initialFragen, profile }:
                 Bitte fülle zuerst deinen <Link href="/profil" className="font-bold underline">Namen im Profil</Link> aus, bevor du eine Frage stellst.
               </div>
             )}
+            <label htmlFor="frage-text" className="sr-only">Deine Frage (Pflichtfeld)</label>
             <textarea
+              id="frage-text"
               placeholder="Was möchtest du wissen?"
               value={frageText}
               onChange={e => setFrageText(e.target.value)}
               rows={4}
+              required
+              aria-required="true"
               className="w-full border border-gray-300 rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
 
@@ -168,9 +177,14 @@ export default function BuergermeisterClient({ fragen: initialFragen, profile }:
       </div>
 
       {/* Fragen-Liste */}
-      <div className="px-4 pb-4 space-y-3">
+      <div
+        role="tabpanel"
+        id={`tab-panel-${activeTab}`}
+        aria-labelledby={`tab-${activeTab}`}
+        className="px-4 pb-4 space-y-3"
+      >
         {visibleFragen.length === 0 && (
-          <div className="text-center text-gray-400 py-8">
+          <div className="text-center text-gray-500 py-8">
             <p>Noch keine Fragen</p>
           </div>
         )}
@@ -182,33 +196,39 @@ export default function BuergermeisterClient({ fragen: initialFragen, profile }:
 
           return (
             <div key={f.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <div className="flex items-start">
               <button
                 onClick={() => setExpandedId(expanded ? null : f.id)}
-                className="w-full p-4 text-left"
+                aria-expanded={expanded}
+                className="flex-1 p-4 text-left"
               >
                 <div className="flex items-start gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className={clsx('flex items-center gap-1 text-xs px-2 py-0.5 rounded-full', meta.color)}>
-                        <StatusIcon className="w-3 h-3" />
+                        <StatusIcon className="w-3 h-3" aria-hidden="true" />
                         {meta.label}
                       </span>
                       {!f.oeffentlich && (
-                        <span className="flex items-center gap-1 text-xs text-gray-400">
-                          <Lock className="w-3 h-3" /> Privat
+                        <span className="flex items-center gap-1 text-xs text-gray-500">
+                          <Lock className="w-3 h-3" aria-hidden="true" /> Privat
                         </span>
                       )}
                     </div>
                     <p className={clsx('text-gray-900 font-medium text-sm', !expanded && 'line-clamp-2')}>
                       {f.frage}
                     </p>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-gray-500 mt-1">
                       {canAnswer ? (f.profiles?.display_name ?? 'Bürger') : 'Bürger'} · {formatDistanceToNow(new Date(f.created_at), { addSuffix: true, locale: de })}
                     </p>
                   </div>
-                  {expanded ? <ChevronUp className="w-4 h-4 text-gray-400 shrink-0 mt-1" /> : <ChevronDown className="w-4 h-4 text-gray-400 shrink-0 mt-1" />}
+                  {expanded ? <ChevronUp className="w-4 h-4 text-gray-400 shrink-0 mt-1" aria-hidden="true" /> : <ChevronDown className="w-4 h-4 text-gray-400 shrink-0 mt-1" aria-hidden="true" />}
                 </div>
               </button>
+              <div className="pr-2 pt-3 shrink-0">
+                <ReportButton inhaltTyp="frage" inhaltId={f.id} />
+              </div>
+              </div>
 
               {expanded && f.antwort && (
                 <div className="px-4 pb-4">

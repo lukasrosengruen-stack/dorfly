@@ -66,6 +66,16 @@ body {
 
 html { scroll-behavior: smooth; }
 
+/* Reduced motion – SC 2.3.3 / WCAG 2.1 AAA (best practice for BITV 2.0) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* ── MARKETING PAGE ─────────────────────────────────────────────────────────── */
 .mp {
   --mp-navy:   #0D1B2A;

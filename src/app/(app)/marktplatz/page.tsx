@@ -1,6 +1,9 @@
+import type { Metadata } from 'next'
 import { getGemeinde } from '@/lib/gemeinde'
 import { PageHeader } from '@/components/ui'
 import { ShoppingBag, Clock } from 'lucide-react'
+
+export const metadata: Metadata = { title: 'Marktplatz – Dorfly' }
 
 export default async function MarktplatzPage() {
   const gemeinde = await getGemeinde()

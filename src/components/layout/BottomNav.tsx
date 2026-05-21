@@ -26,24 +26,30 @@ export default function BottomNav({ role }: { role?: string }) {
           const active = pathname === href || pathname.startsWith(href + '/')
           return (
             <Link key={href} href={href}
+              aria-current={active ? 'page' : undefined}
               className={clsx(
                 'flex-1 flex flex-col items-center gap-0.5 pt-2 text-[9.5px] font-semibold transition-colors',
                 active ? 'text-primary-500' : 'text-[#64748b]'
               )}>
-              <Icon className="w-[22px] h-[22px]" strokeWidth={active ? 2.5 : 1.5} />
+              <Icon className="w-[22px] h-[22px]" aria-hidden="true" strokeWidth={active ? 2.5 : 1.5} />
               <span>{label}</span>
             </Link>
           )
         })}
 
         {/* Center Home Button – quadratisch mit Radius */}
-        <Link href="/home" className="flex flex-col items-center justify-end pb-0 px-3">
+        <Link
+          href="/home"
+          aria-label="Startseite"
+          aria-current={pathname === '/home' ? 'page' : undefined}
+          className="flex flex-col items-center justify-end pb-0 px-3"
+        >
           <div className={clsx(
             'w-[52px] h-[52px] rounded-2xl flex items-center justify-center -mt-4',
             'shadow-[0_4px_18px_rgba(15,45,107,0.4)]',
             pathname === '/home' ? 'bg-primary-600' : 'bg-primary-500'
           )}>
-            <Grid2x2 className="w-6 h-6 text-white" strokeWidth={1.5} />
+            <Grid2x2 className="w-6 h-6 text-white" aria-hidden="true" strokeWidth={1.5} />
           </div>
         </Link>
 
@@ -51,11 +57,12 @@ export default function BottomNav({ role }: { role?: string }) {
           const active = pathname === href || pathname.startsWith(href + '/')
           return (
             <Link key={href} href={href}
+              aria-current={active ? 'page' : undefined}
               className={clsx(
                 'flex-1 flex flex-col items-center gap-0.5 pt-2 text-[9.5px] font-semibold transition-colors',
                 active ? 'text-primary-500' : 'text-[#64748b]'
               )}>
-              <Icon className="w-[22px] h-[22px]" strokeWidth={active ? 2.5 : 1.5} />
+              <Icon className="w-[22px] h-[22px]" aria-hidden="true" strokeWidth={active ? 2.5 : 1.5} />
               <span>{label}</span>
             </Link>
           )

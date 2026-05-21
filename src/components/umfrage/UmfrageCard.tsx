@@ -114,6 +114,7 @@ export default function UmfrageCard({ umfrage: initialUmfrage, hatAbgestimmt: in
           <div className="flex items-start justify-between gap-3 mb-2">
             <button
               className="flex items-center gap-2 flex-wrap flex-1 text-left"
+              aria-expanded={isExpanded}
               onClick={() => setIsExpanded(v => !v)}
             >
               <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-primary-100 text-primary-600">
@@ -121,14 +122,14 @@ export default function UmfrageCard({ umfrage: initialUmfrage, hatAbgestimmt: in
               </span>
               {abgelaufen
                 ? <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Beendet</span>
-                : <span className="flex items-center gap-1 text-xs text-gray-400">
-                    <Clock className="w-3 h-3" />
+                : <span className="flex items-center gap-1 text-xs text-gray-500">
+                    <Clock className="w-3 h-3" aria-hidden="true" />
                     Noch {formatDistanceToNow(new Date(umfrage.enddatum), { locale: de })}
                   </span>
               }
             </button>
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs text-gray-400">{teilnehmer} Teilnehmer</span>
+              <span className="text-xs text-gray-500">{teilnehmer} Teilnehmer</span>
               <button onClick={() => setIsExpanded(v => !v)}>
                 {isExpanded
                   ? <ChevronUp className="w-4 h-4 text-gray-400" />
@@ -152,7 +153,7 @@ export default function UmfrageCard({ umfrage: initialUmfrage, hatAbgestimmt: in
                 <p className="text-sm font-medium text-gray-700">Vielen Dank für Ihre Teilnahme!</p>
               </div>
             ) : abgelaufen ? (
-              <p className="text-sm text-gray-400 text-center py-4">Diese Umfrage ist abgeschlossen.</p>
+              <p className="text-sm text-gray-500 text-center py-4">Diese Umfrage ist abgeschlossen.</p>
             ) : (
               <>
                 {fragen
@@ -170,7 +171,7 @@ export default function UmfrageCard({ umfrage: initialUmfrage, hatAbgestimmt: in
                     </div>
                   ))}
 
-                {error && <p className="text-red-500 text-sm">{error}</p>}
+                {error && <p role="alert" className="text-red-500 text-sm">{error}</p>}
 
                 {!kannNichtAbstimmen && (
                   <button
@@ -203,10 +204,12 @@ function Abstimmung({ frage, antworten, onChange }: {
 
   if (typ === 'ja_nein') {
     return (
-      <div className="flex gap-3">
-        {['ja', 'nein'].map(val => (
+      <div role="radiogroup" aria-label={frage.frage_text} className="flex gap-3">
+        {(['ja', 'nein'] as const).map(val => (
           <button
             key={val}
+            role="radio"
+            aria-checked={antworten[0]?.antwort_text === val}
             onClick={() => onChange({ frage_id: frage.id, antwort_text: val })}
             className={clsx(
               'flex-1 py-2.5 rounded-xl border-2 text-sm font-medium transition-colors',
@@ -215,7 +218,7 @@ function Abstimmung({ frage, antworten, onChange }: {
                 : 'border-gray-200 text-gray-600 hover:border-gray-300'
             )}
           >
-            {val === 'ja' ? '✓ Ja' : '✗ Nein'}
+            {val === 'ja' ? 'Ja' : 'Nein'}
           </button>
         ))}
       </div>
@@ -224,10 +227,13 @@ function Abstimmung({ frage, antworten, onChange }: {
 
   if (typ === 'bewertung') {
     return (
-      <div className="flex gap-2 justify-center">
+      <div role="radiogroup" aria-label="Bewertung von 1 bis 5" className="flex gap-2 justify-center">
         {[1, 2, 3, 4, 5].map(val => (
           <button
             key={val}
+            role="radio"
+            aria-checked={antworten[0]?.antwort_text === String(val)}
+            aria-label={`${val} von 5`}
             onClick={() => onChange({ frage_id: frage.id, antwort_text: String(val) })}
             className={clsx(
               'w-10 h-10 rounded-xl border-2 text-sm font-bold transition-colors',
@@ -247,19 +253,25 @@ function Abstimmung({ frage, antworten, onChange }: {
   const mehrfach = typ === 'mehrfachauswahl'
 
   return (
-    <div className="space-y-2">
+    <div
+      role={mehrfach ? 'group' : 'radiogroup'}
+      aria-label={frage.frage_text}
+      className="space-y-2"
+    >
       {optionen.sort((a, b) => a.reihenfolge - b.reihenfolge).map(opt => {
         const selected = antworten.some(a => a.option_id === opt.id)
         return (
           <button
             key={opt.id}
+            role={mehrfach ? 'checkbox' : 'radio'}
+            aria-checked={selected}
             onClick={() => onChange({ frage_id: frage.id, option_id: opt.id }, mehrfach)}
             className={clsx(
               'w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border-2 text-sm text-left transition-colors',
               selected ? 'border-primary-500 bg-primary-50 text-primary-800' : 'border-gray-200 text-gray-700 hover:border-gray-300'
             )}
           >
-            <span className={clsx(
+            <span aria-hidden="true" className={clsx(
               'w-5 h-5 rounded flex items-center justify-center shrink-0 border-2 transition-colors',
               mehrfach ? 'rounded' : 'rounded-full',
               selected ? 'border-primary-500 bg-primary-500' : 'border-gray-300'
@@ -270,7 +282,7 @@ function Abstimmung({ frage, antworten, onChange }: {
           </button>
         )
       })}
-      {mehrfach && <p className="text-xs text-gray-400">Mehrere Antworten möglich</p>}
+      {mehrfach && <p className="text-xs text-gray-500">Mehrere Antworten möglich</p>}
     </div>
   )
 }

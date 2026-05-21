@@ -210,22 +210,32 @@ export default function LoginPage() {
         </div>
 
         <div className="space-y-3">
-          <input
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            placeholder="E-Mail-Adresse"
-            readOnly={!!einladungsInfo}
-            className={`w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 ${einladungsInfo ? 'bg-gray-50 text-gray-500' : ''}`}
-          />
-          <input
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            placeholder="Passwort"
-            className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
-            onKeyDown={e => e.key === 'Enter' && submit()}
-          />
+          <div>
+            <label htmlFor="login-email" className="sr-only">E-Mail-Adresse</label>
+            <input
+              id="login-email"
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="E-Mail-Adresse"
+              autoComplete="email"
+              readOnly={!!einladungsInfo}
+              className={`w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 ${einladungsInfo ? 'bg-gray-50 text-gray-500' : ''}`}
+            />
+          </div>
+          <div>
+            <label htmlFor="login-password" className="sr-only">Passwort</label>
+            <input
+              id="login-password"
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Passwort"
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              onKeyDown={e => e.key === 'Enter' && submit()}
+            />
+          </div>
 
           {/* Optionale Felder nur bei Registrierung */}
           {mode === 'register' && (
@@ -242,20 +252,30 @@ export default function LoginPage() {
               {showOptional && (
                 <div className="space-y-3 mt-3">
                   <div className="grid grid-cols-2 gap-3">
-                    <input
-                      type="text"
-                      value={vorname}
-                      onChange={e => setVorname(e.target.value)}
-                      placeholder="Vorname"
-                      className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    />
-                    <input
-                      type="text"
-                      value={nachname}
-                      onChange={e => setNachname(e.target.value)}
-                      placeholder="Nachname"
-                      className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    />
+                    <div>
+                      <label htmlFor="register-vorname" className="sr-only">Vorname</label>
+                      <input
+                        id="register-vorname"
+                        type="text"
+                        value={vorname}
+                        onChange={e => setVorname(e.target.value)}
+                        placeholder="Vorname"
+                        autoComplete="given-name"
+                        className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="register-nachname" className="sr-only">Nachname</label>
+                      <input
+                        id="register-nachname"
+                        type="text"
+                        value={nachname}
+                        onChange={e => setNachname(e.target.value)}
+                        placeholder="Nachname"
+                        autoComplete="family-name"
+                        className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      />
+                    </div>
                   </div>
                 </div>
               )}
@@ -279,7 +299,7 @@ export default function LoginPage() {
               )}
             </div>
           ) : error ? (
-            <p className="text-red-500 text-sm">{error}</p>
+            <p role="alert" className="text-red-500 text-sm">{error}</p>
           ) : null}
 
           <button

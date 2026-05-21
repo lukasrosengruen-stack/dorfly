@@ -7,6 +7,7 @@
  */
 import { X, Check } from 'lucide-react'
 import { clsx } from 'clsx'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 
 interface FeedFilterProps {
   open: boolean
@@ -35,6 +36,8 @@ export function FeedFilter({
   onToggleLokaleAngebote,
   hatGewerbeAbonnements,
 }: FeedFilterProps) {
+  const trapRef = useFocusTrap(open)
+
   if (!open) return null
 
   const activeFilterCount = selectedSenders.size + (selectedDays ? 1 : 0) + (nurLokaleAngebote ? 1 : 0)
@@ -45,26 +48,35 @@ export function FeedFilter({
     if (nurLokaleAngebote) onToggleLokaleAngebote()
   }
 
+  function onKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Escape') onClose()
+  }
+
   return (
     <div
       className="fixed inset-0 bg-black/60 z-[60] flex items-end justify-center"
       onClick={onClose}
     >
       <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="feedfilter-title"
+        onKeyDown={onKeyDown}
         className="bg-white w-full max-w-lg rounded-t-2xl max-h-[80vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-white">
-          <h2 className="font-black text-gray-900 uppercase tracking-wide text-sm">Feed filtern</h2>
+          <h2 id="feedfilter-title" className="font-black text-gray-900 uppercase tracking-wide text-sm">Feed filtern</h2>
           <div className="flex items-center gap-3">
             {activeFilterCount > 0 && (
               <button onClick={reset} className="text-xs text-primary-500 font-bold">
                 Zurücksetzen
               </button>
             )}
-            <button onClick={onClose}>
-              <X className="w-5 h-5 text-gray-400" />
+            <button onClick={onClose} aria-label="Filter schließen">
+              <X className="w-5 h-5 text-gray-400" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -72,7 +84,7 @@ export function FeedFilter({
         <div className="p-5 space-y-6 pb-8">
           {/* Zeitraum */}
           <div>
-            <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Zeitraum</p>
+            <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3">Zeitraum</p>
             <div className="flex gap-2">
               {[7, 14, 30].map(days => (
                 <button
@@ -94,7 +106,7 @@ export function FeedFilter({
             {/* Lokale Angebote */}
           {hatGewerbeAbonnements && (
             <div>
-              <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Lokale Angebote</p>
+              <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3">Lokale Angebote</p>
               <button
                 onClick={onToggleLokaleAngebote}
                 className="w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 border-gray-200 transition-colors"
@@ -115,7 +127,7 @@ export function FeedFilter({
           {/* Absender */}
           {(hasVerwaltungPosts || vereinNames.length > 0) && (
             <div>
-              <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Absender</p>
+              <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3">Absender</p>
               <div className="space-y-2">
                 {hasVerwaltungPosts && (
                   <SenderRow

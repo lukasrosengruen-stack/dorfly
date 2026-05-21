@@ -1,6 +1,9 @@
+import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import LokaleAngeboteClient from './LokaleAngeboteClient'
+
+export const metadata: Metadata = { title: 'Lokale Angebote – Dorfly' }
 
 export default async function LokaleAngebotePage() {
   const supabase = await createClient()

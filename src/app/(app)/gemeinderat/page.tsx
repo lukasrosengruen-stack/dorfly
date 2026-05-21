@@ -1,6 +1,9 @@
+import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import GemeinderatClient from './GemeinderatClient'
+
+export const metadata: Metadata = { title: 'Gemeinderat – Dorfly' }
 
 export default async function GemeinderatPage() {
   const supabase = await createClient()

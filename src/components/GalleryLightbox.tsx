@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 
 interface Props {
   bilder: string[]
@@ -11,6 +12,7 @@ interface Props {
 
 export default function GalleryLightbox({ bilder, startIndex = 0, onClose }: Props) {
   const [current, setCurrent] = useState(startIndex)
+  const trapRef = useFocusTrap(true)
 
   const prev = useCallback(() => setCurrent(c => Math.max(0, c - 1)), [])
   const next = useCallback(() => setCurrent(c => Math.min(bilder.length - 1, c + 1)), [bilder.length])
@@ -26,28 +28,38 @@ export default function GalleryLightbox({ bilder, startIndex = 0, onClose }: Pro
   }, [onClose, prev, next])
 
   return (
-    <div className="fixed inset-0 bg-black/95 z-[200] flex flex-col" onClick={onClose}>
+    <div
+      ref={trapRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Bildergalerie"
+      className="fixed inset-0 bg-black/95 z-[200] flex flex-col"
+      onClick={onClose}
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 shrink-0" onClick={e => e.stopPropagation()}>
-        <span className="text-white/60 text-sm font-medium">{current + 1} / {bilder.length}</span>
-        <button onClick={onClose} className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
-          <X className="w-5 h-5 text-white" />
+        <span className="text-white/80 text-sm font-medium">{current + 1} / {bilder.length}</span>
+        <button onClick={onClose} aria-label="Galerie schließen" className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+          <X className="w-5 h-5 text-white" aria-hidden="true" />
         </button>
       </div>
 
       {/* Hauptbild */}
       <div className="flex-1 flex items-center justify-center relative px-12 min-h-0" onClick={e => e.stopPropagation()}>
         {current > 0 && (
-          <button onClick={prev}
+          <button onClick={prev} aria-label="Vorheriges Bild"
             className="absolute left-2 p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10">
-            <ChevronLeft className="w-6 h-6 text-white" />
+            <ChevronLeft className="w-6 h-6 text-white" aria-hidden="true" />
           </button>
         )}
+        <span className="sr-only" aria-live="polite" aria-atomic="true">
+          Bild {current + 1} von {bilder.length}
+        </span>
         <img src={bilder[current]} className="max-w-full max-h-full object-contain rounded-xl select-none" alt="" />
         {current < bilder.length - 1 && (
-          <button onClick={next}
+          <button onClick={next} aria-label="Nächstes Bild"
             className="absolute right-2 p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10">
-            <ChevronRight className="w-6 h-6 text-white" />
+            <ChevronRight className="w-6 h-6 text-white" aria-hidden="true" />
           </button>
         )}
       </div>
@@ -57,6 +69,8 @@ export default function GalleryLightbox({ bilder, startIndex = 0, onClose }: Pro
         <div className="flex gap-2 justify-center py-4 overflow-x-auto px-4 shrink-0" onClick={e => e.stopPropagation()}>
           {bilder.map((url, i) => (
             <button key={i} onClick={() => setCurrent(i)}
+              aria-label={`Bild ${i + 1} von ${bilder.length}`}
+              aria-pressed={i === current}
               className={`w-14 h-14 rounded-lg overflow-hidden shrink-0 border-2 transition-all ${
                 i === current ? 'border-white scale-110' : 'border-transparent opacity-50 hover:opacity-75'
               }`}>

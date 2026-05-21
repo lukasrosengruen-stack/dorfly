@@ -13,6 +13,7 @@ import { de } from 'date-fns/locale'
 import { PostMitProfil, PostChannel } from '@/types/database'
 import GalleryLightbox from '@/components/GalleryLightbox'
 import ShareButton from '@/components/ShareButton'
+import ReportButton from '@/components/ReportButton'
 import { renderRichText } from '@/lib/richText'
 import { useState } from 'react'
 
@@ -102,14 +103,18 @@ export function FeedCard({ post, expanded, onToggleExpand, gemeindeName }: FeedC
 
         {/* Bild */}
         {bilder.length > 0 && (
-          <div className="relative cursor-pointer" onClick={() => setGallery({ bilder, index: 0 })}>
+          <button
+            className="relative w-full cursor-pointer"
+            onClick={() => setGallery({ bilder, index: 0 })}
+            aria-label={`Bildergalerie öffnen (${bilder.length} ${bilder.length === 1 ? 'Bild' : 'Bilder'})`}
+          >
             <img src={bilder[0]} alt={post.titel} className="w-full h-48 object-cover" />
             {bilder.length > 1 && (
               <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                <Images className="w-3 h-3" /> {bilder.length}
+                <Images className="w-3 h-3" aria-hidden="true" /> {bilder.length}
               </div>
             )}
-          </div>
+          </button>
         )}
 
         {/* Inhalt */}
@@ -118,9 +123,10 @@ export function FeedCard({ post, expanded, onToggleExpand, gemeindeName }: FeedC
             <span className={clsx('text-xs px-2 py-0.5 rounded-full font-bold uppercase tracking-wide', tagMeta.color)}>
               {tagMeta.label}
             </span>
-            <span className="text-xs text-gray-400 ml-auto">
+            <span className="text-xs text-gray-500 ml-auto">
               {formatDistanceToNow(new Date(post.published_at), { addSuffix: true, locale: de })}
             </span>
+            <ReportButton inhaltTyp="post" inhaltId={post.id} />
           </div>
 
           <h2 className="font-black text-gray-900 text-base leading-snug uppercase tracking-wide">
@@ -144,14 +150,14 @@ export function FeedCard({ post, expanded, onToggleExpand, gemeindeName }: FeedC
             </div>
           )}
 
-          <div onClick={onToggleExpand} className="cursor-pointer">
+          <button onClick={onToggleExpand} className="w-full text-left" aria-expanded={expanded}>
             <p className={clsx('text-gray-600 text-sm mt-2 leading-relaxed whitespace-pre-wrap', !expanded && 'line-clamp-3')}>
               {renderRichText(post.inhalt)}
             </p>
             {!expanded && (
               <span className="text-xs text-primary-500 font-semibold mt-1 block">Mehr lesen</span>
             )}
-          </div>
+          </button>
 
           {/* Footer */}
           <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">

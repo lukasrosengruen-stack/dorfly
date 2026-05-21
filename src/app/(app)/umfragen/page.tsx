@@ -1,6 +1,9 @@
+import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { getGemeinde } from '@/lib/gemeinde'
 import UmfragenClient from './UmfragenClient'
+
+export const metadata: Metadata = { title: 'Umfragen – Dorfly' }
 
 export default async function UmfragenPage() {
   const supabase = await createClient()

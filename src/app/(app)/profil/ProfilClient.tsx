@@ -200,26 +200,38 @@ export default function ProfilClient({ profile, email }: { profile: FullProfile 
               ) : (
                 <>
                   <div className="relative mt-3">
+                    <label htmlFor="pw-neu" className="sr-only">Neues Passwort</label>
                     <input
+                      id="pw-neu"
                       type={showPw ? 'text' : 'password'}
                       value={pwForm.neu}
                       onChange={e => setPwForm(f => ({ ...f, neu: e.target.value }))}
                       placeholder="Neues Passwort"
+                      autoComplete="new-password"
                       className="w-full border border-gray-300 rounded-xl px-3 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
-                    <button type="button" onClick={() => setShowPw(v => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                      {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    <button
+                      type="button"
+                      onClick={() => setShowPw(v => !v)}
+                      aria-label={showPw ? 'Passwort verbergen' : 'Passwort anzeigen'}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    >
+                      {showPw ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
                     </button>
                   </div>
-                  <input
-                    type="password"
-                    value={pwForm.confirm}
-                    onChange={e => setPwForm(f => ({ ...f, confirm: e.target.value }))}
-                    placeholder="Passwort bestätigen"
-                    className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                  {pwError && <p className="text-red-500 text-xs">{pwError}</p>}
+                  <div>
+                    <label htmlFor="pw-confirm" className="sr-only">Passwort bestätigen</label>
+                    <input
+                      id="pw-confirm"
+                      type="password"
+                      value={pwForm.confirm}
+                      onChange={e => setPwForm(f => ({ ...f, confirm: e.target.value }))}
+                      placeholder="Passwort bestätigen"
+                      autoComplete="new-password"
+                      className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    />
+                  </div>
+                  {pwError && <p role="alert" className="text-red-500 text-xs">{pwError}</p>}
                   <button
                     onClick={changePassword}
                     disabled={pwLoading || !pwForm.neu || !pwForm.confirm}

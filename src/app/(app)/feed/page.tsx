@@ -1,5 +1,8 @@
+import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import FeedClient from './FeedClient'
+
+export const metadata: Metadata = { title: 'Neuigkeiten – Dorfly' }
 
 export const dynamic = 'force-dynamic'
 

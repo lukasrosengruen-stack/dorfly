@@ -54,17 +54,20 @@ export default function VereinListeClient({ vereine, kategorien, profile, abonne
 
       <div className="p-4 space-y-4 pt-4">
         {/* Suchfeld */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <div role="search" className="relative">
+          <label htmlFor="verein-suche" className="sr-only">Verein oder Organisation suchen</label>
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
           <input
+            id="verein-suche"
             value={suche}
             onChange={e => setSuche(e.target.value)}
             placeholder="Verein oder Organisation suchen …"
+            type="search"
             className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
           {suche && (
-            <button onClick={() => setSuche('')} className="absolute right-3 top-1/2 -translate-y-1/2">
-              <X className="w-4 h-4 text-gray-400" />
+            <button onClick={() => setSuche('')} aria-label="Suche leeren" className="absolute right-3 top-1/2 -translate-y-1/2">
+              <X className="w-4 h-4 text-gray-400" aria-hidden="true" />
             </button>
           )}
         </div>

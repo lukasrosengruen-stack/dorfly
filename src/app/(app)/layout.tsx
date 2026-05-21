@@ -26,7 +26,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       style={{ '--color-primary': primaryColor } as React.CSSProperties}
     >
       {gemeinde?.slug && <PushNotificationInit userId={user.id} gemeindeSlug={gemeinde.slug} />}
-      <main className="max-w-lg mx-auto pb-20">
+      <main id="main-content" tabIndex={-1} className="max-w-lg mx-auto pb-20 outline-none">
         {children}
       </main>
       <BottomNav role={profile?.role} />

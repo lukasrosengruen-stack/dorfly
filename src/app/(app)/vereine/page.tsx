@@ -1,6 +1,9 @@
+import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import VereinListeClient from './VereinListeClient'
+
+export const metadata: Metadata = { title: 'Vereine – Dorfly' }
 
 export default async function VereinePage() {
   const supabase = await createClient()

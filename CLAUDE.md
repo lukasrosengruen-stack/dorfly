@@ -77,6 +77,37 @@ Bestehende Grants: [supabase/migrations/012_explicit_grants.sql](supabase/migrat
 
 ---
 
+## Barrierefreiheit (WCAG 2.2 AA)
+
+Dorfly ist eine kommunale Plattform. Barrierefreiheit ist keine Option, sondern Grundanforderung (BITV 2.0, EN 301 549).
+
+**Vollständiger Audit und Maßnahmenplan:** `docs/accessibility/`
+
+### Regeln die immer gelten
+
+- Jedes `<input>` und `<textarea>` braucht ein verknüpftes `<label>` (kein `placeholder` als Ersatz).
+- Kein `<div onClick>` oder `<span onClick>` für Interaktionen. Immer `<button>` oder `<a>`.
+- Icon-Only-Buttons brauchen `aria-label`. Icons neben Text-Labels brauchen `aria-hidden="true"`.
+- Modals brauchen `role="dialog"`, `aria-modal="true"`, Fokus-Trap und Fokus-Restore.
+- Akkordeons und Toggles brauchen `aria-expanded`.
+- Tabs brauchen `role="tablist"`, `role="tab"`, `aria-selected`, `role="tabpanel"`.
+- Fehlermeldungen brauchen `role="alert"` oder `aria-live="assertive"`.
+- Aktive Navigation braucht `aria-current="page"`.
+- `maximumScale` darf nie auf `1` gesetzt werden (sperrt User-Zoom, SC 1.4.4).
+
+### Gemeinsame zugängliche Komponenten
+
+Neue UI-Muster nicht inline bauen — erst prüfen ob eine gemeinsame Komponente existiert oder erstellt werden sollte:
+
+| Muster | Komponente |
+|---|---|
+| Modale / Bottom-Sheets | `src/components/ui/Modal.tsx` (noch zu erstellen) |
+| Formularfelder mit Label + Fehler | `src/components/ui/FormField.tsx` (noch zu erstellen) |
+| Icon-Only-Button | `src/components/ui/IconButton.tsx` (noch zu erstellen) |
+| Tab-Navigation | `src/components/ui/Tabs.tsx` (noch zu erstellen) |
+
+---
+
 ## Lokale Entwicklung
 
 ```bash

@@ -35,7 +35,6 @@ export const viewport: Viewport = {
   themeColor: '#0f2d6b',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -52,6 +51,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         });
       `}</Script>
       <body className="min-h-full bg-gray-50 font-sans">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:bg-white focus:px-4 focus:py-2 focus:rounded-xl focus:shadow-lg focus:text-primary-600 focus:font-bold focus:outline-none"
+        >
+          Zum Hauptinhalt springen
+        </a>
         {children}
         <Toaster richColors position="top-center" />
       </body>

@@ -1,5 +1,8 @@
+import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import MaengelClient from './MaengelClient'
+
+export const metadata: Metadata = { title: 'Mängel melden – Dorfly' }
 
 export default async function MaengelPage() {
   const supabase = await createClient()

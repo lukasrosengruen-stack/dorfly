@@ -1,6 +1,9 @@
+import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import ProfilClient from './ProfilClient'
+
+export const metadata: Metadata = { title: 'Profil – Dorfly' }
 
 export default async function ProfilPage() {
   const supabase = await createClient()

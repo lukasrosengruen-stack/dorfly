@@ -1,5 +1,8 @@
+import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import KalenderClient from './KalenderClient'
+
+export const metadata: Metadata = { title: 'Veranstaltungen – Dorfly' }
 
 export default async function VeranstaltungenPage() {
   const supabase = await createClient()

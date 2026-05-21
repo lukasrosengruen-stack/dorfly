@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
 import { Scale, Users, Send, X, Loader2, MessageCircle, User, CheckCircle, Clock, Mail } from 'lucide-react'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 import Link from 'next/link'
 import { clsx } from 'clsx'
 
@@ -53,6 +54,7 @@ export default function GemeinderatClient({ posts, raete, meineFragen, gemeindeI
   const [activeTab, setActiveTab] = useState<'beitraege' | 'raete' | 'meine-fragen'>('beitraege')
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [selectedRat, setSelectedRat] = useState<Rat | null>(null)
+  const trapRef = useFocusTrap(!!selectedRat)
   const [expandedRat, setExpandedRat] = useState<string | null>(null)
 
   function toggleExpanded(id: string) {
@@ -103,13 +105,19 @@ export default function GemeinderatClient({ posts, raete, meineFragen, gemeindeI
             <User className="w-4 h-4 text-white" />
           </Link>
         </div>
-        <div className="flex gap-1.5 pb-3">
+        <div role="tablist" aria-label="Gemeinderat Bereiche" className="flex gap-1.5 pb-3">
           {[
             { id: 'beitraege', label: 'Beiträge' },
             { id: 'raete', label: 'Räte & Fragen' },
             { id: 'meine-fragen', label: meineFragen.length > 0 ? `Meine Fragen (${meineFragen.length})` : 'Meine Fragen' },
           ].map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id as 'beitraege' | 'raete' | 'meine-fragen')}
+            <button
+              key={tab.id}
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              aria-controls={`gr-panel-${tab.id}`}
+              id={`gr-tab-${tab.id}`}
+              onClick={() => setActiveTab(tab.id as 'beitraege' | 'raete' | 'meine-fragen')}
               className={clsx('px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors',
                 activeTab === tab.id ? 'bg-gold-500 text-white' : 'bg-white/15 text-white/75')}>
               {tab.label}
@@ -121,7 +129,7 @@ export default function GemeinderatClient({ posts, raete, meineFragen, gemeindeI
       <div className="p-4 space-y-4 pt-4">
         {/* BEITRÄGE TAB */}
         {activeTab === 'beitraege' && (
-          <>
+          <div role="tabpanel" id="gr-panel-beitraege" aria-labelledby="gr-tab-beitraege" className="space-y-4">
             {posts.length === 0 && (
               <div className="text-center text-gray-400 py-16">
                 <Scale className="w-10 h-10 mx-auto mb-3 opacity-30" />
@@ -155,14 +163,14 @@ export default function GemeinderatClient({ posts, raete, meineFragen, gemeindeI
                       </span>
                     </div>
                     <h2 className="font-black text-gray-900 text-base leading-snug uppercase tracking-wide">{post.titel}</h2>
-                    <div onClick={() => toggleExpanded(post.id)} className="cursor-pointer">
+                    <button onClick={() => toggleExpanded(post.id)} className="w-full text-left" aria-expanded={isExpanded}>
                       <p className={clsx('text-gray-600 text-sm mt-2 leading-relaxed', !isExpanded && 'line-clamp-3')}>
                         {post.inhalt}
                       </p>
                       {!isExpanded && (
                         <span className="text-xs font-bold text-primary-500 mt-1 inline-block">Mehr lesen</span>
                       )}
-                    </div>
+                    </button>
                     <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
                       <div className="w-7 h-7 rounded-full bg-primary-100 flex items-center justify-center text-xs font-black text-primary-700 shrink-0">
                         {autorName[0]?.toUpperCase()}
@@ -173,12 +181,12 @@ export default function GemeinderatClient({ posts, raete, meineFragen, gemeindeI
                 </article>
               )
             })}
-          </>
+          </div>
         )}
 
         {/* RÄTE & FRAGEN TAB */}
         {activeTab === 'raete' && (
-          <>
+          <div role="tabpanel" id="gr-panel-raete" aria-labelledby="gr-tab-raete" className="space-y-4">
             <p className="text-xs text-gray-500 px-1">
               Alle Gemeinderäte in {gemeindeName}. Du kannst ihnen direkt und privat Fragen stellen.
             </p>
@@ -196,6 +204,7 @@ export default function GemeinderatClient({ posts, raete, meineFragen, gemeindeI
                 <div key={rat.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
                   <button
                     onClick={() => setExpandedRat(isExpanded ? null : rat.id)}
+                    aria-expanded={isExpanded}
                     className="w-full p-4 flex items-center gap-4 text-left"
                   >
                     <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center text-lg font-black text-primary-700 shrink-0">
@@ -245,12 +254,12 @@ export default function GemeinderatClient({ posts, raete, meineFragen, gemeindeI
                 </div>
               )
             })}
-          </>
+          </div>
         )}
 
         {/* MEINE FRAGEN TAB */}
         {activeTab === 'meine-fragen' && (
-          <>
+          <div role="tabpanel" id="gr-panel-meine-fragen" aria-labelledby="gr-tab-meine-fragen" className="space-y-4">
             {meineFragen.length === 0 ? (
               <div className="text-center text-gray-400 py-16">
                 <MessageCircle className="w-10 h-10 mx-auto mb-3 opacity-30" />
@@ -297,21 +306,27 @@ export default function GemeinderatClient({ posts, raete, meineFragen, gemeindeI
                 )
               })
             )}
-          </>
+          </div>
         )}
       </div>
 
       {/* Frage-Modal */}
       {selectedRat && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4" onKeyDown={e => e.key === 'Escape' && setSelectedRat(null)}>
+          <div
+            ref={trapRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="rat-frage-title"
+            className="bg-white w-full max-w-lg rounded-2xl shadow-xl"
+          >
             <div className="flex items-center justify-between px-5 py-4 border-b">
-              <div>
+              <div id="rat-frage-title">
                 <p className="text-xs text-gray-400">Frage an</p>
                 <p className="font-bold text-gray-900">{selectedRat.display_name ?? 'Gemeinderat'}</p>
               </div>
-              <button onClick={() => { setSelectedRat(null); setFrage('') }}>
-                <X className="w-5 h-5 text-gray-400" />
+              <button onClick={() => { setSelectedRat(null); setFrage('') }} aria-label="Frage abbrechen">
+                <X className="w-5 h-5 text-gray-400" aria-hidden="true" />
               </button>
             </div>
             <div className="p-5 space-y-4">
@@ -323,11 +338,15 @@ export default function GemeinderatClient({ posts, raete, meineFragen, gemeindeI
                   Bitte fülle zuerst deinen <Link href="/profil" className="font-bold underline">Namen im Profil</Link> aus, bevor du eine Frage stellst.
                 </div>
               )}
+              <label htmlFor="gr-frage-text" className="sr-only">Deine Frage (Pflichtfeld)</label>
               <textarea
+                id="gr-frage-text"
                 value={frage}
                 onChange={e => setFrage(e.target.value)}
                 placeholder="Deine Frage…"
                 rows={4}
+                required
+                aria-required="true"
                 className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
               <button

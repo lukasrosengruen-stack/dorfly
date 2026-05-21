@@ -1,8 +1,11 @@
+import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Shield, Database, Download, ChevronLeft } from 'lucide-react'
 import DownloadButton from './DownloadButton'
+
+export const metadata: Metadata = { title: 'Datenschutz & Daten – Dorfly' }
 
 export default async function DatenschutzDatenPage() {
   const supabase = await createClient()
