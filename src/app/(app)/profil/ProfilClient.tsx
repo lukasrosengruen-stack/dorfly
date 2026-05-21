@@ -283,17 +283,22 @@ export default function ProfilClient({ profile, email }: { profile: FullProfile 
           </div>
           <div className="divide-y divide-gray-50">
             <a href="/datenschutz" className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors">
-              <Shield className="w-4 h-4 text-gray-400 shrink-0" />
+              <Shield className="w-4 h-4 text-gray-400 shrink-0" aria-hidden="true" />
               <span className="text-sm font-medium text-gray-700 flex-1">Datenschutzerklärung</span>
               <span className="text-gray-300">›</span>
             </a>
             <a href="/impressum" className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors">
-              <Shield className="w-4 h-4 text-gray-400 shrink-0" />
+              <Shield className="w-4 h-4 text-gray-400 shrink-0" aria-hidden="true" />
               <span className="text-sm font-medium text-gray-700 flex-1">Impressum</span>
               <span className="text-gray-300">›</span>
             </a>
+            <Link href="/barrierefreiheit" className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors">
+              <Shield className="w-4 h-4 text-gray-400 shrink-0" aria-hidden="true" />
+              <span className="text-sm font-medium text-gray-700 flex-1">Barrierefreiheit</span>
+              <span className="text-gray-300">›</span>
+            </Link>
             <Link href="/profil/datenschutz-daten" className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors">
-              <Shield className="w-4 h-4 text-gray-400 shrink-0" />
+              <Shield className="w-4 h-4 text-gray-400 shrink-0" aria-hidden="true" />
               <span className="text-sm font-medium text-gray-700 flex-1">Datenschutz & Daten</span>
               <span className="text-gray-300">›</span>
             </Link>
