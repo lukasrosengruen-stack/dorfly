@@ -68,7 +68,11 @@ export default function LoginPage() {
   async function resendConfirmation() {
     if (!email) { setError('Bitte E-Mail eingeben'); return }
     setLoading(true)
-    const { error } = await supabase.auth.resend({ type: 'signup', email })
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    })
     setLoading(false)
     if (error) setError(error.message)
     else setResendSent(true)

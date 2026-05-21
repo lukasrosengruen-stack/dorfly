@@ -67,13 +67,14 @@ export const POST = withAuth(
 
     const { data: gemeinde } = await supabase
       .from('gemeinden')
-      .select('name')
+      .select('name, slug')
       .eq('id', einladung.gemeinde_id)
       .single()
 
     const { error: mailError } = await sendeEinladungsEmail({
       to: einladung.email,
       gemeindeName: gemeinde?.name ?? '',
+      gemeindeSlug: gemeinde?.slug ?? '',
       rolle: einladung.rolle,
       organisationName: einladung.organisation_name,
       hinweis: einladung.hinweis,

@@ -25,7 +25,7 @@ export const POST = withAuth(
     const publicClient = await createClient()
     const { data: gemeinde, error: gemeindeError } = await publicClient
       .from('gemeinden')
-      .select('name')
+      .select('name, slug')
       .eq('id', gemeindeId)
       .single()
 
@@ -80,6 +80,7 @@ export const POST = withAuth(
       const { error: mailError } = await sendeEinladungsEmail({
         to: einladung.email,
         gemeindeName: gemeinde.name,
+        gemeindeSlug: gemeinde.slug,
         rolle: einladung.rolle,
         organisationName: einladung.organisation_name,
         hinweis: einladung.hinweis,

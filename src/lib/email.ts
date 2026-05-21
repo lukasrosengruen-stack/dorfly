@@ -17,12 +17,13 @@ function resend() {
 export async function sendeEinladungsEmail(params: {
   to: string
   gemeindeName: string
+  gemeindeSlug: string
   rolle: string
   organisationName?: string | null
   hinweis?: string | null
   token: string
 }) {
-  const link = `${process.env.NEXT_PUBLIC_APP_URL}/login?token=${params.token}`
+  const link = `https://${params.gemeindeSlug}.dorfly.de/login?token=${params.token}`
   const rolleLabel = ROLLEN_LABEL[params.rolle] ?? params.rolle
 
   const html = `
