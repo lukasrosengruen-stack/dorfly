@@ -38,7 +38,7 @@ export default function proxy(request: NextRequest) {
   requestHeaders.set('x-gemeinde-slug', slug)
 
   const isPublic = PUBLIC_ROUTES.some(route => pathname.startsWith(route))
-  const hasSession = request.cookies.getAll().some(c => c.name.startsWith('sb-') && c.name.endsWith('-auth-token'))
+  const hasSession = request.cookies.getAll().some(c => c.name.startsWith('sb-') && c.name.includes('-auth-token'))
 
   if (!hasSession && !isPublic) {
     return NextResponse.redirect(new URL('/login', request.url))
