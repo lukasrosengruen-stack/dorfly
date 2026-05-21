@@ -104,8 +104,10 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
 
       reset()
       window.location.reload()
-    } catch {
-      toast.error('Fehler beim Erstellen')
+    } catch (err) {
+      console.error('[PostErstellenButton] Fehler beim Erstellen:', err)
+      const msg = (err as { message?: string })?.message
+      toast.error(msg ? `Fehler: ${msg}` : 'Fehler beim Erstellen')
     } finally {
       setLoading(false)
     }
