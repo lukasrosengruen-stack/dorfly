@@ -38,7 +38,9 @@ export async function GET(request: NextRequest) {
         nachname: meta.nachname,
         token: meta.einladungs_token,
       }
-      await profilAnlegen(data.user.id, { email: data.user.email ?? undefined, ...regDaten }).catch(console.error)
+      await profilAnlegen(data.user.id, { email: data.user.email ?? undefined, ...regDaten }).catch((err) => {
+        console.error('[auth/callback] profilAnlegen fehlgeschlagen:', err)
+      })
 
       // Gemeinde-Subdomain des Users ermitteln für korrekten Redirect
       const { data: profile } = await supabase

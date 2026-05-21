@@ -81,7 +81,22 @@ export async function profilAnlegen(userId: string, daten: RegistrierungsDaten =
     display_name: [vorname, nachname].filter(Boolean).join(' ') || null,
   })
 
-  if (error) throw error
+  if (error) {
+    // Unique-Verletzung auf email: verwaistes Profil einer gelöschten auth.users-Zeile.
+    // Profil ohne E-Mail anlegen — kann später manuell ergänzt werden.
+    if (error.code === '23505' && email) {
+      const { error: retryError } = await serviceClient.from('profiles').insert({
+        id: userId,
+        email: null,
+        role: rolle as UserRole,
+        gemeinde_id: gemeindeId,
+        display_name: [vorname, nachname].filter(Boolean).join(' ') || null,
+      })
+      if (retryError) throw retryError
+    } else {
+      throw error
+    }
+  }
 
   if (einladungId && einladungDetails) {
     if (einladungDetails.rolle === 'verein') {
