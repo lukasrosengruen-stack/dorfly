@@ -864,10 +864,10 @@ function Features() {
               <Shield size={26} color={C.blueL} />
             </div>
             <div style={{ flex: 1, minWidth: 260 }}>
-              <h3 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.03em', color: C.white, marginBottom: 10 }}>Datenschutz</h3>
+              <h3 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.03em', color: C.white, marginBottom: 10 }}>Datenschutz und Barrierefreiheit</h3>
               <p style={{ fontSize: 15, lineHeight: 1.7, color: '#94A3B8' }}>
-                Bewusst schlankes Nutzerprofil. Kein Tracking. Keine Nutzeranalyse. Keine Weitergabe an Dritte. Alle Daten auf EU-Servern.{' '}
-                <span style={{ color: C.white, fontWeight: 600 }}>Das Argument, das Ihren Datenschutzbeauftragten überzeugt.</span>
+                Bewusst schlankes Nutzerprofil. Kein Tracking. Keine Nutzeranalyse. Keine Weitergabe an Dritte. Alle Daten auf EU-Servern. Kommunen sind nach BGG, BITV 2.0 und BFSG verpflichtet, digitale Angebote barrierefrei bereitzustellen. Dorfly ist auf WCAG 2.2 AA ausgerichtet. Die Erklärung zur Barrierefreiheit ist für jede Gemeinde inklusive.{' '}
+                <span style={{ color: C.white, fontWeight: 600 }}>Die Argumente, die Ihren Datenschutzbeauftragten und Ihre IT überzeugen.</span>
               </p>
             </div>
           </div>
