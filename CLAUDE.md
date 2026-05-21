@@ -79,28 +79,39 @@ Bestehende Grants: [supabase/migrations/012_explicit_grants.sql](supabase/migrat
 
 ## Barrierefreiheit (WCAG 2.2 AA)
 
-Dorfly ist eine kommunale Plattform. Barrierefreiheit ist keine Option, sondern Grundanforderung (BITV 2.0, EN 301 549).
+Dorfly ist eine kommunale Plattform. Barrierefreiheit ist **Pflichtanforderung**, keine Option (BITV 2.0, EN 301 549, BFSG). Das gilt für jedes neue Feature und jede Änderung — nicht nur für dedizierte Accessibility-Tickets.
 
 **Vollständiger Audit und Maßnahmenplan:** `docs/accessibility/`
 
+### Checkliste — bei jedem neuen Feature prüfen
+
+Vor dem Commit jede Frage durchgehen:
+
+- [ ] Alle `<input>` und `<textarea>` haben ein verknüpftes `<label>` (kein `placeholder` als Ersatz)
+- [ ] Keine `<div onClick>` oder `<span onClick>` — immer `<button>` oder `<a>`
+- [ ] Icon-Only-Buttons haben `aria-label`. Icons neben sichtbarem Text haben `aria-hidden="true"`
+- [ ] Neue Modals/Bottom-Sheets: `role="dialog"`, `aria-modal="true"`, `useFocusTrap` aus `src/hooks/useFocusTrap.ts`, Fokus-Restore beim Schließen
+- [ ] Akkordeons und Toggles haben `aria-expanded`
+- [ ] Neue Tab-Navigationen: `role="tablist"`, `role="tab"`, `aria-selected`, `role="tabpanel"`
+- [ ] Fehlermeldungen haben `role="alert"`
+- [ ] Neue Routen haben `export const metadata` mit aussagekräftigem Seitentitel
+- [ ] Texte mit Informationsgehalt haben mindestens 4.5:1 Kontrast (kein `text-gray-400` für Fließtext — `text-gray-500` minimum)
+- [ ] Nutzer-generierte Inhalte (Posts, Fragen, Meldungen) haben einen `<ReportButton>` aus `src/components/ReportButton.tsx`
+
 ### Regeln die immer gelten
 
-- Jedes `<input>` und `<textarea>` braucht ein verknüpftes `<label>` (kein `placeholder` als Ersatz).
-- Kein `<div onClick>` oder `<span onClick>` für Interaktionen. Immer `<button>` oder `<a>`.
-- Icon-Only-Buttons brauchen `aria-label`. Icons neben Text-Labels brauchen `aria-hidden="true"`.
-- Modals brauchen `role="dialog"`, `aria-modal="true"`, Fokus-Trap und Fokus-Restore.
-- Akkordeons und Toggles brauchen `aria-expanded`.
-- Tabs brauchen `role="tablist"`, `role="tab"`, `aria-selected`, `role="tabpanel"`.
-- Fehlermeldungen brauchen `role="alert"` oder `aria-live="assertive"`.
-- Aktive Navigation braucht `aria-current="page"`.
-- `maximumScale` darf nie auf `1` gesetzt werden (sperrt User-Zoom, SC 1.4.4).
+- `maximumScale` darf nie auf `1` gesetzt werden (sperrt User-Zoom, SC 1.4.4)
+- Aktive Navigation braucht `aria-current="page"`
+- Umfrage-/Auswahl-Widgets: `role="radiogroup"` + `role="radio"` + `aria-checked` (siehe `UmfrageCard.tsx` als Referenz)
 
 ### Gemeinsame zugängliche Komponenten
 
-Neue UI-Muster nicht inline bauen — erst prüfen ob eine gemeinsame Komponente existiert oder erstellt werden sollte:
+Neue UI-Muster nicht inline bauen — erst prüfen ob eine gemeinsame Komponente existiert:
 
 | Muster | Komponente |
 |---|---|
+| Fokus-Trap in Modals | `src/hooks/useFocusTrap.ts` ✓ |
+| DSA-Meldung auf UGC | `src/components/ReportButton.tsx` ✓ |
 | Modale / Bottom-Sheets | `src/components/ui/Modal.tsx` (noch zu erstellen) |
 | Formularfelder mit Label + Fehler | `src/components/ui/FormField.tsx` (noch zu erstellen) |
 | Icon-Only-Button | `src/components/ui/IconButton.tsx` (noch zu erstellen) |
