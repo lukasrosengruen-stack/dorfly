@@ -13,6 +13,8 @@ const ROLE_LABELS: Record<string, string> = {
   buerger:      'Bürger',
   verein:       'Verein',
   organisation: 'Organisation',
+  gewerbe:      'Gewerbe',
+  gemeinderat:  'Gemeinderat',
   verwaltung:   'Verwaltung',
   super_admin:  'Super-Admin',
 }
