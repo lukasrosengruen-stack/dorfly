@@ -36,5 +36,5 @@ export const POST = withAuth(
     const data = await res.json()
     return NextResponse.json(data)
   },
-  { roles: ['verwaltung', 'super_admin', 'gewerbe'] },
+  { roles: ['verwaltung', 'super_admin'] },
 )

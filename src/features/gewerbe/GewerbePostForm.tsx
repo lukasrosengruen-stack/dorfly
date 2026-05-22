@@ -24,7 +24,6 @@ export function GewerbePostForm({ gewerbeId, naechsterMontag, onCreated }: Gewer
   const [ablaufdatum, setAblaufdatum] = useState('')
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [sendPush, setSendPush] = useState(false)
 
   const gesperrt = naechsterMontag !== null
 
@@ -69,19 +68,11 @@ export function GewerbePostForm({ gewerbeId, naechsterMontag, onCreated }: Gewer
         return
       }
       onCreated(data.post)
-      if (sendPush) {
-        await fetch('/api/notifications/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title: 'Neues Angebot', message: text.trim().slice(0, 150), url: '/feed' }),
-        })
-      }
       setTitel('')
       setText('')
       setBildUrl(null)
       setBildrechteBestaetigt(false)
       setAblaufdatum('')
-      setSendPush(false)
       toast.success('Beitrag veröffentlicht')
     } catch {
       toast.error('Fehler beim Erstellen')
@@ -177,11 +168,6 @@ export function GewerbePostForm({ gewerbeId, naechsterMontag, onCreated }: Gewer
           </span>
         </label>
       )}
-      <label className="flex items-center gap-2 text-sm font-bold text-red-700 cursor-pointer bg-red-50 px-3 py-2.5 rounded-xl border border-red-200">
-        <input type="checkbox" checked={sendPush} onChange={e => setSendPush(e.target.checked)} className="rounded accent-red-600" />
-        🔔 Push-Benachrichtigung senden (alle Nutzer)
-      </label>
-
       <Button type="submit" fullWidth loading={saving || uploading} disabled={saving || uploading || (!!bildUrl && !bildrechteBestaetigt)}>
         Beitrag veröffentlichen
       </Button>
