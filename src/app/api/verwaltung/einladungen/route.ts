@@ -15,12 +15,6 @@ export const POST = withAuth(
       : profile.gemeinde_id
     if (!gemeindeId) return apiError('Keine Gemeinde zugewiesen', 400)
 
-    for (const einladung of v.data.einladungen) {
-      if (einladung.rolle === 'verwaltung' && profile.role !== 'super_admin') {
-        return apiError('Nur Super-Admins können Verwaltungs-Rollen vergeben', 403)
-      }
-    }
-
     // gemeinden ist öffentlich lesbar → normaler Client reicht, kein Service-Role nötig
     const publicClient = await createClient()
     const { data: gemeinde, error: gemeindeError } = await publicClient

@@ -17,10 +17,6 @@ export const PATCH = withAuth(
       : profile.gemeinde_id
     if (!gemeindeId) return apiError('Keine Gemeinde zugewiesen', 400)
 
-    if (v.data.neueRolle === 'verwaltung' && profile.role !== 'super_admin') {
-      return apiError('Nur Super-Admins können die Verwaltungs-Rolle vergeben', 403)
-    }
-
     const { email, neueRolle, organisation_name, verein_id, org_id } = v.data
     const supabase = await createServiceClient()
 
