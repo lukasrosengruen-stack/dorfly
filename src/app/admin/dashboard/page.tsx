@@ -94,7 +94,7 @@ export default async function SuperAdminDashboardPage({
     gewerbeResult,
     gemeinderatResult,
   ] = await Promise.all([
-    supabase.from('gemeinden').select('id, name, slug, bundesland, plz, einwohner').order('name'),
+    supabase.from('gemeinden').select('id, name, slug, bundesland, plz, einwohner, features').order('name'),
     svc.rpc('superadmin_buerger_stats',      { p_gemeinde_id: gemeindeId }),
     svc.rpc('superadmin_rollen_stats',        { p_gemeinde_id: gemeindeId }),
     svc.rpc('superadmin_maengel_stats',       { p_gemeinde_id: gemeindeId }),

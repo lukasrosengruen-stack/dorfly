@@ -1,3 +1,5 @@
+import type { GemeindeFeatures } from '@/lib/features'
+
 export type BuergerStats = {
   total: number
   mau: number
@@ -47,6 +49,7 @@ export type Gemeinde = {
   bundesland: string
   plz: string | null
   einwohner: number | null
+  features: GemeindeFeatures | null
 }
 
 export type DashboardData = {
