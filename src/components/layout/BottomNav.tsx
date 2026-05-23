@@ -4,20 +4,29 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Newspaper, AlertTriangle, Grid2x2, BarChart2, MessageCircleQuestion } from 'lucide-react'
 import { clsx } from 'clsx'
+import type { GemeindeFeatures } from '@/lib/features'
 
-const leftItems = [
-  { href: '/feed',    label: 'Newsfeed', icon: Newspaper },
-  { href: '/maengel', label: 'Mängel',   icon: AlertTriangle },
-]
+interface Props {
+  role?: string
+  features?: GemeindeFeatures
+  buergermeisterShortLabel?: string
+}
 
-const rightItems = [
-  { href: '/umfragen',       label: 'Umfragen',  icon: BarChart2 },
-  { href: '/buergermeister', label: 'Frag BM',   icon: MessageCircleQuestion },
-]
-
-export default function BottomNav({ role }: { role?: string }) {
-  void role // wird in zukünftigen Phasen für rollenbasierte Navigation genutzt
+export default function BottomNav({ role, features, buergermeisterShortLabel = 'Frag BM' }: Props) {
+  void role
   const pathname = usePathname()
+
+  const leftItems = [
+    { href: '/feed',    label: 'Newsfeed', icon: Newspaper },
+    { href: '/maengel', label: 'Mängel',   icon: AlertTriangle },
+  ]
+
+  const rightItems = [
+    ...(features?.umfragen === true
+      ? [{ href: '/umfragen', label: 'Umfragen', icon: BarChart2 }]
+      : []),
+    { href: '/buergermeister', label: buergermeisterShortLabel, icon: MessageCircleQuestion },
+  ]
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#e2e8f0] z-50">
@@ -37,7 +46,7 @@ export default function BottomNav({ role }: { role?: string }) {
           )
         })}
 
-        {/* Center Home Button – quadratisch mit Radius */}
+        {/* Center Home Button */}
         <Link
           href="/home"
           aria-label="Startseite"
