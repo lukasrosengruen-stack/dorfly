@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { getGemeinde } from '@/lib/gemeinde'
 import { Newspaper, AlertTriangle, BarChart2, MessageCircleQuestion, LayoutDashboard, CalendarDays, ExternalLink, ScrollText, Scale, UserCircle, Store, Trash2, Users, Phone, Globe, BookOpen, LucideIcon } from 'lucide-react'
+import { isFeatureAktiv } from '@/lib/features'
 
 export const metadata: Metadata = { title: 'Startseite – Dorfly' }
 import Link from 'next/link'
@@ -47,7 +48,19 @@ export default async function HomePage() {
   const gemeindeName = gemeinde?.name ?? ''
   const vorname = profile?.display_name?.split(' ')[0] ?? 'Hallo'
 
-  const tiles = BASE_TILES
+  const FEATURE_GATE: Record<string, Parameters<typeof isFeatureAktiv>[1]> = {
+    '/umfragen':        'umfragen',
+    '/lokale-angebote': 'gewerbe',
+    '/vereine':         'vereine',
+    '/gemeinderat':     'gemeinderat',
+    '/abfallkalender':  'abfallkalender',
+    '/marktplatz':      'marktplatz',
+  }
+
+  const tiles = BASE_TILES.filter(({ href }) => {
+    const featureKey = FEATURE_GATE[href]
+    return featureKey ? isFeatureAktiv(gemeinde, featureKey) : true
+  })
 
   return (
     <div className="min-h-screen bg-[#f5f7fc]">

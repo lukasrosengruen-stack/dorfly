@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Newspaper, AlertTriangle, Grid2x2, BarChart2, MessageCircleQuestion } from 'lucide-react'
+import { Newspaper, AlertTriangle, Grid2x2, CalendarDays, MessageCircleQuestion } from 'lucide-react'
 import { clsx } from 'clsx'
 import type { GemeindeFeatures } from '@/lib/features'
 
@@ -22,9 +22,7 @@ export default function BottomNav({ role, features, buergermeisterShortLabel = '
   ]
 
   const rightItems = [
-    ...(features?.umfragen === true
-      ? [{ href: '/umfragen', label: 'Umfragen', icon: BarChart2 }]
-      : []),
+    { href: '/veranstaltungen', label: 'Veranstaltungen', icon: CalendarDays },
     { href: '/buergermeister', label: buergermeisterShortLabel, icon: MessageCircleQuestion },
   ]
 
