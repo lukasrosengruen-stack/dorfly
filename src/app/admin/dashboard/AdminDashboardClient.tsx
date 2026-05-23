@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { LogOut } from 'lucide-react'
+import { LogOut, Settings } from 'lucide-react'
 import type { DashboardData } from './types'
 import { PRODUZENTEN_ROLLEN } from './types'
 import HealthScoreCard from './HealthScoreCard'
@@ -12,11 +12,13 @@ import RollenTabelle from './RollenTabelle'
 import ProduzentenTab from './ProduzentenTab'
 import AdminEinladungSection from './AdminEinladungSection'
 import GemeindenSection from './GemeindenSection'
+import GemeindeKonfigSlideOver from './GemeindeKonfigSlideOver'
 
 export default function AdminDashboardClient({ data }: { data: DashboardData }) {
   const router = useRouter()
   const supabase = createClient()
   const [activeTab, setActiveTab] = useState<string>(PRODUZENTEN_ROLLEN[0].key)
+  const [slideOverOpen, setSlideOverOpen] = useState(false)
 
   async function signOut() {
     await supabase.auth.signOut()
@@ -28,7 +30,7 @@ export default function AdminDashboardClient({ data }: { data: DashboardData }) 
     router.push(val ? `/admin/dashboard?gemeinde=${val}` : '/admin/dashboard')
   }
 
-  const activeName = data.gemeinden.find(g => g.id === data.activeGemeindeId)?.name
+  const activeGemeinde = data.gemeinden.find(g => g.id === data.activeGemeindeId)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -38,8 +40,8 @@ export default function AdminDashboardClient({ data }: { data: DashboardData }) 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Super-Admin-Dashboard</h1>
-            {activeName && (
-              <p className="text-sm text-gray-500 mt-0.5">{activeName}</p>
+            {activeGemeinde?.name && (
+              <p className="text-sm text-gray-500 mt-0.5">{activeGemeinde.name}</p>
             )}
           </div>
 
@@ -61,6 +63,15 @@ export default function AdminDashboardClient({ data }: { data: DashboardData }) 
                 <option key={g.id} value={g.id}>{g.name}</option>
               ))}
             </select>
+            {activeGemeinde && (
+              <button
+                onClick={() => setSlideOverOpen(true)}
+                aria-label={`Konfiguration für ${activeGemeinde.name}`}
+                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <Settings className="w-4 h-4" aria-hidden="true" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -133,6 +144,16 @@ export default function AdminDashboardClient({ data }: { data: DashboardData }) 
         <GemeindenSection gemeinden={data.gemeinden} />
 
       </div>
+
+      {activeGemeinde && (
+        <GemeindeKonfigSlideOver
+          gemeindeId={activeGemeinde.id}
+          gemeindeName={activeGemeinde.name}
+          initialFeatures={activeGemeinde.features ?? {}}
+          open={slideOverOpen}
+          onClose={() => setSlideOverOpen(false)}
+        />
+      )}
     </div>
   )
 }
