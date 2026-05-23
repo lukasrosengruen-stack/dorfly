@@ -1,11 +1,16 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getGemeinde } from '@/lib/gemeinde'
+import { isFeatureAktiv } from '@/lib/features'
 import GemeinderatClient from './GemeinderatClient'
 
 export const metadata: Metadata = { title: 'Gemeinderat – Dorfly' }
 
 export default async function GemeinderatPage() {
+  const gemeinde = await getGemeinde()
+  if (!isFeatureAktiv(gemeinde, 'gemeinderat')) redirect('/home')
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')

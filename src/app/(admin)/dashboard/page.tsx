@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { isFeatureAktiv } from '@/lib/features'
 import { Users, Home, TrendingUp, AlertTriangle, Clock, MessageCircleQuestion } from 'lucide-react'
 import { FrageErgebnis } from '@/types/umfrage'
 import AbfallkalenderSection from '@/components/dashboard/AbfallkalenderSection'
@@ -123,7 +124,7 @@ export default async function DashboardPage() {
 
   const service = await createServiceClient()
 
-  const wasteFeatureAktiv = (gemeinde?.features as { wasteCalendarEnabled?: boolean } | null | undefined)?.wasteCalendarEnabled ?? false
+  const wasteFeatureAktiv = isFeatureAktiv(gemeinde, 'abfallkalender')
 
   const [maengelResult, fragenResult, postsResult, pendingPostsResult, umfragenResult, nutzerResult, abfallEinstellungenResult] = await Promise.all([
     supabase.from('maengel').select('id, titel, status, created_at, beschreibung, adresse, foto_url, lat, lng, nachricht_an_buerger, profiles(display_name)').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }),

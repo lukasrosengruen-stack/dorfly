@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getGemeinde } from '@/lib/gemeinde'
+import { isFeatureAktiv } from '@/lib/features'
 import AbfallkalenderClient from './AbfallkalenderClient'
 
 export const metadata: Metadata = { title: 'Abfallkalender – Dorfly' }
@@ -9,9 +10,7 @@ export const metadata: Metadata = { title: 'Abfallkalender – Dorfly' }
 export default async function AbfallkalenderPage() {
   const gemeinde = await getGemeinde()
 
-  // Feature-Flag prüfen
-  const featureAktiv = (gemeinde?.features as { wasteCalendarEnabled?: boolean } | null)?.wasteCalendarEnabled ?? false
-  if (!featureAktiv) redirect('/home')
+  if (!isFeatureAktiv(gemeinde, 'abfallkalender')) redirect('/home')
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

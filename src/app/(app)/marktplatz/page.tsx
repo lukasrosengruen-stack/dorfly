@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
+import { redirect } from 'next/navigation'
 import { getGemeinde } from '@/lib/gemeinde'
+import { isFeatureAktiv } from '@/lib/features'
 import { PageHeader } from '@/components/ui'
 import { ShoppingBag, Clock } from 'lucide-react'
 
@@ -7,6 +9,7 @@ export const metadata: Metadata = { title: 'Marktplatz – Dorfly' }
 
 export default async function MarktplatzPage() {
   const gemeinde = await getGemeinde()
+  if (!isFeatureAktiv(gemeinde, 'marktplatz')) redirect('/home')
 
   return (
     <div>

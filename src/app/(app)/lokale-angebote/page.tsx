@@ -1,11 +1,16 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getGemeinde } from '@/lib/gemeinde'
+import { isFeatureAktiv } from '@/lib/features'
 import LokaleAngeboteClient from './LokaleAngeboteClient'
 
 export const metadata: Metadata = { title: 'Lokale Angebote – Dorfly' }
 
 export default async function LokaleAngebotePage() {
+  const gemeinde = await getGemeinde()
+  if (!isFeatureAktiv(gemeinde, 'gewerbe')) redirect('/home')
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')

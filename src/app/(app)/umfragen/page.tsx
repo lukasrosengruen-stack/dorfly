@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getGemeinde } from '@/lib/gemeinde'
+import { isFeatureAktiv } from '@/lib/features'
 import UmfragenClient from './UmfragenClient'
 
 export const metadata: Metadata = { title: 'Umfragen – Dorfly' }
@@ -11,6 +13,8 @@ export default async function UmfragenPage() {
     supabase.auth.getUser(),
     getGemeinde(),
   ])
+
+  if (!isFeatureAktiv(gemeinde, 'umfragen')) redirect('/home')
 
   const { data: profile } = await supabase
     .from('profiles')
