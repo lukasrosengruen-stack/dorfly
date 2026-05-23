@@ -21,9 +21,10 @@ const STATUS_META: Record<FrageStatus, { label: string; color: string; icon: Rea
 interface Props {
   fragen: FrageMitProfil[]
   profile: Profile | null
+  titel: string
 }
 
-export default function BuergermeisterClient({ fragen: initialFragen, profile }: Props) {
+export default function BuergermeisterClient({ fragen: initialFragen, profile, titel }: Props) {
   const [fragen, setFragen] = useState(initialFragen)
   const [showForm, setShowForm] = useState(false)
   const [frageText, setFrageText] = useState('')
@@ -74,7 +75,7 @@ export default function BuergermeisterClient({ fragen: initialFragen, profile }:
       <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-4 sticky top-0 z-10">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Frag den Bürgermeister</h1>
+            <h1 className="text-xl font-bold text-gray-900">{titel}</h1>
             <p className="text-sm text-gray-500">Stelle deine Fragen direkt an die Verwaltung</p>
           </div>
           <Link href="/profil" className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
