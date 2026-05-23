@@ -5,14 +5,6 @@ import { usePathname } from 'next/navigation'
 import { Newspaper, AlertTriangle, MessageCircleQuestion, LayoutDashboard, User, Scale } from 'lucide-react'
 import { clsx } from 'clsx'
 
-const verwaltungItems = [
-  { href: '/feed',           label: 'News',         icon: Newspaper },
-  { href: '/maengel',        label: 'Mängel',        icon: AlertTriangle },
-  { href: '/buergermeister', label: 'Bürgerfragen',  icon: MessageCircleQuestion },
-  { href: '/dashboard',      label: 'Dashboard',     icon: LayoutDashboard },
-  { href: '/profil',         label: 'Profil',        icon: User },
-]
-
 const vereinItems = [
   { href: '/dashboard',      label: 'Meine Beiträge', icon: Newspaper },
   { href: '/profil',         label: 'Profil',          icon: User },
@@ -24,8 +16,27 @@ const gemeinderatItems = [
   { href: '/profil',         label: 'Profil',          icon: User },
 ]
 
-export default function SidebarNav({ gemeindeName, role }: { gemeindeName?: string; role?: string }) {
+interface Props {
+  gemeindeName?: string
+  role?: string
+  buergermeisterLongLabel?: string
+}
+
+export default function SidebarNav({
+  gemeindeName,
+  role,
+  buergermeisterLongLabel = 'Bürgerfragen',
+}: Props) {
   const pathname = usePathname()
+
+  const verwaltungItems = [
+    { href: '/feed',           label: 'News',                   icon: Newspaper },
+    { href: '/maengel',        label: 'Mängel',                  icon: AlertTriangle },
+    { href: '/buergermeister', label: buergermeisterLongLabel,   icon: MessageCircleQuestion },
+    { href: '/dashboard',      label: 'Dashboard',               icon: LayoutDashboard },
+    { href: '/profil',         label: 'Profil',                  icon: User },
+  ]
+
   const items = role === 'verein' || role === 'organisation' ? vereinItems
     : role === 'gemeinderat' ? gemeinderatItems
     : verwaltungItems
@@ -44,6 +55,7 @@ export default function SidebarNav({ gemeindeName, role }: { gemeindeName?: stri
             <Link
               key={href}
               href={href}
+              aria-current={active ? 'page' : undefined}
               className={clsx(
                 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
                 active
@@ -51,7 +63,7 @@ export default function SidebarNav({ gemeindeName, role }: { gemeindeName?: stri
                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               )}
             >
-              <Icon className={clsx('w-4 h-4 shrink-0', active && 'stroke-[2.5]')} />
+              <Icon className={clsx('w-4 h-4 shrink-0', active && 'stroke-[2.5]')} aria-hidden="true" />
               {label}
             </Link>
           )
