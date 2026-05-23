@@ -44,6 +44,7 @@ export const POST = withAuth(
       .eq('gemeinde_id', gemeindeId)
 
     if (deleteError) {
+      console.error('[abfallkalender/import] DELETE abfalltermine:', deleteError)
       return NextResponse.json({ error: 'Fehler beim Löschen alter Termine' }, { status: 500 })
     }
 
