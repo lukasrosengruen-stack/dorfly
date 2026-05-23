@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getGemeinde } from '@/lib/gemeinde'
 import BottomNav from '@/components/layout/BottomNav'
 import PushNotificationInit from '@/components/PushNotificationInit'
+import { getFeatures, getBuergermeisterLabel } from '@/lib/features'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -16,9 +17,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   ])
 
   const profile = profileResult.data
-
-  // Primärfarbe aus der Datenbank – Fallback auf Dorfly-Standard-Blau
   const primaryColor = gemeinde?.primary_color ?? '#0f2d6b'
+  const features = getFeatures(gemeinde)
+  const { short: buergermeisterShortLabel } = getBuergermeisterLabel(gemeinde)
 
   return (
     <div
@@ -29,7 +30,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <main id="main-content" tabIndex={-1} className="max-w-lg mx-auto pb-20 outline-none">
         {children}
       </main>
-      <BottomNav role={profile?.role} />
+      <BottomNav
+        role={profile?.role}
+        features={features}
+        buergermeisterShortLabel={buergermeisterShortLabel}
+      />
     </div>
   )
 }
