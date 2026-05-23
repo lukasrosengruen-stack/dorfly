@@ -44,7 +44,7 @@ Größere Features leben in `src/features/<name>/` (z.B. `feed/`, `gewerbe/`, `m
 
 ## Datenbankkonventionen (Supabase)
 
-**Jede neue Migration muss explizite GRANTs enthalten.** Ab Oktober 2026 vergibt Supabase keine automatischen Grants mehr auf `public`-Tabellen — ohne expliziten GRANT gibt PostgREST `42501` zurück.
+**Jede neue Migration muss explizite GRANTs enthalten** — für alle beteiligten Rollen. Ab Mai 2026 (neue Projekte) vergibt Supabase keine automatischen Grants mehr auf `public`-Tabellen, auch nicht für `service_role`. Ohne expliziten GRANT gibt PostgREST `42501` zurück.
 
 ### Template für neue Migrations
 
@@ -57,8 +57,11 @@ create table public.meine_tabelle (
 alter table public.meine_tabelle enable row level security;
 
 -- anon nur wenn die Tabelle wirklich ohne Login erreichbar sein soll
-grant select on public.meine_tabelle to anon;                          -- optional
+grant select on public.meine_tabelle to anon;                                       -- optional
 grant select, insert, update, delete on public.meine_tabelle to authenticated;
+
+-- service_role braucht explizite GRANTs für alle DML-Operationen, die API-Routen nutzen
+grant select, insert, update, delete on public.meine_tabelle to service_role;       -- nur nötige Rechte
 
 create policy "..." on public.meine_tabelle for select using (...);
 ```
@@ -69,7 +72,7 @@ create policy "..." on public.meine_tabelle for select using (...);
 |---|---|
 | `anon` | Nur für Tabellen ohne Login (z.B. `gemeinden` für Slug-Routing) |
 | `authenticated` | Alle Tabellen im eingeloggten Bereich |
-| `service_role` | Kein GRANT nötig — umgeht RLS, nur in API-Routen |
+| `service_role` | Tabellen die ausschließlich über API-Routen (service client) beschrieben werden — **expliziter GRANT erforderlich** |
 
 Bestehende Grants: [supabase/migrations/012_explicit_grants.sql](supabase/migrations/012_explicit_grants.sql)
 
