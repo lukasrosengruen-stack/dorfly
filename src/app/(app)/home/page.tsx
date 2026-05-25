@@ -77,7 +77,7 @@ export default async function HomePage() {
         {/* Dashboard Banner */}
         {hasDashboard && (
           <Link href={dashboardHref}
-            className="bg-primary-500 rounded-[20px] p-4 flex items-center gap-4 shadow-[0_4px_14px_rgba(15,45,107,0.33)] active:opacity-90">
+            className="bg-primary-500 rounded-[20px] p-4 flex items-center gap-4 shadow-[0_4px_14px_rgba(15,45,107,0.33)] transition-[transform,box-shadow] duration-100 ease-out active:scale-[0.96] active:shadow-none">
             <div className="w-11 h-11 rounded-[14px] bg-white/14 flex items-center justify-center shrink-0">
               <LayoutDashboard className="w-[22px] h-[22px] text-white" strokeWidth={1.5} />
             </div>
@@ -97,7 +97,7 @@ export default async function HomePage() {
         <div className="grid grid-cols-2 gap-2.5">
           {tiles.map(({ href, label, icon: Icon, color, bg, desc }) => (
             <Link key={href} href={href}
-              className="bg-white rounded-[18px] p-[15px_14px] shadow-[0_2px_14px_rgba(15,45,107,0.08)] flex flex-col gap-3 active:opacity-90">
+              className="bg-white rounded-[18px] p-[15px_14px] shadow-[0_2px_14px_rgba(15,45,107,0.08)] flex flex-col gap-3 transition-[transform,box-shadow] duration-100 ease-out active:scale-[0.96] active:shadow-none">
               <div className="w-[58px] h-[58px] rounded-[18px] flex items-center justify-center"
                 style={{ background: bg }}>
                 <Icon className="w-[30px] h-[30px]" style={{ color }} strokeWidth={1.5} />
@@ -117,7 +117,7 @@ export default async function HomePage() {
             <div className="grid grid-cols-2 gap-2.5">
               {(gemeinde as any)?.homepage_url && (
                 <a href={(gemeinde as any).homepage_url} target="_blank" rel="noopener noreferrer"
-                  className="bg-white rounded-[18px] p-[15px_14px] shadow-[0_2px_14px_rgba(15,45,107,0.08)] flex flex-col gap-3 active:opacity-90">
+                  className="bg-white rounded-[18px] p-[15px_14px] shadow-[0_2px_14px_rgba(15,45,107,0.08)] flex flex-col gap-3 transition-[transform,box-shadow] duration-100 ease-out active:scale-[0.96] active:shadow-none">
                   <div className="flex items-start justify-between">
                     <div className="w-[58px] h-[58px] rounded-[18px] flex items-center justify-center" style={{ background: 'rgba(26,92,191,0.08)' }}>
                       <Globe className="w-[30px] h-[30px]" style={{ color: '#1a5cbf' }} strokeWidth={1.5} />
@@ -132,7 +132,7 @@ export default async function HomePage() {
               )}
               {gemeinde?.ratsinformation_url && (
                 <a href={gemeinde.ratsinformation_url} target="_blank" rel="noopener noreferrer"
-                  className="bg-white rounded-[18px] p-[15px_14px] shadow-[0_2px_14px_rgba(15,45,107,0.08)] flex flex-col gap-3 active:opacity-90">
+                  className="bg-white rounded-[18px] p-[15px_14px] shadow-[0_2px_14px_rgba(15,45,107,0.08)] flex flex-col gap-3 transition-[transform,box-shadow] duration-100 ease-out active:scale-[0.96] active:shadow-none">
                   <div className="flex items-start justify-between">
                     <div className="w-[58px] h-[58px] rounded-[18px] flex items-center justify-center" style={{ background: 'rgba(15,45,107,0.08)' }}>
                       <ScrollText className="w-[30px] h-[30px]" style={{ color: '#0f2d6b' }} strokeWidth={1.5} />
@@ -147,7 +147,7 @@ export default async function HomePage() {
               )}
               {gemeinde?.notfallnummern_url && (
                 <a href={gemeinde.notfallnummern_url} target="_blank" rel="noopener noreferrer"
-                  className="bg-white rounded-[18px] p-[15px_14px] shadow-[0_2px_14px_rgba(15,45,107,0.08)] flex flex-col gap-3 active:opacity-90">
+                  className="bg-white rounded-[18px] p-[15px_14px] shadow-[0_2px_14px_rgba(15,45,107,0.08)] flex flex-col gap-3 transition-[transform,box-shadow] duration-100 ease-out active:scale-[0.96] active:shadow-none">
                   <div className="flex items-start justify-between">
                     <div className="w-[58px] h-[58px] rounded-[18px] flex items-center justify-center" style={{ background: 'rgba(196,30,30,0.08)' }}>
                       <Phone className="w-[30px] h-[30px]" style={{ color: '#c41e1e' }} strokeWidth={1.5} />
@@ -162,7 +162,7 @@ export default async function HomePage() {
               )}
               {(gemeinde as any)?.mitteilungsblatt_url && (
                 <a href={(gemeinde as any).mitteilungsblatt_url} target="_blank" rel="noopener noreferrer"
-                  className="bg-white rounded-[18px] p-[15px_14px] shadow-[0_2px_14px_rgba(15,45,107,0.08)] flex flex-col gap-3 active:opacity-90">
+                  className="bg-white rounded-[18px] p-[15px_14px] shadow-[0_2px_14px_rgba(15,45,107,0.08)] flex flex-col gap-3 transition-[transform,box-shadow] duration-100 ease-out active:scale-[0.96] active:shadow-none">
                   <div className="flex items-start justify-between">
                     <div className="w-[58px] h-[58px] rounded-[18px] flex items-center justify-center" style={{ background: 'rgba(124,58,237,0.08)' }}>
                       <BookOpen className="w-[30px] h-[30px]" style={{ color: '#7c3aed' }} strokeWidth={1.5} />
