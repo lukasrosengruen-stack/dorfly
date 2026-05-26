@@ -324,11 +324,22 @@ export default function LoginPage() {
           )}
 
           {infoMsg === 'email_confirmed' ? (
-            <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-sm">
-              <p className="text-green-800 font-medium">E-Mail bestätigt!</p>
-              <p className="text-green-700 mt-1">
-                Deine E-Mail-Adresse wurde bereits bestätigt. Melde dich jetzt mit deiner E-Mail und deinem Passwort an.
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm">
+              <p className="text-amber-800 font-medium">Bestätigungslink in anderem Browser geöffnet</p>
+              <p className="text-amber-700 mt-1">
+                Melde dich direkt mit deiner E-Mail und deinem Passwort an — oder fordere einen neuen Bestätigungslink an.
               </p>
+              {resendSent ? (
+                <p className="text-green-700 mt-2 font-medium">Neue E-Mail gesendet!</p>
+              ) : (
+                <button
+                  onClick={resendConfirmation}
+                  disabled={!email || loading}
+                  className="mt-2 text-amber-900 underline font-medium disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Sende...' : 'Neuen Bestätigungslink senden'}
+                </button>
+              )}
             </div>
           ) : error === 'email_not_confirmed' ? (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm">

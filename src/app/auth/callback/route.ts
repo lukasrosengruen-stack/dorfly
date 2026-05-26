@@ -31,20 +31,26 @@ export async function GET(request: NextRequest) {
   let user: User | null = null
 
   if (code) {
-    // PKCE-Flow: initiale Registrierungsbestätigung (gleicher Browser)
-    const { error, data } = await supabase.auth.exchangeCodeForSession(code)
-    if (error) {
-      console.error('[auth/callback] exchangeCodeForSession fehlgeschlagen:', error.message, error.status)
-      // E-Mail wurde von Supabase bereits bestätigt (passiert vor dem PKCE-Code-Austausch).
-      // Nur die Session-Erstellung schlug fehl (z.B. anderer Browser/Inkognito).
-      // User kann sich direkt mit Passwort anmelden – Profil wird beim Login angelegt.
-      return NextResponse.redirect(new URL('/login?info=email_confirmed', origin))
+    // PKCE-Flow: Primärpfad (gleicher Browser wie Registrierung)
+    const { error: pkceError, data: pkceData } = await supabase.auth.exchangeCodeForSession(code)
+    if (!pkceError) {
+      user = pkceData.user
+    } else {
+      console.error('[auth/callback] exchangeCodeForSession fehlgeschlagen:', pkceError.message, pkceError.status)
+      // PKCE gescheitert (anderer Browser/Inkognito). Neuere Supabase-Versionen senden
+      // token_hash zusätzlich zum code – diesen als Fallback versuchen, er funktioniert
+      // browserunabhängig und bestätigt auch die E-Mail.
+      if (token_hash && type) {
+        const { error: otpError, data: otpData } = await supabase.auth.verifyOtp({
+          token_hash,
+          type: type as 'signup' | 'email' | 'recovery' | 'invite' | 'email_change',
+        })
+        if (otpError) console.error('[auth/callback] verifyOtp-Fallback fehlgeschlagen:', otpError.message)
+        else user = otpData.user
+      }
     }
-    user = data.user
   } else if (token_hash && type) {
-    // OTP-Flow: "Erneut senden"-Bestätigung oder anderer Browser
-    // Tritt auf wenn der Link in einem anderen Browser geöffnet wird als dem,
-    // in dem die Registrierung gestartet wurde (PKCE-Cookie fehlt).
+    // Nur token_hash (kein code): z.B. "Erneut senden"-E-Mail
     const { error, data } = await supabase.auth.verifyOtp({
       token_hash,
       type: type as 'signup' | 'email' | 'recovery' | 'invite' | 'email_change',
