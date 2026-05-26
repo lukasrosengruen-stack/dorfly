@@ -40,9 +40,9 @@ export default function LoginPage() {
   const supabase = createClient()
 
   useEffect(() => {
-    if (searchParams.get('error') === 'confirmation_failed') {
-      setError('email_not_confirmed')
-    }
+    const urlError = searchParams.get('error')
+    if (urlError === 'confirmation_failed') setError('email_not_confirmed')
+    if (urlError === 'wrong_browser') setError('wrong_browser')
     const token = searchParams.get('token')
     if (token) {
       setEinladungsToken(token)
@@ -286,7 +286,26 @@ export default function LoginPage() {
             </div>
           )}
 
-          {error === 'email_not_confirmed' ? (
+          {error === 'wrong_browser' ? (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm">
+              <p className="text-amber-800 font-medium">Link in anderem Browser geöffnet</p>
+              <p className="text-amber-700 mt-1">
+                Der Bestätigungslink wurde in einem anderen Browser geöffnet als dem, in dem du dich registriert hast (z.&nbsp;B. Inkognito-Fenster&nbsp;→ normales Fenster).
+                Gib deine E-Mail ein und fordere einen neuen Link an — der funktioniert dann in jedem Browser.
+              </p>
+              {resendSent ? (
+                <p className="text-green-700 mt-2 font-medium">Neue E-Mail gesendet!</p>
+              ) : (
+                <button
+                  onClick={resendConfirmation}
+                  disabled={loading}
+                  className="mt-2 text-amber-900 underline font-medium disabled:opacity-50"
+                >
+                  {loading ? 'Sende...' : 'Neuen Bestätigungslink senden'}
+                </button>
+              )}
+            </div>
+          ) : error === 'email_not_confirmed' ? (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm">
               <p className="text-amber-800 font-medium">E-Mail noch nicht bestätigt</p>
               <p className="text-amber-700 mt-1">Bitte klicke auf den Link in der Bestätigungs-E-Mail, die wir dir geschickt haben.</p>

@@ -33,8 +33,13 @@ export async function GET(request: NextRequest) {
   if (code) {
     // PKCE-Flow: initiale Registrierungsbestätigung (gleicher Browser)
     const { error, data } = await supabase.auth.exchangeCodeForSession(code)
-    if (error) console.error('[auth/callback] exchangeCodeForSession fehlgeschlagen:', error.message, error.status)
-    else user = data.user
+    if (error) {
+      console.error('[auth/callback] exchangeCodeForSession fehlgeschlagen:', error.message, error.status)
+      // PKCE-Code vorhanden aber Austausch fehlgeschlagen = Link in anderem Browser geöffnet
+      // (z.B. Registrierung im Inkognito-Fenster, E-Mail-Link öffnet im normalen Browser)
+      return NextResponse.redirect(new URL('/login?error=wrong_browser', origin))
+    }
+    user = data.user
   } else if (token_hash && type) {
     // OTP-Flow: "Erneut senden"-Bestätigung oder anderer Browser
     // Tritt auf wenn der Link in einem anderen Browser geöffnet wird als dem,
