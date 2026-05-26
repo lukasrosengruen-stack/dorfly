@@ -35,9 +35,10 @@ export async function GET(request: NextRequest) {
     const { error, data } = await supabase.auth.exchangeCodeForSession(code)
     if (error) {
       console.error('[auth/callback] exchangeCodeForSession fehlgeschlagen:', error.message, error.status)
-      // PKCE-Code vorhanden aber Austausch fehlgeschlagen = Link in anderem Browser geöffnet
-      // (z.B. Registrierung im Inkognito-Fenster, E-Mail-Link öffnet im normalen Browser)
-      return NextResponse.redirect(new URL('/login?error=wrong_browser', origin))
+      // E-Mail wurde von Supabase bereits bestätigt (passiert vor dem PKCE-Code-Austausch).
+      // Nur die Session-Erstellung schlug fehl (z.B. anderer Browser/Inkognito).
+      // User kann sich direkt mit Passwort anmelden – Profil wird beim Login angelegt.
+      return NextResponse.redirect(new URL('/login?info=email_confirmed', origin))
     }
     user = data.user
   } else if (token_hash && type) {

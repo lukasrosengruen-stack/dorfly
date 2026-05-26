@@ -35,19 +35,21 @@ export default function LoginPage() {
   const [registered, setRegistered] = useState(false)
   const [resetSent, setResetSent] = useState(false)
   const [resendSent, setResendSent] = useState(false)
+  const [infoMsg, setInfoMsg] = useState('')
   const [einladungsToken, setEinladungsToken] = useState<string | null>(null)
   const [einladungsInfo, setEinladungsInfo] = useState<EinladungsInfo | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
     const urlError = searchParams.get('error')
+    const urlInfo  = searchParams.get('info')
     if (urlError === 'confirmation_failed') {
       setError('email_not_confirmed')
       setTimeout(() => document.getElementById('login-email')?.focus(), 100)
     }
-    if (urlError === 'wrong_browser') {
-      setError('wrong_browser')
-      setTimeout(() => document.getElementById('login-email')?.focus(), 100)
+    // wrong_browser: Legacy-Redirect von einem kurzen Deploymentzeitraum – gleich behandeln wie email_confirmed
+    if (urlError === 'wrong_browser' || urlInfo === 'email_confirmed') {
+      setInfoMsg('email_confirmed')
     }
     const token = searchParams.get('token')
     if (token) {
@@ -106,12 +108,38 @@ export default function LoginPage() {
       if (mode === 'login') {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
-        const { data: profile } = await supabase
+
+        let profile = await supabase
           .from('profiles')
           .select('role, gemeinden(slug)')
           .eq('id', data.user?.id ?? '')
           .single()
-        if (profile?.role === 'super_admin') {
+          .then(r => r.data)
+
+        // Kein Profil: Auth-Callback schlug fehl (PKCE-Fehler), Profil jetzt nachholen
+        if (!profile) {
+          const res = await fetch('/api/setup-profil', { method: 'POST' })
+          if (res.ok) {
+            const { slug: gemeindeSlug } = await res.json() as { slug?: string }
+            const targetHost = gemeindeSlug ? `${gemeindeSlug}.dorfly.de` : null
+            if (targetHost && window.location.hostname !== targetHost) {
+              window.location.href = `https://${targetHost}/home`
+            } else {
+              router.push('/home')
+              router.refresh()
+            }
+            return
+          }
+          // setup-profil fehlgeschlagen: trotzdem weiterleiten, App-Middleware fängt ab
+          profile = await supabase
+            .from('profiles')
+            .select('role, gemeinden(slug)')
+            .eq('id', data.user?.id ?? '')
+            .single()
+            .then(r => r.data)
+        }
+
+        if ((profile as { role?: string } | null)?.role === 'super_admin') {
           router.push('/admin/dashboard')
           router.refresh()
         } else {
@@ -295,25 +323,12 @@ export default function LoginPage() {
             </div>
           )}
 
-          {error === 'wrong_browser' ? (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm">
-              <p className="text-amber-800 font-medium">Link in anderem Browser geöffnet</p>
-              <p className="text-amber-700 mt-1">
-                Der Bestätigungslink wurde in einem anderen Browser oder einer E-Mail-App geöffnet.
-                {!email && <strong> Gib zuerst deine E-Mail-Adresse oben ein,</strong>}
-                {!email ? ' dann kannst du einen neuen Link anfordern.' : ' Klicke auf "Neuen Link senden" — der funktioniert dann in diesem Browser.'}
+          {infoMsg === 'email_confirmed' ? (
+            <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-sm">
+              <p className="text-green-800 font-medium">E-Mail bestätigt!</p>
+              <p className="text-green-700 mt-1">
+                Deine E-Mail-Adresse wurde bereits bestätigt. Melde dich jetzt mit deiner E-Mail und deinem Passwort an.
               </p>
-              {resendSent ? (
-                <p className="text-green-700 mt-2 font-medium">Neue E-Mail gesendet!</p>
-              ) : (
-                <button
-                  onClick={resendConfirmation}
-                  disabled={!email || loading}
-                  className="mt-2 text-amber-900 underline font-medium disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Sende...' : 'Neuen Bestätigungslink senden'}
-                </button>
-              )}
             </div>
           ) : error === 'email_not_confirmed' ? (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm">
