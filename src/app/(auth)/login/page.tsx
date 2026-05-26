@@ -41,8 +41,14 @@ export default function LoginPage() {
 
   useEffect(() => {
     const urlError = searchParams.get('error')
-    if (urlError === 'confirmation_failed') setError('email_not_confirmed')
-    if (urlError === 'wrong_browser') setError('wrong_browser')
+    if (urlError === 'confirmation_failed') {
+      setError('email_not_confirmed')
+      setTimeout(() => document.getElementById('login-email')?.focus(), 100)
+    }
+    if (urlError === 'wrong_browser') {
+      setError('wrong_browser')
+      setTimeout(() => document.getElementById('login-email')?.focus(), 100)
+    }
     const token = searchParams.get('token')
     if (token) {
       setEinladungsToken(token)
@@ -66,7 +72,10 @@ export default function LoginPage() {
   }, [searchParams])
 
   async function resendConfirmation() {
-    if (!email) { setError('Bitte E-Mail eingeben'); return }
+    if (!email) {
+      document.getElementById('login-email')?.focus()
+      return
+    }
     setLoading(true)
     const { error } = await supabase.auth.resend({
       type: 'signup',
@@ -290,16 +299,17 @@ export default function LoginPage() {
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm">
               <p className="text-amber-800 font-medium">Link in anderem Browser geöffnet</p>
               <p className="text-amber-700 mt-1">
-                Der Bestätigungslink wurde in einem anderen Browser geöffnet als dem, in dem du dich registriert hast (z.&nbsp;B. Inkognito-Fenster&nbsp;→ normales Fenster).
-                Gib deine E-Mail ein und fordere einen neuen Link an — der funktioniert dann in jedem Browser.
+                Der Bestätigungslink wurde in einem anderen Browser oder einer E-Mail-App geöffnet.
+                {!email && <strong> Gib zuerst deine E-Mail-Adresse oben ein,</strong>}
+                {!email ? ' dann kannst du einen neuen Link anfordern.' : ' Klicke auf "Neuen Link senden" — der funktioniert dann in diesem Browser.'}
               </p>
               {resendSent ? (
                 <p className="text-green-700 mt-2 font-medium">Neue E-Mail gesendet!</p>
               ) : (
                 <button
                   onClick={resendConfirmation}
-                  disabled={loading}
-                  className="mt-2 text-amber-900 underline font-medium disabled:opacity-50"
+                  disabled={!email || loading}
+                  className="mt-2 text-amber-900 underline font-medium disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
                 >
                   {loading ? 'Sende...' : 'Neuen Bestätigungslink senden'}
                 </button>
@@ -308,14 +318,17 @@ export default function LoginPage() {
           ) : error === 'email_not_confirmed' ? (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm">
               <p className="text-amber-800 font-medium">E-Mail noch nicht bestätigt</p>
-              <p className="text-amber-700 mt-1">Bitte klicke auf den Link in der Bestätigungs-E-Mail, die wir dir geschickt haben.</p>
+              <p className="text-amber-700 mt-1">
+                Bitte klicke auf den Link in der Bestätigungs-E-Mail.
+                {!email && <> <strong>Gib deine E-Mail-Adresse oben ein</strong> um eine neue anzufordern.</>}
+              </p>
               {resendSent ? (
                 <p className="text-green-700 mt-2 font-medium">E-Mail erneut gesendet!</p>
               ) : (
                 <button
                   onClick={resendConfirmation}
-                  disabled={loading}
-                  className="mt-2 text-amber-900 underline font-medium disabled:opacity-50"
+                  disabled={!email || loading}
+                  className="mt-2 text-amber-900 underline font-medium disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
                 >
                   {loading ? 'Sende...' : 'Bestätigungs-E-Mail erneut senden'}
                 </button>
