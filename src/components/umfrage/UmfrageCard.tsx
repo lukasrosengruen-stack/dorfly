@@ -1,10 +1,9 @@
 'use client'
 
-import { toast } from 'sonner'
 import { useState } from 'react'
 import { Umfrage, UmfrageAntwortInput, FrageTyp } from '@/types/umfrage'
 import { Profile } from '@/types/database'
-import { BarChart2, Clock, ChevronDown, ChevronUp, Loader2, CheckCircle2, Trash2 } from 'lucide-react'
+import { BarChart2, Clock, ChevronDown, ChevronUp, Loader2, CheckCircle2 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
@@ -25,10 +24,8 @@ export default function UmfrageCard({ umfrage: initialUmfrage, hatAbgestimmt: in
   const [teilnehmer, setTeilnehmer] = useState(initialTeilnehmer)
   const [antworten, setAntworten] = useState<Record<string, UmfrageAntwortInput[]>>({})
   const [loading, setLoading] = useState(false)
-  const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState('')
 
-  const isVerwaltung = profile?.role === 'verwaltung' || profile?.role === 'super_admin'
   const abgelaufen = new Date(umfrage.enddatum) < new Date()
   const fragen = umfrage.umfrage_fragen ?? []
   const kannNichtAbstimmen = hatAbgestimmt || abgelaufen || !profile
@@ -71,25 +68,7 @@ export default function UmfrageCard({ umfrage: initialUmfrage, hatAbgestimmt: in
     }
   }
 
-  async function handleDelete() {
-    if (!confirm('Umfrage wirklich löschen?')) return
-    setDeleting(true)
-    try {
-      const res = await fetch('/api/umfragen/loeschen', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ umfrageId: umfrage.id }),
-      })
-      if (!res.ok) throw new Error()
-      onDelete?.(umfrage.id)
-    } catch {
-      toast.error('Fehler beim Löschen')
-    } finally {
-      setDeleting(false)
-    }
-  }
-
-  return (
+return (
     <>
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden border-l-4 border-primary-500">
         {/* Header */}
@@ -113,17 +92,7 @@ export default function UmfrageCard({ umfrage: initialUmfrage, hatAbgestimmt: in
             </button>
             <div className="flex items-center gap-2 shrink-0">
               <span className="text-xs text-gray-500">{teilnehmer} Teilnehmer</span>
-              {isVerwaltung && (
-                <button
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  aria-label="Umfrage löschen"
-                  className="text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
-                >
-                  <Trash2 className="w-4 h-4" aria-hidden="true" />
-                </button>
-              )}
-              <button onClick={() => setIsExpanded(v => !v)} aria-label={isExpanded ? 'Zuklappen' : 'Aufklappen'}>
+<button onClick={() => setIsExpanded(v => !v)} aria-label={isExpanded ? 'Zuklappen' : 'Aufklappen'}>
                 {isExpanded
                   ? <ChevronUp className="w-4 h-4 text-gray-400" aria-hidden="true" />
                   : <ChevronDown className="w-4 h-4 text-gray-400" aria-hidden="true" />
