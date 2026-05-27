@@ -4,7 +4,7 @@ import { withAuth } from '@/lib/api'
 import { validate, umfrageErstellenSchema, umfrageBearbeitenSchema } from '@/lib/validations'
 
 const bearbeitenSchema = umfrageBearbeitenSchema.extend({
-  fragen: umfrageErstellenSchema.shape.fragen,
+  fragen: umfrageErstellenSchema.shape.fragen.optional(),
 })
 
 export const POST = withAuth(
@@ -16,7 +16,6 @@ export const POST = withAuth(
     const { id: umfrageId, titel, beschreibung, enddatum, fragen } = v.data
     const service = await createServiceClient()
 
-    // Basisdaten aktualisieren — nur Umfragen der eigenen Gemeinde
     const { error: updateError } = await service
       .from('umfragen')
       .update({ titel, beschreibung: beschreibung ?? null, enddatum })
@@ -25,22 +24,23 @@ export const POST = withAuth(
 
     if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
 
-    // Alte Fragen + Optionen löschen und neu anlegen
-    await service.from('umfrage_fragen').delete().eq('umfrage_id', umfrageId)
+    if (fragen) {
+      await service.from('umfrage_fragen').delete().eq('umfrage_id', umfrageId)
 
-    for (const frage of fragen) {
-      const { data: dbFrage, error: frageError } = await service
-        .from('umfrage_fragen')
-        .insert({ umfrage_id: umfrageId, reihenfolge: frage.reihenfolge, frage_text: frage.frage_text, typ: frage.typ })
-        .select()
-        .single()
+      for (const frage of fragen) {
+        const { data: dbFrage, error: frageError } = await service
+          .from('umfrage_fragen')
+          .insert({ umfrage_id: umfrageId, reihenfolge: frage.reihenfolge, frage_text: frage.frage_text, typ: frage.typ })
+          .select()
+          .single()
 
-      if (frageError || !dbFrage) return NextResponse.json({ error: frageError?.message ?? 'Fehler' }, { status: 500 })
+        if (frageError || !dbFrage) return NextResponse.json({ error: frageError?.message ?? 'Fehler' }, { status: 500 })
 
-      if (frage.umfrage_optionen?.length) {
-        await service.from('umfrage_optionen').insert(
-          frage.umfrage_optionen.map(o => ({ frage_id: dbFrage.id, reihenfolge: o.reihenfolge, option_text: o.option_text }))
-        )
+        if (frage.umfrage_optionen?.length) {
+          await service.from('umfrage_optionen').insert(
+            frage.umfrage_optionen.map(o => ({ frage_id: dbFrage.id, reihenfolge: o.reihenfolge, option_text: o.option_text }))
+          )
+        }
       }
     }
 
