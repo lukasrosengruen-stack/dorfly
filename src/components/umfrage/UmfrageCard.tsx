@@ -1,15 +1,13 @@
 'use client'
 
-
 import { toast } from 'sonner'
 import { useState } from 'react'
-import { Umfrage, UmfrageAntwort, FrageTyp } from '@/types/umfrage'
+import { Umfrage, UmfrageAntwortInput, FrageTyp } from '@/types/umfrage'
 import { Profile } from '@/types/database'
-import { BarChart2, Clock, ChevronDown, ChevronUp, Loader2, CheckCircle2, Pencil, Trash2 } from 'lucide-react'
+import { BarChart2, Clock, ChevronDown, ChevronUp, Loader2, CheckCircle2, Trash2 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
-import UmfrageBearbeiten from './UmfrageBearbeiten'
 
 interface Props {
   umfrage: Umfrage
@@ -20,15 +18,14 @@ interface Props {
   onUpdate?: (umfrage: Umfrage) => void
 }
 
-export default function UmfrageCard({ umfrage: initialUmfrage, hatAbgestimmt: initialHatAbgestimmt, teilnehmerAnzahl: initialTeilnehmer, profile, onDelete, onUpdate }: Props) {
-  const [umfrage, setUmfrage] = useState(initialUmfrage)
+export default function UmfrageCard({ umfrage: initialUmfrage, hatAbgestimmt: initialHatAbgestimmt, teilnehmerAnzahl: initialTeilnehmer, profile, onDelete }: Props) {
+  const [umfrage] = useState(initialUmfrage)
   const [isExpanded, setIsExpanded] = useState(false)
   const [hatAbgestimmt, setHatAbgestimmt] = useState(initialHatAbgestimmt)
   const [teilnehmer, setTeilnehmer] = useState(initialTeilnehmer)
-  const [antworten, setAntworten] = useState<Record<string, UmfrageAntwort[]>>({})
+  const [antworten, setAntworten] = useState<Record<string, UmfrageAntwortInput[]>>({})
   const [loading, setLoading] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [showEditForm, setShowEditForm] = useState(false)
   const [error, setError] = useState('')
 
   const isVerwaltung = profile?.role === 'verwaltung' || profile?.role === 'super_admin'
@@ -36,7 +33,7 @@ export default function UmfrageCard({ umfrage: initialUmfrage, hatAbgestimmt: in
   const fragen = umfrage.umfrage_fragen ?? []
   const kannNichtAbstimmen = hatAbgestimmt || abgelaufen || !profile
 
-  function setAntwort(frageId: string, antwort: UmfrageAntwort, mehrfach = false) {
+  function setAntwort(frageId: string, antwort: UmfrageAntwortInput, mehrfach = false) {
     setAntworten(prev => {
       if (mehrfach) {
         const aktuell = prev[frageId] ?? []
@@ -92,21 +89,8 @@ export default function UmfrageCard({ umfrage: initialUmfrage, hatAbgestimmt: in
     }
   }
 
-  function handleUpdated(updated: Umfrage) {
-    setUmfrage(updated)
-    onUpdate?.(updated)
-  }
-
   return (
     <>
-      {showEditForm && (
-        <UmfrageBearbeiten
-          umfrage={umfrage}
-          onClose={() => setShowEditForm(false)}
-          onUpdate={handleUpdated}
-        />
-      )}
-
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden border-l-4 border-primary-500">
         {/* Header */}
         <div className="p-4 pb-3">
@@ -131,11 +115,12 @@ export default function UmfrageCard({ umfrage: initialUmfrage, hatAbgestimmt: in
               <span className="text-xs text-gray-500">{teilnehmer} Teilnehmer</span>
               {isVerwaltung && (
                 <button
-                  onClick={() => setShowEditForm(true)}
-                  aria-label="Umfrage bearbeiten"
-                  className="text-gray-400 hover:text-gray-600 transition-colors rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  aria-label="Umfrage löschen"
+                  className="text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
                 >
-                  <Pencil className="w-4 h-4" aria-hidden="true" />
+                  <Trash2 className="w-4 h-4" aria-hidden="true" />
                 </button>
               )}
               <button onClick={() => setIsExpanded(v => !v)} aria-label={isExpanded ? 'Zuklappen' : 'Aufklappen'}>
@@ -204,8 +189,8 @@ export default function UmfrageCard({ umfrage: initialUmfrage, hatAbgestimmt: in
 
 function Abstimmung({ frage, antworten, onChange }: {
   frage: Umfrage['umfrage_fragen'] extends (infer T)[] | undefined ? T : never
-  antworten: UmfrageAntwort[]
-  onChange: (a: UmfrageAntwort, mehrfach?: boolean) => void
+  antworten: UmfrageAntwortInput[]
+  onChange: (a: UmfrageAntwortInput, mehrfach?: boolean) => void
 }) {
   if (!frage) return null
   const typ = frage.typ as FrageTyp
@@ -294,4 +279,3 @@ function Abstimmung({ frage, antworten, onChange }: {
     </div>
   )
 }
-
