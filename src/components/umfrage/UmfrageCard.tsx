@@ -9,7 +9,7 @@ import { BarChart2, Clock, ChevronDown, ChevronUp, Loader2, CheckCircle2, Pencil
 import { clsx } from 'clsx'
 import { formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
-import UmfrageErstellen from './UmfrageErstellen'
+import UmfrageBearbeiten from './UmfrageBearbeiten'
 
 interface Props {
   umfrage: Umfrage
@@ -100,11 +100,10 @@ export default function UmfrageCard({ umfrage: initialUmfrage, hatAbgestimmt: in
   return (
     <>
       {showEditForm && (
-        <UmfrageErstellen
-          gemeindeId={umfrage.gemeinde_id}
+        <UmfrageBearbeiten
+          umfrage={umfrage}
           onClose={() => setShowEditForm(false)}
-          onCreated={handleUpdated}
-          existingUmfrage={umfrage}
+          onUpdate={handleUpdated}
         />
       )}
 
@@ -130,7 +129,16 @@ export default function UmfrageCard({ umfrage: initialUmfrage, hatAbgestimmt: in
             </button>
             <div className="flex items-center gap-2 shrink-0">
               <span className="text-xs text-gray-500">{teilnehmer} Teilnehmer</span>
-              <button onClick={() => setIsExpanded(v => !v)}>
+              {isVerwaltung && (
+                <button
+                  onClick={() => setShowEditForm(true)}
+                  aria-label="Umfrage bearbeiten"
+                  className="text-gray-400 hover:text-gray-600 transition-colors rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  <Pencil className="w-4 h-4" aria-hidden="true" />
+                </button>
+              )}
+              <button onClick={() => setIsExpanded(v => !v)} aria-label={isExpanded ? 'Zuklappen' : 'Aufklappen'}>
                 {isExpanded
                   ? <ChevronUp className="w-4 h-4 text-gray-400" />
                   : <ChevronDown className="w-4 h-4 text-gray-400" />

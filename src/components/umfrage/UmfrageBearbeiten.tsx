@@ -63,7 +63,7 @@ export default function UmfrageBearbeiten({ umfrage, onClose, onUpdate }: Props)
       >
         <div className="flex items-center justify-between">
           <h2 id="umfrage-bearbeiten-titel" className="font-bold text-gray-900">Umfrage bearbeiten</h2>
-          <button onClick={onClose} aria-label="Schließen">
+          <button onClick={onClose} aria-label="Schließen" className="rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
             <X className="w-5 h-5 text-gray-400" aria-hidden="true" />
           </button>
         </div>
