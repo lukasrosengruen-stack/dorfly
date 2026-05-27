@@ -1,6 +1,6 @@
 import { withAuth } from '@/lib/api'
 import { validate, gewerbePostSchema, gewerbePostUpdateSchema, gewerbePostDeleteSchema } from '@/lib/validations'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 function getWochenstart(): Date {
@@ -60,7 +60,8 @@ export const POST = withAuth(
       }
     }
 
-    const { data: post, error } = await supabase
+    const service = await createServiceClient()
+    const { data: post, error } = await service
       .from('posts')
       .insert({
         gemeinde_id: betrieb.gemeinde_id,
@@ -106,7 +107,8 @@ export const PATCH = withAuth(
       return NextResponse.json({ error: 'Beitrag nicht gefunden' }, { status: 404 })
     }
 
-    const { data: post, error } = await supabase
+    const service = await createServiceClient()
+    const { data: post, error } = await service
       .from('posts')
       .update({
         inhalt: text,
@@ -133,9 +135,9 @@ export const DELETE = withAuth(
 
     const { postId } = v.data
 
-    const supabase = await createClient()
+    const service = await createServiceClient()
 
-    const { error } = await supabase
+    const { error } = await service
       .from('posts')
       .delete()
       .eq('id', postId)
