@@ -178,9 +178,9 @@ export const umfrageLoeschenSchema = z.object({
 
 export const umfrageBearbeitenSchema = z.object({
   id: uuid,
-  titel: z.string().max(200).optional(),
+  titel: nonEmpty.max(200),
   beschreibung: z.string().max(1000).nullable().optional(),
-  enddatum: z.string().optional(),
+  enddatum: z.string().min(1, 'Enddatum erforderlich'),
 })
 
 // ── Gewerbe ───────────────────────────────────────────────────────────────────

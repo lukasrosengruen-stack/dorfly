@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -25,6 +25,11 @@ interface Props {
 export default function UmfrageBearbeiten({ umfrage, onClose, onUpdate }: Props) {
   const containerRef = useFocusTrap(true)
   const [serverError, setServerError] = useState('')
+
+  useEffect(() => {
+    const trigger = document.activeElement as HTMLElement | null
+    return () => { trigger?.focus() }
+  }, [])
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(schema),

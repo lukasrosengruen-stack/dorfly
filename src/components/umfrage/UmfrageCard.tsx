@@ -140,8 +140,8 @@ export default function UmfrageCard({ umfrage: initialUmfrage, hatAbgestimmt: in
               )}
               <button onClick={() => setIsExpanded(v => !v)} aria-label={isExpanded ? 'Zuklappen' : 'Aufklappen'}>
                 {isExpanded
-                  ? <ChevronUp className="w-4 h-4 text-gray-400" />
-                  : <ChevronDown className="w-4 h-4 text-gray-400" />
+                  ? <ChevronUp className="w-4 h-4 text-gray-400" aria-hidden="true" />
+                  : <ChevronDown className="w-4 h-4 text-gray-400" aria-hidden="true" />
                 }
               </button>
             </div>
@@ -187,7 +187,7 @@ export default function UmfrageCard({ umfrage: initialUmfrage, hatAbgestimmt: in
                     disabled={loading}
                     className="w-full bg-primary-500 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
                   >
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <BarChart2 className="w-4 h-4" />}
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <BarChart2 className="w-4 h-4" aria-hidden="true" />}
                     Abstimmen
                   </button>
                 )}
