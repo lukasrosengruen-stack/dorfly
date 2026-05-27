@@ -6,14 +6,13 @@ export default function Loading() {
         <div className="w-24 h-24 bg-white rounded-2xl flex items-center justify-center shadow-lg">
           <div className="text-center">
             <div className="w-12 h-12 mx-auto mb-1 border-4 border-primary-500 rounded-full flex items-center justify-center">
-              <span className="text-primary-500 font-black text-lg">E</span>
+              <span className="text-primary-500 font-black text-lg">D</span>
             </div>
           </div>
         </div>
 
         <div className="text-center">
-          <p className="text-white/70 text-xs font-semibold tracking-[0.3em] uppercase mb-1">Gemeinde</p>
-          <h1 className="text-white font-black text-3xl tracking-wider uppercase">EHNINGEN</h1>
+          <h1 className="text-white font-black text-3xl tracking-wider uppercase">Dorfly</h1>
         </div>
 
         <div className="mt-4">
