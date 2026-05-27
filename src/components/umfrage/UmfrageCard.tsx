@@ -140,7 +140,7 @@ export default function UmfrageCard({ umfrage: initialUmfrage, hatAbgestimmt: in
           </div>
           <button className="text-left w-full" onClick={() => setIsExpanded(v => !v)}>
             <h2 className="font-bold text-gray-900 text-base">{umfrage.titel}</h2>
-            {umfrage.beschreibung && <p className="text-sm text-gray-500 mt-1">{umfrage.beschreibung}</p>}
+            {umfrage.beschreibung && <p className="text-sm text-gray-500 mt-1 whitespace-pre-wrap">{umfrage.beschreibung}</p>}
           </button>
         </div>
 

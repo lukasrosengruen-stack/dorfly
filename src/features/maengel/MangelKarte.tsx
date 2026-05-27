@@ -40,7 +40,7 @@ export function MangelKarte({ mangel: m }: MangelKarteProps) {
         </div>
 
         {m.beschreibung && (
-          <p className="text-sm text-gray-500 mt-1">{m.beschreibung}</p>
+          <p className="text-sm text-gray-500 mt-1 whitespace-pre-wrap">{m.beschreibung}</p>
         )}
 
         {m.nachricht_an_buerger && (
