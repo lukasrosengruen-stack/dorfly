@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isValidLinkUrl, parseRichText } from './richText'
+import { isValidLinkUrl, parseRichText, htmlToMd } from './richText'
 
 describe('isValidLinkUrl', () => {
   it('erlaubt http://', () => expect(isValidLinkUrl('http://example.com')).toBe(true))
@@ -65,4 +65,18 @@ describe('parseRichText', () => {
       { type: 'text', content: ' für ' },
       { type: 'bold', content: 'mehr' },
     ]))
+})
+
+describe('htmlToMd', () => {
+  it('konvertiert benannten Link', () =>
+    expect(htmlToMd('<a href="https://example.com">Dorfly</a>')).toBe('[Dorfly](https://example.com)'))
+
+  it('konvertiert URL-Link (Text = URL) zur nackten URL', () =>
+    expect(htmlToMd('<a href="https://example.com">https://example.com</a>')).toBe('https://example.com'))
+
+  it('konvertiert Bold', () =>
+    expect(htmlToMd('<strong>fett</strong>')).toBe('**fett**'))
+
+  it('konvertiert Zeilenumbruch', () =>
+    expect(htmlToMd('Zeile 1<br>Zeile 2')).toBe('Zeile 1\nZeile 2'))
 })

@@ -72,7 +72,7 @@ export function renderRichText(text: string): ReactNode {
   if (segments.length === 1 && segments[0].type === 'text') return segments[0].content
   return segments.map((seg, i) => {
     switch (seg.type) {
-      case 'text': return seg.content
+      case 'text': return <span key={i}>{seg.content}</span>
       case 'br':   return <br key={i} />
       case 'bold': return <strong key={i}>{seg.content}</strong>
       case 'link':
@@ -89,6 +89,10 @@ export function renderRichText(text: string): ReactNode {
             {seg.url}
           </a>
         )
+      default: {
+        const _exhaustive: never = seg
+        return null
+      }
     }
   })
 }
@@ -105,13 +109,13 @@ function mdToHtml(text: string): string {
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
 }
 
-function htmlToMd(html: string): string {
+export function htmlToMd(html: string): string {
   if (!html || html === '<br>') return ''
   return html
     .replace(/<strong>([\s\S]*?)<\/strong>/gi, '**$1**')
     .replace(/<b>([\s\S]*?)<\/b>/gi, '**$1**')
     .replace(/<span[^>]*font-weight:\s*bold[^>]*>([\s\S]*?)<\/span>/gi, '**$1**')
-    .replace(/<a[^>]*\shref="(https?:\/\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/gi, (_, url, inner) => {
+    .replace(/<a[^>]*href="(https?:\/\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/gi, (_, url, inner) => {
       const txt = inner.replace(/<[^>]+>/g, '').trim()
       return txt && txt !== url ? `[${txt}](${url})` : url
     })
