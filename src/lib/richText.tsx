@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useRef, useState } from 'react'
+import { ReactNode, useEffect, useId, useRef, useState } from 'react'
 import { Link2 } from 'lucide-react'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 
@@ -142,12 +142,21 @@ function LinkPopup({ selectedText, onInsert, onClose }: LinkPopupProps) {
   const [displayText, setDisplayText] = useState(selectedText)
   const [url, setUrl] = useState('')
   const [urlError, setUrlError] = useState('')
+  const uid = useId()
+
+  const onCloseRef = useRef(onClose)
+  useEffect(() => { onCloseRef.current = onClose }, [onClose])
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onCloseRef.current() }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [onClose])
+  }, [])
+
+  useEffect(() => {
+    const trigger = document.activeElement as HTMLElement | null
+    return () => { trigger?.focus() }
+  }, [])
 
   function handleSubmit() {
     if (!isValidLinkUrl(url)) {
@@ -167,8 +176,9 @@ function LinkPopup({ selectedText, onInsert, onClose }: LinkPopupProps) {
     >
       {!selectedText && (
         <div>
-          <label className="block text-xs text-gray-600 mb-1">Anzeigetext</label>
+          <label htmlFor={`${uid}-display`} className="block text-xs text-gray-600 mb-1">Anzeigetext</label>
           <input
+            id={`${uid}-display`}
             value={displayText}
             onChange={e => setDisplayText(e.target.value)}
             placeholder="Anzeigetext"
@@ -177,8 +187,9 @@ function LinkPopup({ selectedText, onInsert, onClose }: LinkPopupProps) {
         </div>
       )}
       <div>
-        <label className="block text-xs text-gray-600 mb-1">URL</label>
+        <label htmlFor={`${uid}-url`} className="block text-xs text-gray-600 mb-1">URL</label>
         <input
+          id={`${uid}-url`}
           value={url}
           onChange={e => { setUrl(e.target.value); setUrlError('') }}
           onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleSubmit() } }}
@@ -186,7 +197,7 @@ function LinkPopup({ selectedText, onInsert, onClose }: LinkPopupProps) {
           type="url"
           className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
         />
-        {urlError && <p role="alert" className="text-red-500 text-xs mt-1">{urlError}</p>}
+        <p aria-live="assertive" className="text-red-500 text-xs mt-1 min-h-[1rem]">{urlError}</p>
       </div>
       <div className="flex gap-2">
         <button
