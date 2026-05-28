@@ -153,9 +153,11 @@ function LinkPopup({ selectedText, onInsert, onClose }: LinkPopupProps) {
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
+  const triggerRef = useRef<HTMLElement | null>(
+    typeof document !== 'undefined' ? (document.activeElement as HTMLElement) : null
+  )
   useEffect(() => {
-    const trigger = document.activeElement as HTMLElement | null
-    return () => { trigger?.focus() }
+    return () => { triggerRef.current?.focus() }
   }, [])
 
   function handleSubmit() {
