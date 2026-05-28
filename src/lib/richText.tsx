@@ -63,17 +63,33 @@ export function parseRichText(raw: string): Segment[] {
   return segments
 }
 
-// ── Display: **bold** → <strong> (for FeedCard) ──────────────────────────────
+// ── Display ───────────────────────────────────────────────────────────────────
 
 export function renderRichText(text: string): ReactNode {
-  const decoded = text.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-  const parts = decoded.split(/(\*\*[^*]+\*\*)/)
-  if (parts.length === 1) return decoded
-  return parts.map((part, i) => {
-    if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
-      return <strong key={i}>{part.slice(2, -2)}</strong>
+  if (!text) return null
+  const segments = parseRichText(text)
+  if (segments.length === 0) return null
+  if (segments.length === 1 && segments[0].type === 'text') return segments[0].content
+  return segments.map((seg, i) => {
+    switch (seg.type) {
+      case 'text': return seg.content
+      case 'br':   return <br key={i} />
+      case 'bold': return <strong key={i}>{seg.content}</strong>
+      case 'link':
+        return (
+          <a key={i} href={seg.url} target="_blank" rel="noopener noreferrer"
+             className="text-primary-600 underline underline-offset-2 break-all">
+            {seg.text}
+          </a>
+        )
+      case 'url':
+        return (
+          <a key={i} href={seg.url} target="_blank" rel="noopener noreferrer"
+             className="text-primary-600 underline underline-offset-2 break-all">
+            {seg.url}
+          </a>
+        )
     }
-    return part
   })
 }
 
@@ -95,6 +111,10 @@ function htmlToMd(html: string): string {
     .replace(/<strong>([\s\S]*?)<\/strong>/gi, '**$1**')
     .replace(/<b>([\s\S]*?)<\/b>/gi, '**$1**')
     .replace(/<span[^>]*font-weight:\s*bold[^>]*>([\s\S]*?)<\/span>/gi, '**$1**')
+    .replace(/<a[^>]*\shref="(https?:\/\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/gi, (_, url, inner) => {
+      const txt = inner.replace(/<[^>]+>/g, '').trim()
+      return txt && txt !== url ? `[${txt}](${url})` : url
+    })
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/p>/gi, '\n')
     .replace(/<\/div>/gi, '\n')
