@@ -11,6 +11,7 @@ describe('isValidLinkUrl', () => {
   it('blockiert protokoll-relativ', () => expect(isValidLinkUrl('//example.com')).toBe(false))
   it('blockiert nackte Domain', () => expect(isValidLinkUrl('example.com')).toBe(false))
   it('blockiert leeren String', () => expect(isValidLinkUrl('')).toBe(false))
+  it('blockiert URL ohne Host', () => expect(isValidLinkUrl('https://')).toBe(false))
 })
 
 describe('parseRichText', () => {

@@ -1,6 +1,4 @@
 import { ReactNode, useEffect, useRef, useState } from 'react'
-import { Link2 } from 'lucide-react'
-import { useFocusTrap } from '@/hooks/useFocusTrap'
 
 // ── Typen ────────────────────────────────────────────────────────────────────
 
@@ -14,10 +12,13 @@ export type Segment =
 // ── Parsing ───────────────────────────────────────────────────────────────────
 
 export function isValidLinkUrl(url: string): boolean {
-  return /^https?:\/\//i.test(url.trim())
+  try {
+    const parsed = new URL(url.trim())
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+  } catch {
+    return false
+  }
 }
-
-const COMBINED_RE = /(\[[^\]]+\]\(https?:\/\/[^\s)]+\))|(https?:\/\/[^\s<>"]+)|(\*\*[^*]+\*\*)/g
 
 function appendTextWithBreaks(text: string, segments: Segment[]): void {
   const lines = text.split('\n')
@@ -29,6 +30,7 @@ function appendTextWithBreaks(text: string, segments: Segment[]): void {
 
 export function parseRichText(raw: string): Segment[] {
   if (!raw) return []
+  const re = /(\[[^\]]+\]\(https?:\/\/[^\s)]+\))|(https?:\/\/[^\s<>"]+)|(\*\*[^*]+\*\*)/g
   const decoded = raw
     .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&')
@@ -36,9 +38,8 @@ export function parseRichText(raw: string): Segment[] {
     .replace(/&gt;/g, '>')
   const segments: Segment[] = []
   let lastIdx = 0
-  COMBINED_RE.lastIndex = 0
   let match: RegExpExecArray | null
-  while ((match = COMBINED_RE.exec(decoded)) !== null) {
+  while ((match = re.exec(decoded)) !== null) {
     if (match.index > lastIdx) {
       appendTextWithBreaks(decoded.slice(lastIdx, match.index), segments)
     }
@@ -47,9 +48,8 @@ export function parseRichText(raw: string): Segment[] {
       const m = full.match(/^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/)
       if (m) {
         segments.push({ type: 'link', text: m[1], url: m[2] })
-      } else {
-        appendTextWithBreaks(full, segments)
       }
+      // The else branch is dead code: the outer regex already requires https?:// in the URL
     } else if (full.startsWith('http')) {
       segments.push({ type: 'url', url: full })
     } else if (full.startsWith('**')) {
