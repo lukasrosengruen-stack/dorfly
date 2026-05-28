@@ -1,4 +1,6 @@
 import { ReactNode, useEffect, useRef, useState } from 'react'
+import { Link2 } from 'lucide-react'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 
 // ── Typen ────────────────────────────────────────────────────────────────────
 
@@ -125,6 +127,85 @@ export function htmlToMd(html: string): string {
     .replace(/<[^>]+>/g, '')
     .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
     .replace(/\n+$/, '')
+}
+
+// ── LinkPopup ────────────────────────────────────────────────────────────────
+
+interface LinkPopupProps {
+  selectedText: string
+  onInsert: (displayText: string, url: string) => void
+  onClose: () => void
+}
+
+function LinkPopup({ selectedText, onInsert, onClose }: LinkPopupProps) {
+  const containerRef = useFocusTrap(true)
+  const [displayText, setDisplayText] = useState(selectedText)
+  const [url, setUrl] = useState('')
+  const [urlError, setUrlError] = useState('')
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
+
+  function handleSubmit() {
+    if (!isValidLinkUrl(url)) {
+      setUrlError('Bitte eine gültige URL eingeben (https://...)')
+      return
+    }
+    onInsert(displayText.trim() || url, url.trim())
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Link einfügen"
+      className="absolute z-20 top-full left-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg p-3 w-72 space-y-2"
+    >
+      {!selectedText && (
+        <div>
+          <label className="block text-xs text-gray-600 mb-1">Anzeigetext</label>
+          <input
+            value={displayText}
+            onChange={e => setDisplayText(e.target.value)}
+            placeholder="Anzeigetext"
+            className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+          />
+        </div>
+      )}
+      <div>
+        <label className="block text-xs text-gray-600 mb-1">URL</label>
+        <input
+          value={url}
+          onChange={e => { setUrl(e.target.value); setUrlError('') }}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleSubmit() } }}
+          placeholder="https://..."
+          type="url"
+          className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+        />
+        {urlError && <p role="alert" className="text-red-500 text-xs mt-1">{urlError}</p>}
+      </div>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex-1 text-xs py-1.5 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50"
+        >
+          Abbrechen
+        </button>
+        <button
+          type="button"
+          onClick={handleSubmit}
+          className="flex-1 text-xs py-1.5 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
+        >
+          Einfügen
+        </button>
+      </div>
+    </div>
+  )
 }
 
 // ── RichTextEditor ────────────────────────────────────────────────────────────
