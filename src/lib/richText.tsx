@@ -1,4 +1,67 @@
 import { ReactNode, useEffect, useRef, useState } from 'react'
+import { Link2 } from 'lucide-react'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
+
+// ── Typen ────────────────────────────────────────────────────────────────────
+
+export type Segment =
+  | { type: 'text'; content: string }
+  | { type: 'bold'; content: string }
+  | { type: 'link'; text: string; url: string }
+  | { type: 'url'; url: string }
+  | { type: 'br' }
+
+// ── Parsing ───────────────────────────────────────────────────────────────────
+
+export function isValidLinkUrl(url: string): boolean {
+  return /^https?:\/\//i.test(url.trim())
+}
+
+const COMBINED_RE = /(\[[^\]]+\]\(https?:\/\/[^\s)]+\))|(https?:\/\/[^\s<>"]+)|(\*\*[^*]+\*\*)/g
+
+function appendTextWithBreaks(text: string, segments: Segment[]): void {
+  const lines = text.split('\n')
+  lines.forEach((line, i) => {
+    if (line) segments.push({ type: 'text', content: line })
+    if (i < lines.length - 1) segments.push({ type: 'br' })
+  })
+}
+
+export function parseRichText(raw: string): Segment[] {
+  if (!raw) return []
+  const decoded = raw
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+  const segments: Segment[] = []
+  let lastIdx = 0
+  COMBINED_RE.lastIndex = 0
+  let match: RegExpExecArray | null
+  while ((match = COMBINED_RE.exec(decoded)) !== null) {
+    if (match.index > lastIdx) {
+      appendTextWithBreaks(decoded.slice(lastIdx, match.index), segments)
+    }
+    const full = match[0]
+    if (full.startsWith('[')) {
+      const m = full.match(/^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/)
+      if (m) {
+        segments.push({ type: 'link', text: m[1], url: m[2] })
+      } else {
+        appendTextWithBreaks(full, segments)
+      }
+    } else if (full.startsWith('http')) {
+      segments.push({ type: 'url', url: full })
+    } else if (full.startsWith('**')) {
+      segments.push({ type: 'bold', content: full.slice(2, -2) })
+    }
+    lastIdx = match.index + full.length
+  }
+  if (lastIdx < decoded.length) {
+    appendTextWithBreaks(decoded.slice(lastIdx), segments)
+  }
+  return segments
+}
 
 // ── Display: **bold** → <strong> (for FeedCard) ──────────────────────────────
 
