@@ -567,6 +567,7 @@ export interface Database {
           beschreibung: string | null
           enddatum: string
           created_at: string
+          bilder_urls: string[]
         }
         Insert: {
           id?: string
@@ -576,6 +577,7 @@ export interface Database {
           beschreibung?: string | null
           enddatum: string
           created_at?: string
+          bilder_urls?: string[]
         }
         Update: {
           id?: string
@@ -585,6 +587,7 @@ export interface Database {
           beschreibung?: string | null
           enddatum?: string
           created_at?: string
+          bilder_urls?: string[]
         }
         Relationships: [
           {
@@ -604,6 +607,7 @@ export interface Database {
           reihenfolge: number
           frage_text: string
           typ: FrageTyp
+          bilder_urls: string[]
         }
         Insert: {
           id?: string
@@ -611,6 +615,7 @@ export interface Database {
           reihenfolge: number
           frage_text: string
           typ: FrageTyp
+          bilder_urls?: string[]
         }
         Update: {
           id?: string
@@ -618,6 +623,7 @@ export interface Database {
           reihenfolge?: number
           frage_text?: string
           typ?: FrageTyp
+          bilder_urls?: string[]
         }
         Relationships: [
           {

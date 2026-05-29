@@ -153,12 +153,14 @@ export const umfrageErstellenSchema = z.object({
   beschreibung: z.string().max(1000).optional(),
   enddatum: z.string().min(1, 'Enddatum erforderlich'),
   gemeindeId: uuid,
+  bilder_urls: z.array(z.string().url()).optional().default([]),
   fragen: z
     .array(
       z.object({
         reihenfolge: z.number().int().min(0),
         frage_text: nonEmpty.max(500),
         typ: z.enum(['ja_nein', 'einzelauswahl', 'mehrfachauswahl', 'bewertung']),
+        bilder_urls: z.array(z.string().url()).optional().default([]),
         umfrage_optionen: z
           .array(
             z.object({
@@ -181,6 +183,11 @@ export const umfrageBearbeitenSchema = z.object({
   titel: nonEmpty.max(200),
   beschreibung: z.string().max(1000).nullable().optional(),
   enddatum: z.string().min(1, 'Enddatum erforderlich'),
+  bilder_urls: z.array(z.string().url()).optional().default([]),
+  fragen_bilder: z.array(z.object({
+    id: z.string().uuid(),
+    bilder_urls: z.array(z.string().url()),
+  })).optional(),
 })
 
 // ── Gewerbe ───────────────────────────────────────────────────────────────────

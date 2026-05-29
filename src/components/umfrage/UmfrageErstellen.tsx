@@ -5,6 +5,10 @@ import { Umfrage, FrageTyp } from '@/types/umfrage'
 import { X, Plus, Trash2, GripVertical, Loader2 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { RichTextEditor } from '@/lib/richText'
+import { createClient } from '@/lib/supabase/client'
+import { compressImage } from '@/lib/compressImage'
+import BilderUpload from '@/components/dashboard/BilderUpload'
+import { toast } from 'sonner'
 
 const TYP_META: Record<FrageTyp, string> = {
   ja_nein:        'Ja / Nein',
@@ -18,6 +22,7 @@ interface FormFrage {
   frage_text: string
   typ: FrageTyp
   optionen: string[]
+  bilder_urls: string[]
 }
 
 interface Props {
@@ -35,6 +40,7 @@ function fragenAusUmfrage(umfrage: Umfrage): FormFrage[] {
       frage_text: f.frage_text,
       typ: f.typ,
       optionen: f.umfrage_optionen?.map(o => o.option_text) ?? ['', ''],
+      bilder_urls: f.bilder_urls ?? [],
     }))
 }
 
@@ -49,11 +55,12 @@ export default function UmfrageErstellen({ gemeindeId, onClose, onCreated, exist
   const [fragen, setFragen] = useState<FormFrage[]>(
     existingUmfrage ? fragenAusUmfrage(existingUmfrage) : [neeFrage()]
   )
+  const [umfrageBilder, setUmfrageBilder] = useState<string[]>(existingUmfrage?.bilder_urls ?? [])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   function neeFrage(): FormFrage {
-    return { tempId: crypto.randomUUID(), frage_text: '', typ: 'ja_nein', optionen: ['', ''] }
+    return { tempId: crypto.randomUUID(), frage_text: '', typ: 'ja_nein', optionen: ['', ''], bilder_urls: [] }
   }
 
   function addFrage() {
@@ -87,6 +94,54 @@ export default function UmfrageErstellen({ gemeindeId, onClose, onCreated, exist
     ))
   }
 
+  async function uploadBilder(files: File[], pathPrefix: string): Promise<string[]> {
+    const supabase = createClient()
+    const urls: string[] = []
+    for (const file of files) {
+      const compressed = await compressImage(file)
+      const path = `${pathPrefix}/${Date.now()}_${compressed.name}`
+      const { error: uploadError } = await supabase.storage.from('dorfly-media').upload(path, compressed)
+      if (uploadError) throw uploadError
+      const { data: { publicUrl } } = supabase.storage.from('dorfly-media').getPublicUrl(path)
+      urls.push(publicUrl)
+    }
+    return urls
+  }
+
+  async function handleUmfrageBilderAdd(files: File[]) {
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      const newUrls = await uploadBilder(files, `umfragen/tmp/${user?.id ?? 'anon'}`)
+      setUmfrageBilder(prev => [...prev, ...newUrls])
+    } catch {
+      toast.error('Bild-Upload fehlgeschlagen')
+    }
+  }
+
+  function handleUmfrageBilderRemove(index: number) {
+    setUmfrageBilder(prev => prev.filter((_, i) => i !== index))
+  }
+
+  async function handleFrageBilderAdd(tempId: string, files: File[]) {
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      const newUrls = await uploadBilder(files, `umfragen/tmp/${user?.id ?? 'anon'}`)
+      setFragen(prev => prev.map(f =>
+        f.tempId === tempId ? { ...f, bilder_urls: [...f.bilder_urls, ...newUrls] } : f
+      ))
+    } catch {
+      toast.error('Bild-Upload fehlgeschlagen')
+    }
+  }
+
+  function handleFrageBilderRemove(tempId: string, index: number) {
+    setFragen(prev => prev.map(f =>
+      f.tempId === tempId ? { ...f, bilder_urls: f.bilder_urls.filter((_, i) => i !== index) } : f
+    ))
+  }
+
   async function submit() {
     if (!titel || !enddatum || fragen.some(f => !f.frage_text)) {
       setError('Bitte Titel, Enddatum und alle Fragen ausfüllen.')
@@ -99,6 +154,7 @@ export default function UmfrageErstellen({ gemeindeId, onClose, onCreated, exist
         reihenfolge: i + 1,
         frage_text: f.frage_text,
         typ: f.typ,
+        bilder_urls: f.bilder_urls,
         umfrage_optionen: ['einzelauswahl', 'mehrfachauswahl'].includes(f.typ)
           ? f.optionen.filter(Boolean).map((o, j) => ({ option_text: o, reihenfolge: j + 1 }))
           : [],
@@ -106,8 +162,8 @@ export default function UmfrageErstellen({ gemeindeId, onClose, onCreated, exist
 
       const url = isEdit ? '/api/umfragen/bearbeiten' : '/api/umfragen/erstellen'
       const body = isEdit
-        ? { umfrageId: existingUmfrage.id, titel, beschreibung, enddatum: new Date(enddatum).toISOString(), fragen: fragenPayload }
-        : { titel, beschreibung, enddatum: new Date(enddatum).toISOString(), gemeindeId, fragen: fragenPayload }
+        ? { umfrageId: existingUmfrage.id, titel, beschreibung, enddatum: new Date(enddatum).toISOString(), bilder_urls: umfrageBilder, fragen: fragenPayload }
+        : { titel, beschreibung, enddatum: new Date(enddatum).toISOString(), gemeindeId, bilder_urls: umfrageBilder, fragen: fragenPayload }
 
       const res = await fetch(url, {
         method: 'POST',
@@ -145,6 +201,12 @@ export default function UmfrageErstellen({ gemeindeId, onClose, onCreated, exist
             onChange={setBeschreibung}
             placeholder="Beschreibung (optional)"
             rows={2}
+          />
+          <BilderUpload
+            id="umfrage-bilder"
+            previews={umfrageBilder}
+            onAdd={handleUmfrageBilderAdd}
+            onRemove={handleUmfrageBilderRemove}
           />
           <div>
             <label className="text-xs text-gray-400 mb-1 block">Enddatum</label>
@@ -220,6 +282,13 @@ export default function UmfrageErstellen({ gemeindeId, onClose, onCreated, exist
                     </button>
                   </div>
                 )}
+
+                <BilderUpload
+                  id={`frage-bilder-${frage.tempId}`}
+                  previews={frage.bilder_urls}
+                  onAdd={files => handleFrageBilderAdd(frage.tempId, files)}
+                  onRemove={idx => handleFrageBilderRemove(frage.tempId, idx)}
+                />
               </div>
             ))}
 
@@ -248,4 +317,3 @@ export default function UmfrageErstellen({ gemeindeId, onClose, onCreated, exist
     </div>
   )
 }
-

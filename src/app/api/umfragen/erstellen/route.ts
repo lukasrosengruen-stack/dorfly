@@ -9,13 +9,13 @@ export const POST = withAuth(
     const v = validate(umfrageErstellenSchema, body)
     if (!v.success) return v.error
 
-    const { titel, beschreibung, enddatum, gemeindeId, fragen } = v.data
+    const { titel, beschreibung, enddatum, gemeindeId, fragen, bilder_urls } = v.data
     const service = await createServiceClient()
 
     // Umfrage anlegen
     const { data: umfrage, error: umfrageError } = await service
       .from('umfragen')
-      .insert({ titel, beschreibung: beschreibung ?? null, enddatum, gemeinde_id: gemeindeId, author_id: user.id })
+      .insert({ titel, beschreibung: beschreibung ?? null, enddatum, gemeinde_id: gemeindeId, author_id: user.id, bilder_urls: bilder_urls ?? [] })
       .select()
       .single()
 
@@ -27,7 +27,7 @@ export const POST = withAuth(
     for (const frage of fragen) {
       const { data: dbFrage, error: frageError } = await service
         .from('umfrage_fragen')
-        .insert({ umfrage_id: umfrage.id, reihenfolge: frage.reihenfolge, frage_text: frage.frage_text, typ: frage.typ })
+        .insert({ umfrage_id: umfrage.id, reihenfolge: frage.reihenfolge, frage_text: frage.frage_text, typ: frage.typ, bilder_urls: frage.bilder_urls ?? [] })
         .select()
         .single()
 

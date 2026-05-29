@@ -121,6 +121,15 @@ return (
             <h2 className="font-bold text-gray-900 text-base">{umfrage.titel}</h2>
             {umfrage.beschreibung && <p className="text-sm text-gray-500 mt-1">{renderBeschreibungText(umfrage.beschreibung)}</p>}
           </button>
+          {(umfrage.bilder_urls ?? []).length > 0 && (
+            <div className="flex gap-2 overflow-x-auto py-1" role="list" aria-label="Umfragebilder">
+              {umfrage.bilder_urls!.map((url, i) => (
+                <div key={i} role="listitem" className="shrink-0">
+                  <img src={url} alt="" className="h-40 w-auto rounded-lg object-cover" />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Ausgeklappter Inhalt */}
@@ -142,6 +151,15 @@ return (
                       <p className="text-sm font-semibold text-gray-800 mb-2">
                         {idx + 1}. {renderRichText(frage.frage_text)}
                       </p>
+                      {(frage.bilder_urls ?? []).length > 0 && (
+                        <div className="flex gap-2 overflow-x-auto py-1 mb-2" role="list" aria-label="Fragebilder">
+                          {frage.bilder_urls!.map((url, i) => (
+                            <div key={i} role="listitem" className="shrink-0">
+                              <img src={url} alt="" className="h-32 w-auto rounded-lg object-cover" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
                       <Abstimmung
                         frage={frage}
                         antworten={antworten[frage.id] ?? []}

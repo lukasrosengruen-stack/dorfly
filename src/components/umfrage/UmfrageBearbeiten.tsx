@@ -8,6 +8,10 @@ import { X, Loader2 } from 'lucide-react'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { RichTextEditor } from '@/lib/richText'
 import { Umfrage } from '@/types/umfrage'
+import { createClient } from '@/lib/supabase/client'
+import { compressImage } from '@/lib/compressImage'
+import BilderUpload from '@/components/dashboard/BilderUpload'
+import { toast } from 'sonner'
 
 const schema = z.object({
   titel: z.string().min(1, 'Titel erforderlich').max(200),
@@ -26,6 +30,12 @@ interface Props {
 export default function UmfrageBearbeiten({ umfrage, onClose, onUpdate }: Props) {
   const containerRef = useFocusTrap(true)
   const [serverError, setServerError] = useState('')
+  const [umfrageBilder, setUmfrageBilder] = useState<string[]>(umfrage.bilder_urls ?? [])
+  const [fragenBilder, setFragenBilder] = useState<Record<string, string[]>>(
+    Object.fromEntries(
+      (umfrage.umfrage_fragen ?? []).map(f => [f.id, f.bilder_urls ?? []])
+    )
+  )
 
   useEffect(() => {
     const trigger = document.activeElement as HTMLElement | null
@@ -41,13 +51,62 @@ export default function UmfrageBearbeiten({ umfrage, onClose, onUpdate }: Props)
     },
   })
 
+  async function uploadBilder(files: File[]): Promise<string[]> {
+    const supabase = createClient()
+    const urls: string[] = []
+    for (const file of files) {
+      const compressed = await compressImage(file)
+      const path = `umfragen/${umfrage.id}/${Date.now()}_${compressed.name}`
+      const { error: uploadError } = await supabase.storage.from('dorfly-media').upload(path, compressed)
+      if (uploadError) throw uploadError
+      const { data: { publicUrl } } = supabase.storage.from('dorfly-media').getPublicUrl(path)
+      urls.push(publicUrl)
+    }
+    return urls
+  }
+
+  async function handleUmfrageBilderAdd(files: File[]) {
+    try {
+      const newUrls = await uploadBilder(files)
+      setUmfrageBilder(prev => [...prev, ...newUrls])
+    } catch {
+      toast.error('Bild-Upload fehlgeschlagen')
+    }
+  }
+
+  function handleUmfrageBilderRemove(index: number) {
+    setUmfrageBilder(prev => prev.filter((_, i) => i !== index))
+  }
+
+  async function handleFrageBilderAdd(frageId: string, files: File[]) {
+    try {
+      const newUrls = await uploadBilder(files)
+      setFragenBilder(prev => ({ ...prev, [frageId]: [...(prev[frageId] ?? []), ...newUrls] }))
+    } catch {
+      toast.error('Bild-Upload fehlgeschlagen')
+    }
+  }
+
+  function handleFrageBilderRemove(frageId: string, index: number) {
+    setFragenBilder(prev => ({
+      ...prev,
+      [frageId]: (prev[frageId] ?? []).filter((_, i) => i !== index),
+    }))
+  }
+
   async function onSubmit(values: FormValues) {
     setServerError('')
     try {
+      const fragen_bilder = Object.entries(fragenBilder).map(([id, bilder_urls]) => ({ id, bilder_urls }))
       const res = await fetch('/api/umfragen/bearbeiten', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: umfrage.id, ...values }),
+        body: JSON.stringify({
+          id: umfrage.id,
+          ...values,
+          bilder_urls: umfrageBilder,
+          fragen_bilder,
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Fehler beim Speichern')
@@ -58,6 +117,8 @@ export default function UmfrageBearbeiten({ umfrage, onClose, onUpdate }: Props)
     }
   }
 
+  const sortierteFragen = [...(umfrage.umfrage_fragen ?? [])].sort((a, b) => a.reihenfolge - b.reihenfolge)
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40">
       <div
@@ -65,7 +126,7 @@ export default function UmfrageBearbeiten({ umfrage, onClose, onUpdate }: Props)
         role="dialog"
         aria-modal="true"
         aria-labelledby="umfrage-bearbeiten-titel"
-        className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4"
+        className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 space-y-4"
       >
         <div className="flex items-center justify-between">
           <h2 id="umfrage-bearbeiten-titel" className="font-bold text-gray-900">Umfrage bearbeiten</h2>
@@ -112,6 +173,18 @@ export default function UmfrageBearbeiten({ umfrage, onClose, onUpdate }: Props)
           </div>
 
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Bilder zur Umfrage
+            </label>
+            <BilderUpload
+              id="umfrage-bearbeiten-bilder"
+              previews={umfrageBilder}
+              onAdd={handleUmfrageBilderAdd}
+              onRemove={handleUmfrageBilderRemove}
+            />
+          </div>
+
+          <div>
             <label htmlFor="umfrage-enddatum" className="block text-sm font-medium text-gray-700 mb-1">
               Enddatum
             </label>
@@ -125,6 +198,23 @@ export default function UmfrageBearbeiten({ umfrage, onClose, onUpdate }: Props)
               <p role="alert" className="text-red-500 text-xs mt-1">{errors.enddatum.message}</p>
             )}
           </div>
+
+          {sortierteFragen.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-gray-700">Bilder zu den Fragen</p>
+              {sortierteFragen.map((frage, idx) => (
+                <div key={frage.id} className="border border-gray-200 rounded-xl p-3 space-y-2">
+                  <p className="text-sm text-gray-600">{idx + 1}. {frage.frage_text}</p>
+                  <BilderUpload
+                    id={`frage-bearbeiten-bilder-${frage.id}`}
+                    previews={fragenBilder[frage.id] ?? []}
+                    onAdd={files => handleFrageBilderAdd(frage.id, files)}
+                    onRemove={i => handleFrageBilderRemove(frage.id, i)}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
 
           {serverError && (
             <p role="alert" className="text-red-500 text-sm">{serverError}</p>

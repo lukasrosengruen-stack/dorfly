@@ -13,16 +13,26 @@ export const POST = withAuth(
     const v = validate(bearbeitenSchema, body)
     if (!v.success) return v.error
 
-    const { id: umfrageId, titel, beschreibung, enddatum, fragen } = v.data
+    const { id: umfrageId, titel, beschreibung, enddatum, fragen, bilder_urls, fragen_bilder } = v.data
     const service = await createServiceClient()
 
     const { error: updateError } = await service
       .from('umfragen')
-      .update({ titel, beschreibung: beschreibung ?? null, enddatum })
+      .update({ titel, beschreibung: beschreibung ?? null, enddatum, bilder_urls: bilder_urls ?? [] })
       .eq('id', umfrageId)
       .eq('gemeinde_id', profile.gemeinde_id!)
 
     if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
+
+    if (fragen_bilder?.length) {
+      for (const { id, bilder_urls: urls } of fragen_bilder) {
+        await service
+          .from('umfrage_fragen')
+          .update({ bilder_urls: urls })
+          .eq('id', id)
+          .eq('umfrage_id', umfrageId)
+      }
+    }
 
     if (fragen) {
       await service.from('umfrage_fragen').delete().eq('umfrage_id', umfrageId)
