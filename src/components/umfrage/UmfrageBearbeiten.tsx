@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { X, Loader2 } from 'lucide-react'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
+import { RichTextEditor } from '@/lib/richText'
 import { Umfrage } from '@/types/umfrage'
 
 const schema = z.object({
@@ -31,7 +32,7 @@ export default function UmfrageBearbeiten({ umfrage, onClose, onUpdate }: Props)
     return () => { trigger?.focus() }
   }, [])
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>({
+  const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       titel: umfrage.titel,
@@ -90,14 +91,20 @@ export default function UmfrageBearbeiten({ umfrage, onClose, onUpdate }: Props)
           </div>
 
           <div>
-            <label htmlFor="umfrage-beschreibung" className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Beschreibung
             </label>
-            <textarea
-              id="umfrage-beschreibung"
-              rows={4}
-              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm resize-none"
-              {...register('beschreibung')}
+            <Controller
+              name="beschreibung"
+              control={control}
+              render={({ field }) => (
+                <RichTextEditor
+                  value={field.value ?? ''}
+                  onChange={field.onChange}
+                  placeholder="Beschreibung (optional)"
+                  rows={4}
+                />
+              )}
             />
             {errors.beschreibung && (
               <p role="alert" className="text-red-500 text-xs mt-1">{errors.beschreibung.message}</p>
