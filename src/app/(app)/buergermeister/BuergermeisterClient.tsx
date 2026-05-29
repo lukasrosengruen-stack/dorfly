@@ -11,7 +11,7 @@ import ReportButton from '@/components/ReportButton'
 import { clsx } from 'clsx'
 import { formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
-import { parseRichText, renderRichText } from '@/lib/richText'
+import { parseRichText, renderRichText, RichTextEditor } from '@/lib/richText'
 
 const STATUS_META: Record<FrageStatus, { label: string; color: string; icon: React.ElementType }> = {
   offen:        { label: 'Offen',        color: 'text-blue-600 bg-blue-50',   icon: Clock },
@@ -138,16 +138,11 @@ export default function BuergermeisterClient({ fragen: initialFragen, profile, t
                 Bitte fülle zuerst deinen <Link href="/profil" className="font-bold underline">Namen im Profil</Link> aus, bevor du eine Frage stellst.
               </div>
             )}
-            <label htmlFor="frage-text" className="sr-only">Deine Frage (Pflichtfeld)</label>
-            <textarea
-              id="frage-text"
-              placeholder="Was möchtest du wissen?"
+            <RichTextEditor
               value={frageText}
-              onChange={e => setFrageText(e.target.value)}
+              onChange={setFrageText}
+              placeholder="Was möchtest du wissen?"
               rows={4}
-              required
-              aria-required="true"
-              className="w-full border border-gray-300 rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
 
             {/* Sichtbarkeit */}
@@ -288,12 +283,12 @@ function AnswerForm({ frageId, onAnswer }: { frageId: string; onAnswer: (a: stri
 
   return (
     <div className="px-4 pb-4 space-y-2">
-      <textarea
-        placeholder="Antwort der Verwaltung …"
+      <RichTextEditor
         value={text}
-        onChange={e => setText(e.target.value)}
+        onChange={setText}
+        placeholder="Antwort der Verwaltung …"
         rows={3}
-        className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
+        compact
       />
       <button
         onClick={submit}
