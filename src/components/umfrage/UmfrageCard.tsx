@@ -7,6 +7,7 @@ import { BarChart2, Clock, ChevronDown, ChevronUp, Loader2, CheckCircle2 } from 
 import { clsx } from 'clsx'
 import { formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
+import { renderRichText } from '@/lib/richText'
 
 interface Props {
   umfrage: Umfrage
@@ -102,7 +103,7 @@ return (
           </div>
           <button className="text-left w-full" onClick={() => setIsExpanded(v => !v)}>
             <h2 className="font-bold text-gray-900 text-base">{umfrage.titel}</h2>
-            {umfrage.beschreibung && <p className="text-sm text-gray-500 mt-1 whitespace-pre-wrap">{umfrage.beschreibung}</p>}
+            {umfrage.beschreibung && <p className="text-sm text-gray-500 mt-1">{renderRichText(umfrage.beschreibung)}</p>}
           </button>
         </div>
 
@@ -123,7 +124,7 @@ return (
                   .map((frage, idx) => (
                     <div key={frage.id}>
                       <p className="text-sm font-semibold text-gray-800 mb-2">
-                        {idx + 1}. {frage.frage_text}
+                        {idx + 1}. {renderRichText(frage.frage_text)}
                       </p>
                       <Abstimmung
                         frage={frage}
