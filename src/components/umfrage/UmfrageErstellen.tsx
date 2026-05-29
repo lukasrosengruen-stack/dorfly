@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Umfrage, FrageTyp } from '@/types/umfrage'
 import { X, Plus, Trash2, GripVertical, Loader2 } from 'lucide-react'
 import { clsx } from 'clsx'
+import { RichTextEditor } from '@/lib/richText'
 
 const TYP_META: Record<FrageTyp, string> = {
   ja_nein:        'Ja / Nein',
@@ -139,12 +140,11 @@ export default function UmfrageErstellen({ gemeindeId, onClose, onCreated, exist
             onChange={e => setTitel(e.target.value)}
             className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
-          <textarea
-            placeholder="Beschreibung (optional)"
+          <RichTextEditor
             value={beschreibung}
-            onChange={e => setBeschreibung(e.target.value)}
+            onChange={setBeschreibung}
+            placeholder="Beschreibung (optional)"
             rows={2}
-            className="w-full border border-gray-300 rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
           <div>
             <label className="text-xs text-gray-400 mb-1 block">Enddatum</label>
@@ -172,11 +172,12 @@ export default function UmfrageErstellen({ gemeindeId, onClose, onCreated, exist
                   )}
                 </div>
 
-                <input
-                  placeholder="Fragetext"
+                <RichTextEditor
                   value={frage.frage_text}
-                  onChange={e => updateFrage(frage.tempId, { frage_text: e.target.value })}
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  onChange={val => updateFrage(frage.tempId, { frage_text: val })}
+                  placeholder="Fragetext"
+                  rows={2}
+                  compact
                 />
 
                 <div className="grid grid-cols-2 gap-2">
