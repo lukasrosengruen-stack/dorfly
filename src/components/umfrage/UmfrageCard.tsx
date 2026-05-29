@@ -1,13 +1,29 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, ReactNode } from 'react'
 import { Umfrage, UmfrageAntwortInput, FrageTyp } from '@/types/umfrage'
 import { Profile } from '@/types/database'
 import { BarChart2, Clock, ChevronDown, ChevronUp, Loader2, CheckCircle2 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
-import { renderRichText } from '@/lib/richText'
+import { parseRichText, renderRichText } from '@/lib/richText'
+
+function renderBeschreibungText(text: string): ReactNode {
+  const segments = parseRichText(text)
+  if (segments.length === 0) return null
+  if (segments.length === 1 && segments[0].type === 'text') return segments[0].content
+  return segments.map((seg, i) => {
+    switch (seg.type) {
+      case 'text': return <span key={i}>{seg.content}</span>
+      case 'bold': return <strong key={i}>{seg.content}</strong>
+      case 'br':   return <br key={i} />
+      case 'link': return <span key={i}>{seg.text}</span>
+      case 'url':  return <span key={i}>{seg.url}</span>
+      default:     return null
+    }
+  })
+}
 
 interface Props {
   umfrage: Umfrage
@@ -103,7 +119,7 @@ return (
           </div>
           <button className="text-left w-full" onClick={() => setIsExpanded(v => !v)}>
             <h2 className="font-bold text-gray-900 text-base">{umfrage.titel}</h2>
-            {umfrage.beschreibung && <p className="text-sm text-gray-500 mt-1">{renderRichText(umfrage.beschreibung)}</p>}
+            {umfrage.beschreibung && <p className="text-sm text-gray-500 mt-1">{renderBeschreibungText(umfrage.beschreibung)}</p>}
           </button>
         </div>
 
