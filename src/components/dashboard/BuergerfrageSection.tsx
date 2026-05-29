@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { useState } from 'react'
 import { MessageCircleQuestion, ChevronDown, ChevronUp, Loader2, CheckCircle2, Pencil, Trash2 } from 'lucide-react'
 import Link from 'next/link'
+import { RichTextEditor, renderRichText } from '@/lib/richText'
 
 interface Frage {
   id: string
@@ -124,16 +125,16 @@ export default function BuergerfrageSection({ fragen: initialFragen }: { fragen:
                           <Pencil className="w-3.5 h-3.5 text-primary-500" />
                         </button>
                       </div>
-                      <p className="text-sm text-gray-700">{f.antwort}</p>
+                      <p className="text-sm text-gray-700">{f.antwort && renderRichText(f.antwort)}</p>
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      <textarea
-                        placeholder="Antwort eingeben..."
+                      <RichTextEditor
                         value={antworten[f.id] ?? ''}
-                        onChange={e => setAntworten(prev => ({ ...prev, [f.id]: e.target.value }))}
+                        onChange={val => setAntworten(prev => ({ ...prev, [f.id]: val }))}
+                        placeholder="Antwort eingeben..."
                         rows={3}
-                        className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        compact
                       />
                       <div className="flex gap-2">
                         <button onClick={() => antwort_speichern(f.id)}
