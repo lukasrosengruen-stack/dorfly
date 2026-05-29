@@ -265,40 +265,4 @@ export default function BuergermeisterClient({ fragen: initialFragen, profile, t
   )
 }
 
-function AnswerForm({ frageId, onAnswer }: { frageId: string; onAnswer: (a: string) => void }) {
-  const [text, setText] = useState('')
-  const [loading, setLoading] = useState(false)
-  const supabase = createClient()
-
-  async function submit() {
-    if (!text.trim()) return
-    setLoading(true)
-    const { error } = await supabase
-      .from('fragen')
-      .update({ antwort: text.trim(), status: 'beantwortet', beantwortet_at: new Date().toISOString() })
-      .eq('id', frageId)
-    setLoading(false)
-    if (!error) onAnswer(text.trim())
-  }
-
-  return (
-    <div className="px-4 pb-4 space-y-2">
-      <RichTextEditor
-        value={text}
-        onChange={setText}
-        placeholder="Antwort der Verwaltung …"
-        rows={3}
-        compact
-      />
-      <button
-        onClick={submit}
-        disabled={loading || !text.trim()}
-        className="w-full bg-primary-500 text-white py-2 rounded-xl text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-2"
-      >
-        {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-        Antwort veröffentlichen
-      </button>
-    </div>
-  )
-}
 
