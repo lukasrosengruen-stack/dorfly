@@ -11,6 +11,7 @@ import ReportButton from '@/components/ReportButton'
 import { clsx } from 'clsx'
 import { formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
+import { renderRichText } from '@/lib/richText'
 
 const STATUS_META: Record<FrageStatus, { label: string; color: string; icon: React.ElementType }> = {
   offen:        { label: 'Offen',        color: 'text-blue-600 bg-blue-50',   icon: Clock },
@@ -217,7 +218,7 @@ export default function BuergermeisterClient({ fragen: initialFragen, profile, t
                       )}
                     </div>
                     <p className={clsx('text-gray-900 font-medium text-sm', !expanded && 'line-clamp-2')}>
-                      {f.frage}
+                      {renderRichText(f.frage)}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
                       {canAnswer ? (f.profiles?.display_name ?? 'Bürger') : 'Bürger'} · {formatDistanceToNow(new Date(f.created_at), { addSuffix: true, locale: de })}
@@ -235,7 +236,7 @@ export default function BuergermeisterClient({ fragen: initialFragen, profile, t
                 <div className="px-4 pb-4">
                   <div className="bg-primary-50 rounded-xl p-3 border border-primary-100">
                     <p className="text-xs font-semibold text-primary-600 mb-1">Antwort der Verwaltung</p>
-                    <p className="text-sm text-gray-700">{f.antwort}</p>
+                    <p className="text-sm text-gray-700">{f.antwort && renderRichText(f.antwort)}</p>
                     {f.beantwortet_at && (
                       <p className="text-xs text-gray-400 mt-1">
                         {formatDistanceToNow(new Date(f.beantwortet_at), { addSuffix: true, locale: de })}
