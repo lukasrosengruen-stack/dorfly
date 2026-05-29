@@ -2,7 +2,7 @@
 
 
 import { toast } from 'sonner'
-import { useState } from 'react'
+import { ReactNode, useState } from 'react'
 import { FrageMitProfil, FrageStatus, Profile } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
 import { Send, Lock, Globe, ChevronDown, ChevronUp, Loader2, CheckCircle2, Clock, Archive, User } from 'lucide-react'
@@ -11,7 +11,7 @@ import ReportButton from '@/components/ReportButton'
 import { clsx } from 'clsx'
 import { formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
-import { renderRichText } from '@/lib/richText'
+import { parseRichText, renderRichText } from '@/lib/richText'
 
 const STATUS_META: Record<FrageStatus, { label: string; color: string; icon: React.ElementType }> = {
   offen:        { label: 'Offen',        color: 'text-blue-600 bg-blue-50',   icon: Clock },
@@ -23,6 +23,22 @@ interface Props {
   fragen: FrageMitProfil[]
   profile: Profile | null
   titel: string
+}
+
+function renderFrageText(text: string): ReactNode {
+  const segments = parseRichText(text)
+  if (segments.length === 0) return null
+  if (segments.length === 1 && segments[0].type === 'text') return segments[0].content
+  return segments.map((seg, i) => {
+    switch (seg.type) {
+      case 'text': return <span key={i}>{seg.content}</span>
+      case 'bold': return <strong key={i}>{seg.content}</strong>
+      case 'br':   return <br key={i} />
+      case 'link': return <span key={i}>{seg.text}</span>
+      case 'url':  return <span key={i}>{seg.url}</span>
+      default:     return null
+    }
+  })
 }
 
 export default function BuergermeisterClient({ fragen: initialFragen, profile, titel }: Props) {
@@ -218,7 +234,7 @@ export default function BuergermeisterClient({ fragen: initialFragen, profile, t
                       )}
                     </div>
                     <p className={clsx('text-gray-900 font-medium text-sm', !expanded && 'line-clamp-2')}>
-                      {renderRichText(f.frage)}
+                      {renderFrageText(f.frage)}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
                       {canAnswer ? (f.profiles?.display_name ?? 'Bürger') : 'Bürger'} · {formatDistanceToNow(new Date(f.created_at), { addSuffix: true, locale: de })}
@@ -236,7 +252,7 @@ export default function BuergermeisterClient({ fragen: initialFragen, profile, t
                 <div className="px-4 pb-4">
                   <div className="bg-primary-50 rounded-xl p-3 border border-primary-100">
                     <p className="text-xs font-semibold text-primary-600 mb-1">Antwort der Verwaltung</p>
-                    <p className="text-sm text-gray-700">{f.antwort && renderRichText(f.antwort)}</p>
+                    <p className="text-sm text-gray-700">{renderRichText(f.antwort!)}</p>
                     {f.beantwortet_at && (
                       <p className="text-xs text-gray-400 mt-1">
                         {formatDistanceToNow(new Date(f.beantwortet_at), { addSuffix: true, locale: de })}
