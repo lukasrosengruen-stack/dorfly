@@ -153,13 +153,6 @@ function LinkPopup({ selectedText, onInsert, onClose }: LinkPopupProps) {
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
-  const triggerRef = useRef<HTMLElement | null>(
-    typeof document !== 'undefined' ? (document.activeElement as HTMLElement) : null
-  )
-  useEffect(() => {
-    return () => { triggerRef.current?.focus() }
-  }, [])
-
   function handleSubmit() {
     if (!isValidLinkUrl(url)) {
       setUrlError('Bitte eine gültige URL eingeben (https://...)')
@@ -237,7 +230,7 @@ export function RichTextEditor({ value, onChange, placeholder, rows = 4, compact
   const [empty, setEmpty] = useState(!value)
   const [showLinkPopup, setShowLinkPopup] = useState(false)
   const savedRange = useRef<Range | null>(null)
-  const savedSelection = useRef('')
+  const [savedSelection, setSavedSelection] = useState('')
 
   useEffect(() => {
     if (divRef.current) {
@@ -279,10 +272,10 @@ export function RichTextEditor({ value, onChange, placeholder, rows = 4, compact
     const sel = window.getSelection()
     if (sel && sel.rangeCount > 0 && divRef.current?.contains(sel.anchorNode)) {
       savedRange.current = sel.getRangeAt(0).cloneRange()
-      savedSelection.current = sel.toString()
+      setSavedSelection(sel.toString())
     } else {
       savedRange.current = null
-      savedSelection.current = ''
+      setSavedSelection('')
     }
     setShowLinkPopup(true)
   }
@@ -297,14 +290,14 @@ export function RichTextEditor({ value, onChange, placeholder, rows = 4, compact
     document.execCommand('insertText', false, `[${displayText}](${url})`)
     sync()
     savedRange.current = null
-    savedSelection.current = ''
+    setSavedSelection('')
     setShowLinkPopup(false)
   }
 
   function closeLinkPopup() {
     setShowLinkPopup(false)
     savedRange.current = null
-    savedSelection.current = ''
+    setSavedSelection('')
     divRef.current?.focus()
   }
 
@@ -336,7 +329,7 @@ export function RichTextEditor({ value, onChange, placeholder, rows = 4, compact
         </button>
         {showLinkPopup && (
           <LinkPopup
-            selectedText={savedSelection.current}
+            selectedText={savedSelection}
             onInsert={insertLink}
             onClose={closeLinkPopup}
           />
