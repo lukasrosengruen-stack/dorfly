@@ -118,6 +118,10 @@ export interface Database {
           fraktion: string | null
           ueber_mich: string | null
           kontakt_email: string | null
+          social_x: string | null
+          social_facebook: string | null
+          social_instagram: string | null
+          social_tiktok: string | null
           feed_einstellungen: Json | null
           created_at: string
           updated_at: string
@@ -139,6 +143,10 @@ export interface Database {
           fraktion?: string | null
           ueber_mich?: string | null
           kontakt_email?: string | null
+          social_x?: string | null
+          social_facebook?: string | null
+          social_instagram?: string | null
+          social_tiktok?: string | null
           feed_einstellungen?: Json | null
           created_at?: string
           updated_at?: string
@@ -160,6 +168,10 @@ export interface Database {
           fraktion?: string | null
           ueber_mich?: string | null
           kontakt_email?: string | null
+          social_x?: string | null
+          social_facebook?: string | null
+          social_instagram?: string | null
+          social_tiktok?: string | null
           feed_einstellungen?: Json | null
           created_at?: string
           updated_at?: string
