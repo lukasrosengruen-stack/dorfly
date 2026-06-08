@@ -2,11 +2,23 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { withAuth } from '@/lib/api'
 import { z } from 'zod'
+import { normalizeSocialUsername } from '@/lib/social'
+
+const usernameField = z
+  .string()
+  .max(100)
+  .nullable()
+  .optional()
+  .transform(v => normalizeSocialUsername(v))
 
 const schema = z.object({
-  fraktion: z.string().max(100).nullable(),
-  ueber_mich: z.string().max(1000).nullable(),
-  kontakt_email: z.string().email().max(200).nullable(),
+  fraktion:         z.string().max(100).nullable(),
+  ueber_mich:       z.string().max(1000).nullable(),
+  kontakt_email:    z.string().email().max(200).nullable(),
+  social_x:         usernameField,
+  social_facebook:  usernameField,
+  social_instagram: usernameField,
+  social_tiktok:    usernameField,
 })
 
 export const PATCH = withAuth(
@@ -18,7 +30,15 @@ export const PATCH = withAuth(
     const supabase = await createClient()
     const { error } = await supabase
       .from('profiles')
-      .update({ fraktion: v.data.fraktion, ueber_mich: v.data.ueber_mich, kontakt_email: v.data.kontakt_email })
+      .update({
+        fraktion:         v.data.fraktion,
+        ueber_mich:       v.data.ueber_mich,
+        kontakt_email:    v.data.kontakt_email,
+        social_x:         v.data.social_x ?? null,
+        social_facebook:  v.data.social_facebook ?? null,
+        social_instagram: v.data.social_instagram ?? null,
+        social_tiktok:    v.data.social_tiktok ?? null,
+      })
       .eq('id', user.id)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
