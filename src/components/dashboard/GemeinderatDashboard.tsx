@@ -261,8 +261,9 @@ export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profil
         {activeTab === 'profil' && (
           <div className="bg-white rounded-2xl shadow-sm p-6 space-y-5 max-w-lg">
             <div>
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Fraktion</label>
+              <label htmlFor="profil-fraktion" className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Fraktion</label>
               <input
+                id="profil-fraktion"
                 type="text"
                 value={fraktion}
                 onChange={e => setFraktion(e.target.value)}
@@ -271,8 +272,9 @@ export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profil
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Kontakt-E-Mail (öffentlich)</label>
+              <label htmlFor="profil-kontakt-email" className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Kontakt-E-Mail (öffentlich)</label>
               <input
+                id="profil-kontakt-email"
                 type="email"
                 value={kontakt_email}
                 onChange={e => setKontaktEmail(e.target.value)}
@@ -282,8 +284,9 @@ export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profil
               <p className="text-xs text-gray-400 mt-1">Wird Bürgern angezeigt, damit sie dich direkt per E-Mail kontaktieren können.</p>
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Über mich</label>
+              <label htmlFor="profil-ueber-mich" className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Über mich</label>
               <textarea
+                id="profil-ueber-mich"
                 value={ueber_mich}
                 onChange={e => setUeberMich(e.target.value)}
                 placeholder="Stell dich den Bürgerinnen und Bürgern vor …"
@@ -292,8 +295,8 @@ export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profil
               />
               <p className="text-xs text-gray-400 mt-1 text-right">{ueber_mich.length} / 1000</p>
             </div>
-            <div>
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Social Media</p>
+            <fieldset>
+              <legend className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Social Media</legend>
               <div className="space-y-3">
                 {[
                   { label: 'X / Twitter', key: 'x', value: social_x, setter: setSocialX,
@@ -319,7 +322,7 @@ export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profil
                   </div>
                 ))}
               </div>
-            </div>
+            </fieldset>
             <button
               onClick={saveProfil}
               disabled={profilSaving}
