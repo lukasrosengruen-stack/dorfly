@@ -50,9 +50,13 @@ export default async function DashboardPage() {
         fragen={(gemeinderatFragenResult.data ?? []) as unknown as Parameters<typeof GemeinderatDashboard>[0]['fragen']}
         gemeindeId={profile.gemeinde_id!}
         profileId={user!.id}
-        fraktion={(profile as unknown as { fraktion?: string | null }).fraktion ?? null}
-        ueber_mich={(profile as unknown as { ueber_mich?: string | null }).ueber_mich ?? null}
-        kontakt_email={(profile as unknown as { kontakt_email?: string | null }).kontakt_email ?? null}
+        fraktion={profile.fraktion ?? null}
+        ueber_mich={profile.ueber_mich ?? null}
+        kontakt_email={profile.kontakt_email ?? null}
+        social_x={profile.social_x ?? null}
+        social_facebook={profile.social_facebook ?? null}
+        social_instagram={profile.social_instagram ?? null}
+        social_tiktok={profile.social_tiktok ?? null}
       />
     )
   }
