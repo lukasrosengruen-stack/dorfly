@@ -15,5 +15,6 @@ const SOCIAL_URL_MAP: Record<SocialPlatform, (username: string) => string> = {
 }
 
 export function buildSocialUrl(platform: SocialPlatform, username: string): string {
-  return SOCIAL_URL_MAP[platform](username)
+  const normalized = normalizeSocialUsername(username) ?? username
+  return SOCIAL_URL_MAP[platform](normalized)
 }

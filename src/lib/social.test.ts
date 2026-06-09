@@ -35,4 +35,7 @@ describe('buildSocialUrl', () => {
   it('baut TikTok-URL mit @ korrekt', () => {
     expect(buildSocialUrl('tiktok', 'lukas_rosen')).toBe('https://tiktok.com/@lukas_rosen')
   })
+  it('entfernt führendes @ aus dem Username', () => {
+    expect(buildSocialUrl('instagram', '@lukas_rosen')).toBe('https://instagram.com/lukas_rosen')
+  })
 })
