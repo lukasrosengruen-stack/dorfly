@@ -249,7 +249,17 @@ export default function GemeinderatClient({ posts, raete, meineFragen, gemeindeI
                         )}
                       </div>
                     )}
-                    <MessageCircle className={clsx('w-4 h-4 shrink-0 transition-colors', isExpanded ? 'text-primary-500' : 'text-gray-300')} aria-hidden="true" />
+                    {hatGesendet ? (
+                      <MessageCircle className="w-4 h-4 shrink-0 text-green-500" aria-label="Frage gesendet" />
+                    ) : (
+                      <button
+                        onClick={e => { e.stopPropagation(); setSelectedRat(rat) }}
+                        aria-label={`Frage an ${name} stellen`}
+                        className={clsx('shrink-0 transition-colors hover:text-primary-500', isExpanded ? 'text-primary-500' : 'text-gray-300')}
+                      >
+                        <MessageCircle className="w-4 h-4" aria-hidden="true" />
+                      </button>
+                    )}
                   </div>
 
                   {isExpanded && (
