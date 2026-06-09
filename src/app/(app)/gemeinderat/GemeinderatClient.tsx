@@ -211,6 +211,7 @@ export default function GemeinderatClient({ posts, raete, meineFragen, gemeindeI
                     <button
                       onClick={() => setExpandedRat(isExpanded ? null : rat.id)}
                       aria-expanded={isExpanded}
+                      aria-controls={`rat-detail-${rat.id}`}
                       aria-label={`${name} – Profil anzeigen`}
                       className="flex items-center gap-4 text-left flex-1 min-w-0"
                     >
@@ -252,7 +253,7 @@ export default function GemeinderatClient({ posts, raete, meineFragen, gemeindeI
                   </div>
 
                   {isExpanded && (
-                    <div className="px-4 pb-4 pt-0 space-y-3 border-t border-gray-100">
+                    <div id={`rat-detail-${rat.id}`} className="px-4 pb-4 pt-0 space-y-3 border-t border-gray-100">
                       {rat.ueber_mich && (
                         <p className="text-sm text-gray-600 leading-relaxed">{rat.ueber_mich}</p>
                       )}
