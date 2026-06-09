@@ -12,9 +12,9 @@ const usernameField = z
   .transform(v => normalizeSocialUsername(v))
 
 const schema = z.object({
-  fraktion:         z.string().max(100).nullable(),
-  ueber_mich:       z.string().max(1000).nullable(),
-  kontakt_email:    z.string().email().max(200).nullable(),
+  fraktion:         z.string().max(100).nullable().optional(),
+  ueber_mich:       z.string().max(1000).nullable().optional(),
+  kontakt_email:    z.string().email().max(200).nullable().optional(),
   social_x:         usernameField,
   social_facebook:  usernameField,
   social_instagram: usernameField,
