@@ -19,13 +19,15 @@ import { useState } from 'react'
 
 // ── Typen & Konstanten ──────────────────────────────────────────────────────
 
-const TAGS = ['nachricht', 'veranstaltung', 'bekanntmachung'] as const
+const TAGS = ['nachricht', 'veranstaltung', 'bekanntmachung', 'eigene_position', 'fraktionsposition'] as const
 type PostTag = typeof TAGS[number]
 
 const TAG_META: Record<PostTag, { label: string; color: string }> = {
-  nachricht:      { label: 'Nachricht',      color: 'bg-primary-100 text-primary-700' },
-  veranstaltung:  { label: 'Veranstaltung',  color: 'bg-purple-100 text-purple-700' },
-  bekanntmachung: { label: 'Bekanntmachung', color: 'bg-amber-100 text-amber-700' },
+  nachricht:         { label: 'Nachricht',         color: 'bg-primary-100 text-primary-700' },
+  veranstaltung:     { label: 'Veranstaltung',     color: 'bg-purple-100 text-purple-700' },
+  bekanntmachung:    { label: 'Bekanntmachung',    color: 'bg-amber-100 text-amber-700' },
+  eigene_position:   { label: 'Eigene Position',   color: 'bg-teal-100 text-teal-700' },
+  fraktionsposition: { label: 'Fraktionsposition', color: 'bg-sky-100 text-sky-700' },
 }
 
 const CHANNEL_COLORS: Record<PostChannel, string> = {

@@ -11,7 +11,12 @@ import { clsx } from 'clsx'
 import BilderUpload from './BilderUpload'
 
 const TAGS = ['nachricht', 'veranstaltung', 'bekanntmachung'] as const
-const TAG_LABELS = { nachricht: 'Nachricht', veranstaltung: 'Veranstaltung', bekanntmachung: 'Bekanntmachung' }
+const GEMEINDERAT_TAGS = ['eigene_position', 'fraktionsposition'] as const
+type PostTag = typeof TAGS[number] | typeof GEMEINDERAT_TAGS[number]
+const TAG_LABELS: Record<PostTag, string> = {
+  nachricht: 'Nachricht', veranstaltung: 'Veranstaltung', bekanntmachung: 'Bekanntmachung',
+  eigene_position: 'Eigene Position', fraktionsposition: 'Fraktionsposition',
+}
 
 interface Props {
   gemeindeId: string
@@ -27,7 +32,7 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
   const [bildFiles, setBildFiles] = useState<File[]>([])
   const [bildPreviews, setBildPreviews] = useState<string[]>([])
   const [bildrechteBestaetigt, setBildrechteBestaetigt] = useState(false)
-  const [form, setForm] = useState({ titel: '', inhalt: '', tag: 'nachricht' as typeof TAGS[number], channel: (defaultChannel ?? 'gemeinde') as 'gemeinde' | 'verein' | 'gewerbe' | 'gemeinderat', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', pinned: false, push: false, geplant: false, scheduled_date: '', scheduled_time: '' })
+  const [form, setForm] = useState({ titel: '', inhalt: '', tag: (defaultChannel === 'gemeinderat' ? 'eigene_position' : 'nachricht') as PostTag, channel: (defaultChannel ?? 'gemeinde') as 'gemeinde' | 'verein' | 'gewerbe' | 'gemeinderat', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', pinned: false, push: false, geplant: false, scheduled_date: '', scheduled_time: '' })
   const supabase = createClient()
 
   function addBilder(files: File[]) {
@@ -52,7 +57,7 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
 
   function reset() {
     setShowForm(false)
-    setForm({ titel: '', inhalt: '', tag: 'nachricht', channel: (defaultChannel ?? 'gemeinde') as 'gemeinde' | 'verein' | 'gewerbe' | 'gemeinderat', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', pinned: false, push: false, geplant: false, scheduled_date: '', scheduled_time: '' })
+    setForm({ titel: '', inhalt: '', tag: defaultChannel === 'gemeinderat' ? 'eigene_position' : 'nachricht', channel: (defaultChannel ?? 'gemeinde') as 'gemeinde' | 'verein' | 'gewerbe' | 'gemeinderat', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', pinned: false, push: false, geplant: false, scheduled_date: '', scheduled_time: '' })
     setBildFiles([]); setBildPreviews([]); setBildrechteBestaetigt(false)
   }
 
@@ -128,20 +133,18 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
               <button onClick={reset}><X className="w-5 h-5 text-gray-400" /></button>
             </div>
             <div className="p-6 space-y-4">
-              {defaultChannel !== 'gemeinderat' && (
-                <div>
-                  <p className="text-xs font-bold text-gray-500 mb-2 uppercase">Kategorie</p>
-                  <div className="flex gap-2 flex-wrap">
-                    {TAGS.map(tag => (
-                      <button key={tag} onClick={() => setForm(f => ({ ...f, tag }))}
-                        className={clsx('px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-colors',
-                          form.tag === tag ? 'border-primary-500 bg-primary-50 text-primary-600' : 'border-gray-200 text-gray-500')}>
-                        {TAG_LABELS[tag]}
-                      </button>
-                    ))}
-                  </div>
+              <div>
+                <p className="text-xs font-bold text-gray-500 mb-2 uppercase">Kategorie</p>
+                <div className="flex gap-2 flex-wrap">
+                  {(defaultChannel === 'gemeinderat' ? GEMEINDERAT_TAGS : TAGS).map(tag => (
+                    <button key={tag} onClick={() => setForm(f => ({ ...f, tag }))}
+                      className={clsx('px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-colors',
+                        form.tag === tag ? 'border-primary-500 bg-primary-50 text-primary-600' : 'border-gray-200 text-gray-500')}>
+                      {TAG_LABELS[tag]}
+                    </button>
+                  ))}
                 </div>
-              )}
+              </div>
               <input type="text" placeholder="Titel" value={form.titel}
                 onChange={e => setForm(f => ({ ...f, titel: e.target.value }))}
                 className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 font-bold" />

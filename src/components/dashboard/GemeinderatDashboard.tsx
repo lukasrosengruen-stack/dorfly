@@ -350,7 +350,7 @@ export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profil
                     <p className="font-bold text-gray-900 text-sm truncate">{post.titel}</p>
                     <p className="text-xs text-gray-400 mt-0.5">
                       {format(new Date(post.published_at), 'dd. MMM yyyy', { locale: de })}
-                      {post.tag && ` · ${post.tag.charAt(0).toUpperCase() + post.tag.slice(1)}`}
+                      {post.tag && ` · ${{ eigene_position: 'Eigene Position', fraktionsposition: 'Fraktionsposition', nachricht: 'Nachricht', bekanntmachung: 'Bekanntmachung', veranstaltung: 'Veranstaltung' }[post.tag] ?? post.tag}`}
                     </p>
                   </div>
                   <span className={clsx(
@@ -396,6 +396,18 @@ export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profil
               <p className="text-xs text-amber-700 bg-amber-50 px-3 py-2.5 rounded-xl border border-amber-200">
                 ⏳ Nach dem Speichern wird der Beitrag erneut zur Freigabe eingereicht.
               </p>
+              <div>
+                <p className="text-xs font-bold text-gray-500 mb-2 uppercase">Kategorie</p>
+                <div className="flex gap-2">
+                  {(['eigene_position', 'fraktionsposition'] as const).map(tag => (
+                    <button key={tag} onClick={() => setEditForm(f => ({ ...f, tag }))}
+                      className={clsx('px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-colors',
+                        editForm.tag === tag ? 'border-primary-500 bg-primary-50 text-primary-600' : 'border-gray-200 text-gray-500')}>
+                      {tag === 'eigene_position' ? 'Eigene Position' : 'Fraktionsposition'}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <input
                 type="text"
                 value={editForm.titel}
