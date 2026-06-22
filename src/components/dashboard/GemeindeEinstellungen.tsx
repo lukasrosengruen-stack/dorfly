@@ -134,11 +134,11 @@ export default function GemeindeEinstellungen({
               type="text"
               value={warncellId}
               onChange={e => setWarncellId(e.target.value)}
-              placeholder="z.B. DE-BW-08135000"
+              placeholder="z.B. 808115013"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
             <p className="text-xs text-gray-400 mt-1.5">
-              Die ID findet sich im <a href="https://www.dwd.de/DE/wetter/warnungen_gemeinden/warnWetter_node.html" target="_blank" rel="noopener noreferrer" className="underline">DWD-Warnkarten-Tool</a> oder bei der Gemeindeverwaltung. Leer lassen = keine DWD-Warnungen.
+              Numerische ID aus der Bright Sky API (z.B. über <code className="bg-gray-100 px-1 rounded">api.brightsky.dev/alerts?lat=…&lon=…</code>). Leer lassen = keine DWD-Warnungen.
             </p>
           </div>
 
