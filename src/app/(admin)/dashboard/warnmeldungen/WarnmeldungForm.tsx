@@ -32,7 +32,7 @@ export default function WarnmeldungForm() {
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 max-w-xl">
       {serverError && (
-        <div role="alert" className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+        <div role="alert" aria-live="assertive" className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
           {serverError}
         </div>
       )}
