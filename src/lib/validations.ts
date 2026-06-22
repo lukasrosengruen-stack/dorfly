@@ -75,6 +75,7 @@ export const gemeindeAktualisierenSchema = z.object({
   notfallnummern_url:   urlOrEmpty,
   homepage_url:         urlOrEmpty,
   mitteilungsblatt_url: urlOrEmpty,
+  warncell_id: z.string().max(50).transform(v => v.trim() || null).nullable().optional(),
 })
 
 // ── Gemeinderat ───────────────────────────────────────────────────────────────

@@ -12,6 +12,7 @@ interface Props {
   initialNotfallnummernUrl: string | null
   initialHomepageUrl: string | null
   initialMitteilungsblattUrl: string | null
+  initialWarncellId: string | null
 }
 
 const DIENSTE = [
@@ -29,10 +30,12 @@ export default function GemeindeEinstellungen({
   initialNotfallnummernUrl,
   initialHomepageUrl,
   initialMitteilungsblattUrl,
+  initialWarncellId,
 }: Props) {
   const [open, setOpen] = useState(false)
   const [einwohner, setEinwohner] = useState(String(initialEinwohner ?? ''))
   const [haushalte, setHaushalte] = useState(String(initialHaushalte ?? ''))
+  const [warncellId, setWarncellId] = useState(initialWarncellId ?? '')
   const [urls, setUrls] = useState({
     ratsinformation_url:  initialRatsinformationUrl  ?? '',
     notfallnummern_url:   initialNotfallnummernUrl   ?? '',
@@ -52,6 +55,7 @@ export default function GemeindeEinstellungen({
           gemeindeId,
           einwohner: einwohner ? parseInt(einwohner) : null,
           haushalte: haushalte ? parseInt(haushalte) : null,
+          warncell_id: warncellId,
           ...urls,
         }),
       })
@@ -120,6 +124,22 @@ export default function GemeindeEinstellungen({
               ))}
             </div>
             <p className="text-xs text-gray-400 mt-1.5">Leer lassen = Kachel wird nicht angezeigt</p>
+          </div>
+
+          {/* DWD Warnmeldungen */}
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">DWD Warnmeldungen</p>
+            <label className="text-xs text-gray-500 block mb-1">Warn-Cell-ID</label>
+            <input
+              type="text"
+              value={warncellId}
+              onChange={e => setWarncellId(e.target.value)}
+              placeholder="z.B. DE-BW-08135000"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+            <p className="text-xs text-gray-400 mt-1.5">
+              Die ID findet sich im <a href="https://www.dwd.de/DE/wetter/warnungen_gemeinden/warnWetter_node.html" target="_blank" rel="noopener noreferrer" className="underline">DWD-Warnkarten-Tool</a> oder bei der Gemeindeverwaltung. Leer lassen = keine DWD-Warnungen.
+            </p>
           </div>
 
           <div className="flex gap-2 pt-1">

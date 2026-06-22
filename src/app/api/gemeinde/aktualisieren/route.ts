@@ -25,6 +25,7 @@ export const POST = withAuth(
         notfallnummern_url:   v.data.notfallnummern_url   ?? null,
         homepage_url:         v.data.homepage_url         ?? null,
         mitteilungsblatt_url: v.data.mitteilungsblatt_url ?? null,
+        warncell_id:          v.data.warncell_id          ?? null,
       })
       .eq('id', v.data.gemeindeId)
 

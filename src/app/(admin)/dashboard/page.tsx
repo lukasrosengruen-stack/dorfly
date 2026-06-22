@@ -125,6 +125,7 @@ export default async function DashboardPage() {
     features: Record<string, unknown> | null
     ratsinformation_url: string | null; notfallnummern_url: string | null;
     homepage_url: string | null; mitteilungsblatt_url: string | null;
+    warncell_id: string | null;
   } | null
 
   const service = await createServiceClient()
@@ -232,6 +233,7 @@ export default async function DashboardPage() {
                 initialNotfallnummernUrl={gemeinde?.notfallnummern_url ?? null}
                 initialHomepageUrl={gemeinde?.homepage_url ?? null}
                 initialMitteilungsblattUrl={gemeinde?.mitteilungsblatt_url ?? null}
+                initialWarncellId={gemeinde?.warncell_id ?? null}
               />
             )}
           </div>
