@@ -1,10 +1,10 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { isFeatureAktiv } from '@/lib/features'
-import { Users, Home, TrendingUp, AlertTriangle, Clock, MessageCircleQuestion, ShieldAlert } from 'lucide-react'
-import Link from 'next/link'
+import { Users, Home, TrendingUp, AlertTriangle, Clock, MessageCircleQuestion } from 'lucide-react'
 import { FrageErgebnis } from '@/types/umfrage'
 import AbfallkalenderSection from '@/components/dashboard/AbfallkalenderSection'
+import WarnmeldungenSection from '@/components/dashboard/WarnmeldungenSection'
 import EinladungenSection from '@/components/dashboard/EinladungenSection'
 import GemeindeEinstellungen from '@/components/dashboard/GemeindeEinstellungen'
 import PostFreigabe from '@/components/dashboard/PostFreigabe'
@@ -132,14 +132,16 @@ export default async function DashboardPage() {
 
   const wasteFeatureAktiv = isFeatureAktiv(gemeinde, 'abfallkalender')
 
-  const aktiveWarnungenResult = profile.role === 'verwaltung'
+  type WarnRow = { id: string; titel: string; severity: number | null; is_active: boolean; dwd_id: string | null; created_at: string }
+  const warnmeldungenResult = profile.role === 'verwaltung'
     ? await (service.from('posts') as any)
-        .select('id', { count: 'exact', head: true })
+        .select('id, titel, severity, is_active, dwd_id, created_at')
         .eq('gemeinde_id', gemeindeId!)
         .eq('channel', 'warnung')
-        .eq('is_active', true)
+        .order('created_at', { ascending: false }) as { data: WarnRow[] | null }
     : null
-  const aktiveWarnungenAnzahl: number = aktiveWarnungenResult?.count ?? 0
+  const warnmeldungen: WarnRow[] = warnmeldungenResult?.data ?? []
+  const aktiveWarnungenAnzahl = warnmeldungen.filter(w => w.is_active).length
 
   const [maengelResult, fragenResult, postsResult, pendingPostsResult, umfragenResult, nutzerResult, abfallEinstellungenResult] = await Promise.all([
     supabase.from('maengel').select('id, titel, status, created_at, beschreibung, adresse, foto_url, lat, lng, nachricht_an_buerger, profiles(display_name)').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }),
@@ -290,29 +292,7 @@ export default async function DashboardPage() {
           )}
 
           {profile.role === 'verwaltung' && (
-            <div className="bg-white rounded-2xl border border-gray-100 p-5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${aktiveWarnungenAnzahl > 0 ? 'bg-red-50' : 'bg-gray-50'}`}>
-                    <ShieldAlert className={`w-5 h-5 ${aktiveWarnungenAnzahl > 0 ? 'text-red-600' : 'text-gray-400'}`} aria-hidden="true" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-sm text-gray-900">Warnmeldungen</p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {aktiveWarnungenAnzahl > 0
-                        ? `${aktiveWarnungenAnzahl} aktive Warnung${aktiveWarnungenAnzahl !== 1 ? 'en' : ''}`
-                        : 'Keine aktiven Warnmeldungen'}
-                    </p>
-                  </div>
-                </div>
-                <Link
-                  href="/dashboard/warnmeldungen"
-                  className="text-sm font-semibold text-primary-600 hover:text-primary-700"
-                >
-                  Verwalten →
-                </Link>
-              </div>
-            </div>
+            <WarnmeldungenSection warnmeldungen={warnmeldungen} />
           )}
 
         </div>

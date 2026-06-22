@@ -2,7 +2,6 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 
@@ -15,7 +14,7 @@ export const warnmeldungSchema = z.object({
 
 export type WarnmeldungFormValues = z.infer<typeof warnmeldungSchema>
 
-export async function createWarnmeldungAction(values: WarnmeldungFormValues): Promise<{ error?: string }> {
+export async function createWarnmeldungAction(values: WarnmeldungFormValues): Promise<{ success?: boolean; error?: string }> {
   const parsed = warnmeldungSchema.safeParse(values)
   if (!parsed.success) return { error: 'Ungültige Eingabe' }
 
@@ -73,6 +72,6 @@ export async function createWarnmeldungAction(values: WarnmeldungFormValues): Pr
     }
   }
 
-  revalidatePath('/dashboard/warnmeldungen')
-  redirect('/dashboard/warnmeldungen')
+  revalidatePath('/dashboard')
+  return { success: true }
 }
