@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { getGemeinde } from '@/lib/gemeinde'
-import { Newspaper, AlertTriangle, BarChart2, MessageCircleQuestion, LayoutDashboard, CalendarDays, ExternalLink, ScrollText, Scale, UserCircle, Store, Trash2, Users, Phone, Globe, BookOpen, LucideIcon } from 'lucide-react'
+import { Newspaper, AlertTriangle, BarChart2, MessageCircleQuestion, LayoutDashboard, CalendarDays, ExternalLink, ScrollText, Scale, UserCircle, Store, Trash2, Users, Phone, Globe, BookOpen, ShieldAlert, LucideIcon } from 'lucide-react'
 import { isFeatureAktiv } from '@/lib/features'
 
 export const metadata: Metadata = { title: 'Startseite – Dorfly' }
@@ -27,6 +27,7 @@ const BASE_TILES: Tile[] = [
   { href: '/gemeinderat',     label: 'Gemeinderat',      icon: Scale,                 color: '#0f2d6b', bg: 'rgba(15,45,107,0.1)',  desc: 'Politik & Fragen' },
   { href: '/profil',          label: 'Mein Profil',      icon: UserCircle,            color: '#475569', bg: 'rgba(71,85,105,0.1)',  desc: 'Einstellungen & Konto' },
   { href: '/abfallkalender',  label: 'Abfallkalender',   icon: Trash2,                color: '#16a34a', bg: 'rgba(22,163,74,0.1)',  desc: 'Abfuhrtermine' },
+  { href: '/warnmeldungen',   label: 'Warnmeldungen',    icon: ShieldAlert,           color: '#475569', bg: 'rgba(71,85,105,0.1)',  desc: 'Aktuelle Warnungen' },
 ]
 
 export default async function HomePage() {
@@ -41,6 +42,16 @@ export default async function HomePage() {
       .single(),
     getGemeinde(),
   ])
+
+  const { data: activeWarnung } = await supabase
+    .from('posts')
+    .select('id, titel, severity')
+    .eq('gemeinde_id', gemeinde?.id ?? '')
+    .eq('channel', 'warnung')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
 
   const profile = profileResult.data
   const hasDashboard = profile?.role === 'verwaltung' || profile?.role === 'super_admin' || profile?.role === 'verein' || profile?.role === 'organisation' || profile?.role === 'gemeinderat' || profile?.role === 'gewerbe'
@@ -61,6 +72,12 @@ export default async function HomePage() {
     const featureKey = FEATURE_GATE[href]
     return featureKey ? isFeatureAktiv(gemeinde, featureKey) : true
   })
+
+  const tilesWithWarn = tiles.map((t) =>
+    t.href === '/warnmeldungen' && activeWarnung
+      ? { ...t, color: '#dc2626', bg: 'rgba(220,38,38,0.1)' }
+      : t,
+  )
 
   return (
     <div className="min-h-screen bg-[#f5f7fc]">
@@ -93,9 +110,30 @@ export default async function HomePage() {
           </Link>
         )}
 
+        {/* Warnmeldungs-Banner — nur bei aktiver Warnung */}
+        {activeWarnung && (
+          <Link
+            href="/warnmeldungen"
+            className="bg-red-600 rounded-[20px] p-4 flex items-center gap-4 shadow-[0_4px_14px_rgba(220,38,38,0.35)] transition-[transform,box-shadow] duration-100 ease-out active:scale-[0.96] active:shadow-none"
+          >
+            <div className="w-11 h-11 rounded-[14px] bg-white/20 flex items-center justify-center shrink-0">
+              <ShieldAlert className="w-[22px] h-[22px] text-white" strokeWidth={1.5} aria-hidden="true" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-white font-bold text-[14.5px] leading-snug line-clamp-1">{(activeWarnung as any).titel}</p>
+              <p className="text-white/60 text-xs mt-0.5">Aktive Warnung · Details ansehen</p>
+            </div>
+            <div className="w-[30px] h-[30px] rounded-[9px] bg-white/20 flex items-center justify-center shrink-0">
+              <svg width="15" height="15" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                <path d="M4 11h14M13 5l6 6-6 6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          </Link>
+        )}
+
         {/* Kachel-Grid */}
         <div className="grid grid-cols-2 gap-2.5">
-          {tiles.map(({ href, label, icon: Icon, color, bg, desc }) => (
+          {tilesWithWarn.map(({ href, label, icon: Icon, color, bg, desc }) => (
             <Link key={href} href={href}
               className="bg-white rounded-[18px] p-[15px_14px] shadow-[0_2px_14px_rgba(15,45,107,0.08)] flex flex-col gap-3 transition-[transform,box-shadow] duration-100 ease-out active:scale-[0.96] active:shadow-none">
               <div className="w-[58px] h-[58px] rounded-[18px] flex items-center justify-center"
