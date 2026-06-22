@@ -10,7 +10,7 @@ ALTER TABLE public.posts ALTER COLUMN author_id DROP NOT NULL;
 -- 3. DWD-spezifische Spalten
 ALTER TABLE public.posts
   ADD COLUMN IF NOT EXISTS dwd_id     text,
-  ADD COLUMN IF NOT EXISTS severity   smallint,
+  ADD COLUMN IF NOT EXISTS severity   smallint CHECK (severity BETWEEN 1 AND 4),
   ADD COLUMN IF NOT EXISTS expires_at timestamptz,
   ADD COLUMN IF NOT EXISTS is_active  boolean NOT NULL DEFAULT true;
 
@@ -22,6 +22,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS posts_dwd_id_unique
 -- 5. Warncell-ID für DWD-Polling
 ALTER TABLE public.gemeinden
   ADD COLUMN IF NOT EXISTS warncell_id text;
+
+-- Index für DWD-Cron-Abfrage (WHERE warncell_id IS NOT NULL)
+CREATE INDEX IF NOT EXISTS gemeinden_warncell_id_idx
+  ON public.gemeinden(warncell_id)
+  WHERE warncell_id IS NOT NULL;
 
 -- Keine neuen GRANTs nötig:
 -- - service_role: DWD-Cron und Deaktivierungs-Route nutzen createServiceClient()
