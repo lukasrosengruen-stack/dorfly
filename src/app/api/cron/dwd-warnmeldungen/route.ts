@@ -17,7 +17,12 @@ export async function GET(req: NextRequest) {
     .select('id, slug, warncell_id')
     .not('warncell_id', 'is', null)
 
-  if (error || !gemeinden?.length) {
+  if (error) {
+    console.error('[DWD Cron] Fehler beim Laden der Gemeinden:', error)
+    return NextResponse.json({ error: 'Datenbankfehler' }, { status: 500 })
+  }
+
+  if (!gemeinden?.length) {
     return NextResponse.json({ ok: true, created: 0, deactivated: 0, message: 'Keine Gemeinden mit warncell_id' })
   }
 
@@ -44,7 +49,7 @@ export async function GET(req: NextRequest) {
         if (existingDwdIds.has(alert.id)) continue
 
         const { titel, inhalt } = buildPostContent(alert)
-        await service.from('posts').insert({
+        const { error: insertError } = await service.from('posts').insert({
           gemeinde_id: gemeinde.id,
           channel: 'warnung',
           titel,
@@ -57,8 +62,10 @@ export async function GET(req: NextRequest) {
           status: 'published',
         } as any)
 
-        await sendPushNotification(gemeinde.slug, titel)
-        created++
+        if (!insertError) {
+          await sendPushNotification(gemeinde.slug, titel)
+          created++
+        }
       }
 
       // Nicht mehr aktive DWD-Warnungen deaktivieren
