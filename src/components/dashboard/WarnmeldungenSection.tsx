@@ -37,19 +37,23 @@ export default function WarnmeldungenSection({ warnmeldungen: initial }: Props) 
     e.preventDefault()
     setSubmitting(true)
     setServerError(null)
-    const result = await createWarnmeldungAction({ titel, inhalt, severity, sendPush })
-    if (result?.error) {
-      setServerError(result.error)
+    try {
+      const result = await createWarnmeldungAction({ titel, inhalt, severity, sendPush })
+      if (result?.error) {
+        setServerError(result.error)
+        return
+      }
+      setTitel('')
+      setInhalt('')
+      setSeverity(2)
+      setSendPush(true)
+      setShowForm(false)
+      router.refresh()
+    } catch {
+      setServerError('Unbekannter Fehler – bitte erneut versuchen.')
+    } finally {
       setSubmitting(false)
-      return
     }
-    setTitel('')
-    setInhalt('')
-    setSeverity(2)
-    setSendPush(true)
-    setShowForm(false)
-    setSubmitting(false)
-    router.refresh()
   }
 
   async function handleDeactivate(postId: string) {
