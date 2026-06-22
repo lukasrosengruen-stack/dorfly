@@ -5,8 +5,6 @@ import { revalidatePath } from 'next/cache'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { warnmeldungSchema, type WarnmeldungFormValues } from './schema'
 
-export type { WarnmeldungFormValues }
-
 export async function createWarnmeldungAction(values: WarnmeldungFormValues): Promise<{ success?: boolean; error?: string }> {
   try {
     const parsed = warnmeldungSchema.safeParse(values)

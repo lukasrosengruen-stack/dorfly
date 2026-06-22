@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ShieldAlert, Plus, X, Loader2 } from 'lucide-react'
 import { SEVERITY_LABEL, SEVERITY_COLOR, type WarnSeverity } from '@/features/warnmeldungen/types'
-import { createWarnmeldungAction } from '@/app/(admin)/dashboard/warnmeldungen/actions'
 
 interface WarnRow {
   id: string
@@ -38,9 +37,14 @@ export default function WarnmeldungenSection({ warnmeldungen: initial }: Props) 
     setSubmitting(true)
     setServerError(null)
     try {
-      const result = await createWarnmeldungAction({ titel, inhalt, severity, sendPush })
-      if (result?.error) {
-        setServerError(result.error)
+      const res = await fetch('/api/warnmeldungen/erstellen', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ titel, inhalt, severity, sendPush }),
+      })
+      const result = await res.json()
+      if (!res.ok) {
+        setServerError(result.error ?? 'Fehler beim Erstellen der Warnmeldung')
         return
       }
       setTitel('')
