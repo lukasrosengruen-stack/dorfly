@@ -2,17 +2,10 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { z } from 'zod'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { warnmeldungSchema, type WarnmeldungFormValues } from './schema'
 
-export const warnmeldungSchema = z.object({
-  titel: z.string().min(1, 'Titel erforderlich').max(200),
-  inhalt: z.string().min(1, 'Beschreibung erforderlich'),
-  severity: z.number().int().min(1).max(4),
-  sendPush: z.boolean(),
-})
-
-export type WarnmeldungFormValues = z.infer<typeof warnmeldungSchema>
+export type { WarnmeldungFormValues }
 
 export async function createWarnmeldungAction(values: WarnmeldungFormValues): Promise<{ success?: boolean; error?: string }> {
   try {

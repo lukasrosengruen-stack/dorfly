@@ -5,7 +5,8 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
-import { warnmeldungSchema, type WarnmeldungFormValues, createWarnmeldungAction } from './actions'
+import { warnmeldungSchema, type WarnmeldungFormValues } from './schema'
+import { createWarnmeldungAction } from './actions'
 import { SEVERITY_LABEL } from '@/features/warnmeldungen/types'
 
 export default function WarnmeldungForm() {
