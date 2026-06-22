@@ -12,13 +12,13 @@ export default async function WarnmeldungenPage() {
     getGemeinde(),
   ])
 
-  const { data: warnmeldungen } = await supabase
-    .from('posts')
+  type WarnRow = { id: string; titel: string; inhalt: string | null; severity: number | null; dwd_id: string | null; created_at: string; expires_at: string | null }
+  const { data: warnmeldungen } = await (supabase.from('posts') as any)
     .select('id, titel, inhalt, severity, dwd_id, created_at, expires_at')
     .eq('gemeinde_id', gemeinde?.id ?? '')
     .eq('channel', 'warnung')
     .eq('is_active', true)
-    .order('created_at', { ascending: false })
+    .order('created_at', { ascending: false }) as { data: WarnRow[] | null }
 
   const liste = warnmeldungen ?? []
 
@@ -48,11 +48,11 @@ export default async function WarnmeldungenPage() {
         )}
 
         {liste.map((w) => {
-          const sev = ((w as any).severity ?? 2) as WarnSeverity
+          const sev = (w.severity ?? 2) as WarnSeverity
           const color = SEVERITY_COLOR[sev]
           const bg = SEVERITY_BG[sev]
           const label = SEVERITY_LABEL[sev]
-          const quelle = (w as any).dwd_id ? 'Deutscher Wetterdienst' : 'Gemeindeverwaltung'
+          const quelle = w.dwd_id ? 'Deutscher Wetterdienst' : 'Gemeindeverwaltung'
 
           return (
             <article
@@ -87,8 +87,8 @@ export default async function WarnmeldungenPage() {
                       day: '2-digit', month: '2-digit', year: 'numeric',
                       hour: '2-digit', minute: '2-digit',
                     })}
-                    {(w as any).expires_at && (
-                      <> · Gültig bis {new Date((w as any).expires_at).toLocaleString('de-DE', {
+                    {w.expires_at && (
+                      <> · Gültig bis {new Date(w.expires_at).toLocaleString('de-DE', {
                         day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
                       })}</>
                     )}

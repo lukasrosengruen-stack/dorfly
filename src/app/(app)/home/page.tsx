@@ -43,16 +43,14 @@ export default async function HomePage() {
     getGemeinde(),
   ])
 
-  const { data: activeWarnung } = await supabase
-    .from('posts')
+  const { data: activeWarnung } = await (supabase.from('posts') as any)
     .select('id, titel, severity')
     .eq('gemeinde_id', gemeinde?.id ?? '')
-    .eq('channel', 'warnung' as string)
-    .eq('is_active', true as unknown as boolean)
+    .eq('channel', 'warnung')
+    .eq('is_active', true)
     .order('created_at', { ascending: false })
     .limit(1)
-    .returns<{ id: string; titel: string; severity: number | null }>()
-    .maybeSingle()
+    .maybeSingle() as { data: { id: string; titel: string; severity: number | null } | null }
 
   const profile = profileResult.data
   const hasDashboard = profile?.role === 'verwaltung' || profile?.role === 'super_admin' || profile?.role === 'verein' || profile?.role === 'organisation' || profile?.role === 'gemeinderat' || profile?.role === 'gewerbe'

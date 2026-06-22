@@ -76,7 +76,7 @@ export default function WarnmeldungForm() {
         <select
           id="severity"
           className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
-          {...form.register('severity')}
+          {...form.register('severity', { valueAsNumber: true })}
         >
           {severityOptions.map((opt) => (
             <option key={opt.value} value={opt.value}>

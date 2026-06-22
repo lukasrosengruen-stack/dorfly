@@ -23,15 +23,15 @@ export default async function WarnmeldungenAdminPage() {
 
   const service = await createServiceClient()
 
-  const { data: warnmeldungen } = await service
-    .from('posts')
+  type WarnRow = { id: string; titel: string; severity: number | null; is_active: boolean; dwd_id: string | null; created_at: string }
+  const { data: warnmeldungen } = await (service.from('posts') as any)
     .select('id, titel, severity, is_active, dwd_id, created_at')
     .eq('gemeinde_id', profile.gemeinde_id!)
     .eq('channel', 'warnung')
-    .order('created_at', { ascending: false })
+    .order('created_at', { ascending: false }) as { data: WarnRow[] | null }
 
-  const aktive = (warnmeldungen ?? []).filter((w) => (w as any).is_active)
-  const inaktive = (warnmeldungen ?? []).filter((w) => !(w as any).is_active)
+  const aktive = (warnmeldungen ?? []).filter((w) => w.is_active)
+  const inaktive = (warnmeldungen ?? []).filter((w) => !w.is_active)
 
   return (
     <div className="min-h-screen bg-gray-50">

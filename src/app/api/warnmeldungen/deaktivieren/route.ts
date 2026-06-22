@@ -22,24 +22,24 @@ export async function POST(req: NextRequest) {
 
   const service = await createServiceClient()
 
-  const { data: post } = await service
-    .from('posts')
+  type PostRow = { id: string; gemeinde_id: string | null; dwd_id: string | null; channel: string }
+  const { data: post } = await (service.from('posts') as any)
     .select('id, gemeinde_id, dwd_id, channel')
     .eq('id', post_id)
-    .single()
+    .single() as { data: PostRow | null }
 
   if (!post) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
-  if ((post as any).channel !== 'warnung') {
+  if (post.channel !== 'warnung') {
     return NextResponse.json({ error: 'Kein Warnmeldungs-Post' }, { status: 400 })
   }
-  if ((post as any).dwd_id !== null) {
+  if (post.dwd_id !== null) {
     return NextResponse.json({ error: 'DWD-Warnungen können nicht manuell deaktiviert werden' }, { status: 400 })
   }
   if (post.gemeinde_id !== profile.gemeinde_id) {
     return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
   }
 
-  await service.from('posts').update({ is_active: false } as any).eq('id', post_id)
+  await (service.from('posts') as any).update({ is_active: false }).eq('id', post_id)
 
   return NextResponse.json({ ok: true })
 }

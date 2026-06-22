@@ -12,10 +12,10 @@ export async function GET(req: NextRequest) {
 
   const service = await createServiceClient()
 
-  const { data: gemeinden, error } = await service
-    .from('gemeinden')
+  type GemeindeRow = { id: string; slug: string; warncell_id: string }
+  const { data: gemeinden, error } = await (service.from('gemeinden') as any)
     .select('id, slug, warncell_id')
-    .not('warncell_id', 'is', null)
+    .not('warncell_id', 'is', null) as { data: GemeindeRow[] | null; error: any }
 
   if (error) {
     console.error('[DWD Cron] Fehler beim Laden der Gemeinden:', error)
@@ -35,14 +35,14 @@ export async function GET(req: NextRequest) {
       const activeAlerts = filterActiveAlerts(allAlerts)
       const activeDwdIds = new Set(activeAlerts.map((a) => a.id))
 
-      const { data: existingPosts } = await service
-        .from('posts')
+      type ExistingPostRow = { id: string; dwd_id: string | null; is_active: boolean }
+      const { data: existingPosts } = await (service.from('posts') as any)
         .select('id, dwd_id, is_active')
         .eq('gemeinde_id', gemeinde.id)
         .eq('channel', 'warnung')
-        .not('dwd_id', 'is', null)
+        .not('dwd_id', 'is', null) as { data: ExistingPostRow[] | null }
 
-      const existingDwdIds = new Set((existingPosts ?? []).map((p) => (p as any).dwd_id!))
+      const existingDwdIds = new Set((existingPosts ?? []).map((p) => p.dwd_id!))
 
       // Neue Warnungen anlegen
       for (const alert of activeAlerts) {
@@ -70,10 +70,10 @@ export async function GET(req: NextRequest) {
 
       // Nicht mehr aktive DWD-Warnungen deaktivieren
       for (const post of existingPosts ?? []) {
-        if (!(post as any).is_active) continue
-        if (activeDwdIds.has((post as any).dwd_id!)) continue
+        if (!post.is_active) continue
+        if (activeDwdIds.has(post.dwd_id!)) continue
 
-        await service.from('posts').update({ is_active: false } as any).eq('id', post.id)
+        await (service.from('posts') as any).update({ is_active: false }).eq('id', post.id)
         deactivated++
       }
     } catch (err) {
