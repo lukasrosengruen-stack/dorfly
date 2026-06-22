@@ -47,10 +47,11 @@ export default async function HomePage() {
     .from('posts')
     .select('id, titel, severity')
     .eq('gemeinde_id', gemeinde?.id ?? '')
-    .eq('channel', 'warnung')
-    .eq('is_active', true)
+    .eq('channel', 'warnung' as string)
+    .eq('is_active', true as unknown as boolean)
     .order('created_at', { ascending: false })
     .limit(1)
+    .returns<{ id: string; titel: string; severity: number | null }>()
     .maybeSingle()
 
   const profile = profileResult.data
@@ -114,13 +115,14 @@ export default async function HomePage() {
         {activeWarnung && (
           <Link
             href="/warnmeldungen"
+            aria-label={`Aktive Warnung: ${activeWarnung.titel}`}
             className="bg-red-600 rounded-[20px] p-4 flex items-center gap-4 shadow-[0_4px_14px_rgba(220,38,38,0.35)] transition-[transform,box-shadow] duration-100 ease-out active:scale-[0.96] active:shadow-none"
           >
             <div className="w-11 h-11 rounded-[14px] bg-white/20 flex items-center justify-center shrink-0">
               <ShieldAlert className="w-[22px] h-[22px] text-white" strokeWidth={1.5} aria-hidden="true" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-white font-bold text-[14.5px] leading-snug line-clamp-1">{(activeWarnung as any).titel}</p>
+              <p className="text-white font-bold text-[14.5px] leading-snug line-clamp-1">{activeWarnung.titel}</p>
               <p className="text-white/60 text-xs mt-0.5">Aktive Warnung · Details ansehen</p>
             </div>
             <div className="w-[30px] h-[30px] rounded-[9px] bg-white/20 flex items-center justify-center shrink-0">
