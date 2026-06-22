@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/abfall-benachrichtigungen",
       "schedule": "0 17 * * *"
+    },
+    {
+      "path": "/api/cron/dwd-warnmeldungen",
+      "schedule": "*/10 * * * *"
     }
   ]
 }
