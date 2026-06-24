@@ -1,8 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getGemeinde } from '@/lib/gemeinde'
-import SidebarNav from '@/components/layout/SidebarNav'
-import { getBuergermeisterLabel } from '@/lib/features'
+import BottomNav from '@/components/layout/BottomNav'
+import { getFeatures, getBuergermeisterLabel } from '@/lib/features'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -11,7 +11,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!user) redirect('/login')
 
   const [profileResult, gemeinde] = await Promise.all([
-    supabase.from('profiles').select('role, gemeinden(name)').eq('id', user.id).single(),
+    supabase.from('profiles').select('role').eq('id', user.id).single(),
     getGemeinde(),
   ])
 
@@ -21,19 +21,23 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect('/feed')
   }
 
-  const gemeindeName = (profile.gemeinden as unknown as { name: string } | null)?.name
-  const { long: buergermeisterLongLabel } = getBuergermeisterLabel(gemeinde)
+  const primaryColor = gemeinde?.primary_color ?? '#0f2d6b'
+  const features = getFeatures(gemeinde)
+  const { short: buergermeisterShortLabel } = getBuergermeisterLabel(gemeinde)
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      <SidebarNav
-        gemeindeName={gemeindeName}
-        role={profile.role}
-        buergermeisterLongLabel={buergermeisterLongLabel}
-      />
-      <main className="flex-1 overflow-auto">
+    <div
+      className="min-h-screen bg-[#F4F6F9]"
+      style={{ '--color-primary': primaryColor } as React.CSSProperties}
+    >
+      <main className="pb-20">
         {children}
       </main>
+      <BottomNav
+        role={profile.role}
+        features={features}
+        buergermeisterShortLabel={buergermeisterShortLabel}
+      />
     </div>
   )
 }
