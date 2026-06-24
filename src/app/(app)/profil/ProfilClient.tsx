@@ -88,22 +88,51 @@ export default function ProfilClient({ profile, email }: { profile: FullProfile 
     setTimeout(() => { setPwDone(false); setShowPwForm(false) }, 2000)
   }
 
-  async function enablePush() {
+  function enablePush() {
     setPushLoading(true)
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const OneSignal = (window as any).OneSignal
-      if (!OneSignal) {
-        toast.error('Bitte Seite neu laden und erneut versuchen')
-        return
+
+    const rootUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://dorfly.de'
+    const userId = profile?.id ?? ''
+    const hostname = window.location.hostname
+    const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'
+    const slug = hostname.endsWith(`.${rootDomain}`)
+      ? hostname.replace(`.${rootDomain}`, '')
+      : hostname
+
+    const popup = window.open(
+      `${rootUrl}/push-register?userId=${encodeURIComponent(userId)}&slug=${encodeURIComponent(slug)}`,
+      'push-register',
+      'width=480,height=520,left=200,top=100',
+    )
+
+    if (!popup) {
+      toast.error('Popup blockiert – bitte den Popup-Blocker für diese Seite deaktivieren')
+      setPushLoading(false)
+      return
+    }
+
+    const onMessage = (e: MessageEvent) => {
+      if (e.data?.type !== 'PUSH_REGISTERED') return
+      cleanup()
+      if (e.data.permission === 'granted') {
+        setPushPermission('granted')
+        toast.success('Push-Benachrichtigungen aktiviert!')
+      } else {
+        toast.error('Push-Benachrichtigungen wurden nicht aktiviert')
       }
-      await OneSignal.Notifications.requestPermission()
-      setPushPermission(Notification.permission)
-    } catch {
-      toast.error('Push konnte nicht aktiviert werden')
-    } finally {
+    }
+
+    const checkClosed = setInterval(() => {
+      if (popup.closed) cleanup()
+    }, 500)
+
+    function cleanup() {
+      clearInterval(checkClosed)
+      window.removeEventListener('message', onMessage)
       setPushLoading(false)
     }
+
+    window.addEventListener('message', onMessage)
   }
 
   return (

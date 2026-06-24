@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getGemeinde } from '@/lib/gemeinde'
 import BottomNav from '@/components/layout/BottomNav'
-import PushNotificationInit from '@/components/PushNotificationInit'
 import { getFeatures, getBuergermeisterLabel } from '@/lib/features'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -26,7 +25,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       className="min-h-screen bg-[#F4F6F9]"
       style={{ '--color-primary': primaryColor } as React.CSSProperties}
     >
-      {gemeinde?.slug && <PushNotificationInit userId={user.id} gemeindeSlug={gemeinde.slug} />}
       <main id="main-content" tabIndex={-1} className="max-w-lg mx-auto pb-20 outline-none">
         {children}
       </main>

@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next'
 import { Plus_Jakarta_Sans, DM_Sans } from 'next/font/google'
-import Script from 'next/script'
 import { Toaster } from 'sonner'
 import './globals.css'
 
@@ -43,13 +42,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
       </head>
-      <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="afterInteractive" />
-      <Script id="onesignal-init" strategy="afterInteractive">{`
-        window.OneSignalDeferred = window.OneSignalDeferred || [];
-        OneSignalDeferred.push(async function(OneSignal) {
-          await OneSignal.init({ appId: "${process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID}" });
-        });
-      `}</Script>
       <body className="min-h-full bg-gray-50 font-sans">
         <a
           href="#main-content"
