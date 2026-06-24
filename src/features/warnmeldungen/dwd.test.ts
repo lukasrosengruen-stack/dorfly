@@ -25,8 +25,8 @@ describe('filterActiveAlerts', () => {
     expect(filterActiveAlerts([mockAlert()])).toHaveLength(1)
   })
 
-  it('excludes Minor severity alerts', () => {
-    expect(filterActiveAlerts([mockAlert({ severity: 'Minor' })])).toHaveLength(0)
+  it('includes Minor severity alerts', () => {
+    expect(filterActiveAlerts([mockAlert({ severity: 'Minor' })])).toHaveLength(1)
   })
 
   it('includes Severe and Extreme', () => {
@@ -49,7 +49,7 @@ describe('filterActiveAlerts', () => {
 describe('buildPostContent', () => {
   it('builds titel from headline', () => {
     const { titel } = buildPostContent(mockAlert())
-    expect(titel).toBe('Unwetterwarnung: Amtliche WARNUNG vor STARKREGEN')
+    expect(titel).toBe('Amtliche WARNUNG vor STARKREGEN')
   })
 
   it('includes description in inhalt', () => {

@@ -94,7 +94,7 @@ async function sendPushNotification(gemeindeSlug: string, titel: string) {
     body: JSON.stringify({
       app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID,
       filters: [{ field: 'tag', key: 'gemeinde_slug', relation: '=', value: gemeindeSlug }],
-      headings: { de: 'Unwetterwarnung', en: 'Unwetterwarnung' },
+      headings: { de: 'DWD-Warnung', en: 'DWD-Warnung' },
       contents: { de: titel, en: titel },
       url: `${process.env.NEXT_PUBLIC_APP_URL}/warnmeldungen`,
     }),

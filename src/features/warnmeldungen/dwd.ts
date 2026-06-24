@@ -1,18 +1,14 @@
 // src/features/warnmeldungen/dwd.ts
 import type { DwdAlert, DwdAlertsResponse } from './types'
-import { SEVERITY_MAP } from './types'
 
 export function filterActiveAlerts(alerts: DwdAlert[]): DwdAlert[] {
   return alerts.filter(
-    (a) =>
-      a.status === 'Actual' &&
-      a.message_type !== 'Cancel' &&
-      SEVERITY_MAP[a.severity] >= 2,
+    (a) => a.status === 'Actual' && a.message_type !== 'Cancel',
   )
 }
 
 export function buildPostContent(alert: DwdAlert): { titel: string; inhalt: string } {
-  const titel = `Unwetterwarnung: ${alert.headline}`
+  const titel = alert.headline
   const parts: string[] = []
   if (alert.description) parts.push(alert.description)
   if (alert.expires) {
