@@ -24,17 +24,16 @@ export const SEVERITY_BG: Record<WarnSeverity, string> = {
 }
 
 export interface DwdAlert {
-  id: string
-  event: string
-  headline: string
-  description: string | null
-  instruction: string | null
-  severity: 'Minor' | 'Moderate' | 'Severe' | 'Extreme'
+  id: number
+  alert_id: string
+  event_de: string
+  headline_de: string
+  description_de: string | null
+  instruction_de: string | null
+  severity: 'minor' | 'moderate' | 'severe' | 'extreme'
   status: string
-  message_type: string
   effective: string
   expires: string | null
-  warn_cell_ids: string[]
 }
 
 export interface DwdAlertsResponse {
@@ -42,8 +41,8 @@ export interface DwdAlertsResponse {
 }
 
 export const SEVERITY_MAP: Record<DwdAlert['severity'], WarnSeverity> = {
-  Minor: 1,
-  Moderate: 2,
-  Severe: 3,
-  Extreme: 4,
+  minor: 1,
+  moderate: 2,
+  severe: 3,
+  extreme: 4,
 }

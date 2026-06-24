@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
     try {
       const allAlerts = await fetchDwdAlerts(gemeinde.warncell_id!)
       const activeAlerts = filterActiveAlerts(allAlerts)
-      const activeDwdIds = new Set(activeAlerts.map((a) => a.id))
+      const activeDwdIds = new Set(activeAlerts.map((a) => String(a.id)))
 
       type ExistingPostRow = { id: string; dwd_id: string | null; is_active: boolean }
       const { data: existingPosts } = await (service.from('posts') as any)
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
 
       // Neue Warnungen anlegen
       for (const alert of activeAlerts) {
-        if (existingDwdIds.has(alert.id)) continue
+        if (existingDwdIds.has(String(alert.id))) continue
 
         const { titel, inhalt } = buildPostContent(alert)
         const { error: insertError } = await service.from('posts').insert({
@@ -54,8 +54,8 @@ export async function GET(req: NextRequest) {
           channel: 'warnung',
           titel,
           inhalt,
-          dwd_id: alert.id,
-          severity: SEVERITY_MAP[alert.severity],
+          dwd_id: String(alert.id),
+          severity: SEVERITY_MAP[alert.severity] ?? 1,
           expires_at: alert.expires,
           is_active: true,
           pinned: true,

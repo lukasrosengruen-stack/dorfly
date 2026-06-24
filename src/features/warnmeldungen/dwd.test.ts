@@ -5,49 +5,44 @@ import type { DwdAlert } from './types'
 
 function mockAlert(overrides: Partial<DwdAlert> = {}): DwdAlert {
   return {
-    id: 'alert-1',
-    event: 'STARKREGEN',
-    headline: 'Amtliche WARNUNG vor STARKREGEN',
-    description: 'Örtlich Starkregen zwischen 20 und 30 l/m².',
-    instruction: 'Keller leerpumpen.',
-    severity: 'Moderate',
-    status: 'Actual',
-    message_type: 'Alert',
+    id: 2313758,
+    alert_id: '2.49.0.0.276.0.DWD.PVW.test',
+    event_de: 'STARKREGEN',
+    headline_de: 'Amtliche WARNUNG vor STARKREGEN',
+    description_de: 'Örtlich Starkregen zwischen 20 und 30 l/m².',
+    instruction_de: 'Keller leerpumpen.',
+    severity: 'moderate',
+    status: 'actual',
     effective: '2024-01-15T10:00:00+00:00',
     expires: '2024-01-15T22:00:00+00:00',
-    warn_cell_ids: ['DE-BW-08135000'],
     ...overrides,
   }
 }
 
 describe('filterActiveAlerts', () => {
-  it('includes Moderate severity active alerts', () => {
+  it('includes active alerts', () => {
     expect(filterActiveAlerts([mockAlert()])).toHaveLength(1)
   })
 
-  it('includes Minor severity alerts', () => {
-    expect(filterActiveAlerts([mockAlert({ severity: 'Minor' })])).toHaveLength(1)
+  it('includes minor severity alerts', () => {
+    expect(filterActiveAlerts([mockAlert({ severity: 'minor' })])).toHaveLength(1)
   })
 
-  it('includes Severe and Extreme', () => {
+  it('includes severe and extreme', () => {
     const alerts = [
-      mockAlert({ severity: 'Severe' }),
-      mockAlert({ id: 'alert-2', severity: 'Extreme' }),
+      mockAlert({ severity: 'severe' }),
+      mockAlert({ id: 2313759, severity: 'extreme' }),
     ]
     expect(filterActiveAlerts(alerts)).toHaveLength(2)
   })
 
-  it('excludes cancelled messages', () => {
-    expect(filterActiveAlerts([mockAlert({ message_type: 'Cancel' })])).toHaveLength(0)
-  })
-
-  it('excludes non-Actual status', () => {
-    expect(filterActiveAlerts([mockAlert({ status: 'Exercise' })])).toHaveLength(0)
+  it('excludes non-actual status', () => {
+    expect(filterActiveAlerts([mockAlert({ status: 'exercise' })])).toHaveLength(0)
   })
 })
 
 describe('buildPostContent', () => {
-  it('builds titel from headline', () => {
+  it('builds titel from headline_de', () => {
     const { titel } = buildPostContent(mockAlert())
     expect(titel).toBe('Amtliche WARNUNG vor STARKREGEN')
   })
@@ -63,7 +58,7 @@ describe('buildPostContent', () => {
   })
 
   it('handles null description gracefully', () => {
-    const { inhalt } = buildPostContent(mockAlert({ description: null }))
+    const { inhalt } = buildPostContent(mockAlert({ description_de: null }))
     expect(typeof inhalt).toBe('string')
     expect(inhalt.length).toBeGreaterThan(0)
   })
