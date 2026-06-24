@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 
 export default function PushRegisterPage() {
   const [status, setStatus] = useState<'loading' | 'success' | 'denied' | 'error'>('loading')
+  const [errorMsg, setErrorMsg] = useState('')
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -15,11 +16,10 @@ export default function PushRegisterPage() {
 
     function finish(permission: 'granted' | 'denied' | 'error') {
       if (window.opener) {
-        // Popup-Modus (Desktop)
         window.opener.postMessage({ type: 'PUSH_REGISTERED', permission }, '*')
-        setTimeout(() => window.close(), permission === 'granted' ? 1500 : 2000)
+        if (permission === 'granted') setTimeout(() => window.close(), 1500)
+        // Bei Fehler: Fenster bleibt offen für Diagnose
       } else if (returnUrl) {
-        // Redirect-Modus (Mobile / PWA)
         const url = new URL(returnUrl)
         url.searchParams.set('push_result', permission)
         window.location.href = url.toString()
@@ -44,7 +44,9 @@ export default function PushRegisterPage() {
           finish('denied')
         }
       } catch (e) {
+        const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e)
         console.error('[PushRegister]', e)
+        setErrorMsg(msg)
         setStatus('error')
         finish('error')
       }
@@ -89,6 +91,9 @@ export default function PushRegisterPage() {
           <div>
             <p className="text-lg font-semibold text-red-500">Fehler</p>
             <p className="text-sm text-gray-400 mt-2">Push konnte nicht aktiviert werden.</p>
+            {errorMsg && (
+              <p className="text-xs text-red-400 mt-3 font-mono break-all">{errorMsg}</p>
+            )}
           </div>
         )}
       </div>
