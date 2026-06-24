@@ -43,30 +43,8 @@ export default function ProfilClient({ profile, email }: { profile: FullProfile 
   const [pushLoading, setPushLoading] = useState(false)
 
   useEffect(() => {
-    // Push-Status basiert auf localStorage (Subscription auf www.dorfly.de),
-    // nicht auf Notification.permission des aktuellen Subdomains
-    if (localStorage.getItem('push_subscribed') === 'true') {
-      setPushPermission('granted')
-    } else {
-      // Subscription happens on www.dorfly.de (popup/redirect), so Notification.permission
-      // on this subdomain is irrelevant. Always show the Aktivieren button.
-      setPushPermission('default')
-    }
-
-    // Rückkehr vom Redirect-Flow (Mobile / PWA)
-    const params = new URLSearchParams(window.location.search)
-    const pushResult = params.get('push_result')
-    if (pushResult) {
-      if (pushResult === 'granted') {
-        localStorage.setItem('push_subscribed', 'true')
-        setPushPermission('granted')
-        toast.success('Push-Benachrichtigungen aktiviert!')
-      } else {
-        toast.error('Push-Benachrichtigungen wurden nicht aktiviert')
-      }
-      const url = new URL(window.location.href)
-      url.searchParams.delete('push_result')
-      window.history.replaceState({}, '', url.toString())
+    if ('Notification' in window) {
+      setPushPermission(Notification.permission)
     }
   }, [])
   const nameParts = (profile?.display_name ?? '').trim().split(/\s+/)
@@ -113,46 +91,55 @@ export default function ProfilClient({ profile, email }: { profile: FullProfile 
   function enablePush() {
     setPushLoading(true)
 
-    const rootUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://dorfly.de'
-    const userId = profile?.id ?? ''
-    const hostname = window.location.hostname
-    const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'
-    const slug = hostname.endsWith(`.${rootDomain}`)
-      ? hostname.replace(`.${rootDomain}`, '')
-      : hostname
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const win = window as any
 
-    const registerUrl = `${rootUrl}/push-register?userId=${encodeURIComponent(userId)}&slug=${encodeURIComponent(slug)}&return=${encodeURIComponent(window.location.href)}`
+    const doInit = async (OneSignal: any) => {
+      try {
+        await OneSignal.init({
+          appId: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID!,
+          notifyButton: { enable: false },
+        })
 
-    const popup = window.open(registerUrl, 'push-register', 'width=480,height=520,left=200,top=100')
+        const granted = await OneSignal.Notifications.requestPermission()
 
-    if (!popup) {
-      // Popup blockiert (Mobile / PWA) → Redirect-Modus
-      window.location.href = registerUrl
-      return
-    }
-
-    const onMessage = (e: MessageEvent) => {
-      if (e.data?.type !== 'PUSH_REGISTERED') return
-      cleanup()
-      if (e.data.permission === 'granted') {
-        setPushPermission('granted')
-        toast.success('Push-Benachrichtigungen aktiviert!')
-      } else {
-        toast.error('Push-Benachrichtigungen wurden nicht aktiviert')
+        if (granted) {
+          if (profile?.id) await OneSignal.login(profile.id)
+          const hostname = window.location.hostname
+          const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'
+          const slug = hostname.endsWith(`.${rootDomain}`)
+            ? hostname.replace(`.${rootDomain}`, '')
+            : hostname
+          OneSignal.User.addTag('gemeinde_slug', slug)
+          setPushPermission('granted')
+          toast.success('Push-Benachrichtigungen aktiviert!')
+        } else {
+          setPushPermission(Notification.permission)
+        }
+      } catch (e) {
+        console.error('[Push]', e)
+        toast.error('Push konnte nicht aktiviert werden')
+      } finally {
+        setPushLoading(false)
       }
     }
 
-    const checkClosed = setInterval(() => {
-      if (popup.closed) cleanup()
-    }, 500)
+    if (win.OneSignal) {
+      doInit(win.OneSignal)
+    } else {
+      win.OneSignalDeferred = win.OneSignalDeferred || []
+      win.OneSignalDeferred.push(doInit)
 
-    function cleanup() {
-      clearInterval(checkClosed)
-      window.removeEventListener('message', onMessage)
-      setPushLoading(false)
+      if (!document.querySelector('script[src*="OneSignalSDK.page.js"]')) {
+        const script = document.createElement('script')
+        script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js'
+        script.onerror = () => {
+          toast.error('Push konnte nicht geladen werden')
+          setPushLoading(false)
+        }
+        document.head.appendChild(script)
+      }
     }
-
-    window.addEventListener('message', onMessage)
   }
 
   return (
@@ -307,7 +294,11 @@ export default function ProfilClient({ profile, email }: { profile: FullProfile 
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-700">Push-Benachrichtigungen</p>
               <p className="text-xs text-gray-400">
-                {pushPermission === 'granted' ? 'Aktiviert' : 'Nicht aktiviert'}
+                {pushPermission === 'granted'
+                  ? 'Aktiviert'
+                  : pushPermission === 'denied'
+                    ? 'Blockiert – in Browser-Einstellungen aktivieren'
+                    : 'Nicht aktiviert'}
               </p>
             </div>
             {pushPermission === 'default' && (
