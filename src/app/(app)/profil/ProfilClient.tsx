@@ -43,8 +43,12 @@ export default function ProfilClient({ profile, email }: { profile: FullProfile 
   const [pushLoading, setPushLoading] = useState(false)
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      setPushPermission(Notification.permission)
+    // Push-Status basiert auf localStorage (Subscription auf www.dorfly.de),
+    // nicht auf Notification.permission des aktuellen Subdomains
+    if (localStorage.getItem('push_subscribed') === 'true') {
+      setPushPermission('granted')
+    } else if (typeof window !== 'undefined' && 'Notification' in window) {
+      setPushPermission(Notification.permission === 'denied' ? 'denied' : 'default')
     }
 
     // Rückkehr vom Redirect-Flow (Mobile / PWA)
@@ -52,6 +56,7 @@ export default function ProfilClient({ profile, email }: { profile: FullProfile 
     const pushResult = params.get('push_result')
     if (pushResult) {
       if (pushResult === 'granted') {
+        localStorage.setItem('push_subscribed', 'true')
         setPushPermission('granted')
         toast.success('Push-Benachrichtigungen aktiviert!')
       } else {
