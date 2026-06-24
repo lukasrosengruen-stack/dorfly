@@ -11,6 +11,21 @@ export default function PushRegisterPage() {
     const userId = params.get('userId') ?? ''
     const slug = params.get('slug') ?? ''
 
+    const returnUrl = params.get('return') ?? ''
+
+    function finish(permission: 'granted' | 'denied' | 'error') {
+      if (window.opener) {
+        // Popup-Modus (Desktop)
+        window.opener.postMessage({ type: 'PUSH_REGISTERED', permission }, '*')
+        setTimeout(() => window.close(), permission === 'granted' ? 1500 : 2000)
+      } else if (returnUrl) {
+        // Redirect-Modus (Mobile / PWA)
+        const url = new URL(returnUrl)
+        url.searchParams.set('push_result', permission)
+        window.location.href = url.toString()
+      }
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const doInit = async (OneSignal: any) => {
       try {
@@ -23,18 +38,15 @@ export default function PushRegisterPage() {
           if (userId) await OneSignal.login(userId)
           if (slug) OneSignal.User.addTag('gemeinde_slug', slug)
           setStatus('success')
-          window.opener?.postMessage({ type: 'PUSH_REGISTERED', permission: 'granted' }, '*')
-          setTimeout(() => window.close(), 1500)
+          finish('granted')
         } else {
           setStatus('denied')
-          window.opener?.postMessage({ type: 'PUSH_REGISTERED', permission: 'denied' }, '*')
-          setTimeout(() => window.close(), 2000)
+          finish('denied')
         }
       } catch (e) {
         console.error('[PushRegister]', e)
         setStatus('error')
-        window.opener?.postMessage({ type: 'PUSH_REGISTERED', permission: 'error' }, '*')
-        setTimeout(() => window.close(), 2000)
+        finish('error')
       }
     }
 

@@ -46,6 +46,21 @@ export default function ProfilClient({ profile, email }: { profile: FullProfile 
     if (typeof window !== 'undefined' && 'Notification' in window) {
       setPushPermission(Notification.permission)
     }
+
+    // Rückkehr vom Redirect-Flow (Mobile / PWA)
+    const params = new URLSearchParams(window.location.search)
+    const pushResult = params.get('push_result')
+    if (pushResult) {
+      if (pushResult === 'granted') {
+        setPushPermission('granted')
+        toast.success('Push-Benachrichtigungen aktiviert!')
+      } else {
+        toast.error('Push-Benachrichtigungen wurden nicht aktiviert')
+      }
+      const url = new URL(window.location.href)
+      url.searchParams.delete('push_result')
+      window.history.replaceState({}, '', url.toString())
+    }
   }, [])
   const nameParts = (profile?.display_name ?? '').trim().split(/\s+/)
   const [form, setForm] = useState({
@@ -99,15 +114,13 @@ export default function ProfilClient({ profile, email }: { profile: FullProfile 
       ? hostname.replace(`.${rootDomain}`, '')
       : hostname
 
-    const popup = window.open(
-      `${rootUrl}/push-register?userId=${encodeURIComponent(userId)}&slug=${encodeURIComponent(slug)}`,
-      'push-register',
-      'width=480,height=520,left=200,top=100',
-    )
+    const registerUrl = `${rootUrl}/push-register?userId=${encodeURIComponent(userId)}&slug=${encodeURIComponent(slug)}&return=${encodeURIComponent(window.location.href)}`
+
+    const popup = window.open(registerUrl, 'push-register', 'width=480,height=520,left=200,top=100')
 
     if (!popup) {
-      toast.error('Popup blockiert – bitte den Popup-Blocker für diese Seite deaktivieren')
-      setPushLoading(false)
+      // Popup blockiert (Mobile / PWA) → Redirect-Modus
+      window.location.href = registerUrl
       return
     }
 
