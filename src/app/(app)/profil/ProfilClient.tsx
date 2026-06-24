@@ -47,8 +47,10 @@ export default function ProfilClient({ profile, email }: { profile: FullProfile 
     // nicht auf Notification.permission des aktuellen Subdomains
     if (localStorage.getItem('push_subscribed') === 'true') {
       setPushPermission('granted')
-    } else if (typeof window !== 'undefined' && 'Notification' in window) {
-      setPushPermission(Notification.permission === 'denied' ? 'denied' : 'default')
+    } else {
+      // Subscription happens on www.dorfly.de (popup/redirect), so Notification.permission
+      // on this subdomain is irrelevant. Always show the Aktivieren button.
+      setPushPermission('default')
     }
 
     // Rückkehr vom Redirect-Flow (Mobile / PWA)
@@ -305,9 +307,7 @@ export default function ProfilClient({ profile, email }: { profile: FullProfile 
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-700">Push-Benachrichtigungen</p>
               <p className="text-xs text-gray-400">
-                {pushPermission === 'granted' ? 'Aktiviert' :
-                 pushPermission === 'denied' ? 'Blockiert – in Browser-Einstellungen aktivieren' :
-                 'Nicht aktiviert'}
+                {pushPermission === 'granted' ? 'Aktiviert' : 'Nicht aktiviert'}
               </p>
             </div>
             {pushPermission === 'default' && (
