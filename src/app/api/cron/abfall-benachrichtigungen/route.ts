@@ -57,6 +57,14 @@ export async function GET(req: NextRequest) {
     termineByGemeinde.set(t.gemeinde_id, [...existing, t.typ])
   }
 
+  // Gemeinde-Slugs für korrekte Notification-URLs laden
+  const gemeindeIds = [...new Set(praeferenzen.map(p => p.gemeinde_id))]
+  const { data: gemeinden } = await service
+    .from('gemeinden')
+    .select('id, slug')
+    .in('id', gemeindeIds)
+  const slugByGemeinde = new Map((gemeinden ?? []).map(g => [g.id, g.slug]))
+
   const userIds = praeferenzen.map(p => p.user_id)
   const { data: profiles } = await service
     .from('profiles')
@@ -83,9 +91,10 @@ export async function GET(req: NextRequest) {
     )
 
     // ── Push-Notification ────────────────────────────────────────────────────
+    const gemeindeSlug = slugByGemeinde.get(pref.gemeinde_id) ?? ''
     if (pref.push_aktiviert) {
       for (const label of typLabels) {
-        await sendPush(pref.user_id, label)
+        await sendPush(pref.user_id, label, gemeindeSlug)
       }
     }
 
@@ -106,7 +115,7 @@ export async function GET(req: NextRequest) {
 
 // ─── Push über OneSignal (einzelner Nutzer via external_id) ──────────────────
 
-async function sendPush(userId: string, abfallart: string) {
+async function sendPush(userId: string, abfallart: string, gemeindeSlug: string) {
   const nachricht = `Morgen wird ${abfallart} abgeholt. Tonne bitte bis 06:00 Uhr bereitstellen.`
 
   await fetch('https://onesignal.com/api/v1/notifications', {
@@ -121,7 +130,7 @@ async function sendPush(userId: string, abfallart: string) {
       target_channel: 'push',
       headings: { de: 'Abfuhr-Erinnerung', en: 'Abfuhr-Erinnerung' },
       contents: { de: nachricht, en: nachricht },
-      url: `${process.env.NEXT_PUBLIC_APP_URL}/abfallkalender`,
+      url: `https://${gemeindeSlug}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'}/abfallkalender`,
     }),
   }).catch(e => console.error('[Abfallkalender Cron] Push-Fehler:', e))
 }
