@@ -3,6 +3,9 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import type { Database } from '@/types/supabase'
 
+const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'
+const COOKIE_DOMAIN = process.env.NODE_ENV === 'production' ? `.${ROOT_DOMAIN}` : undefined
+
 export async function createClient() {
   const cookieStore = await cookies()
 
@@ -17,7 +20,7 @@ export async function createClient() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
+              cookieStore.set(name, value, COOKIE_DOMAIN ? { ...options, domain: COOKIE_DOMAIN } : options)
             )
           } catch {
             // Server component – cookies werden per Middleware gesetzt
