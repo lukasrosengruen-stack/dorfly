@@ -1,0 +1,51 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
+      "Bash(git add *)",
+      "Bash(git push *)",
+      "Bash(grep -E \"^-.*\\\\.\\(ts|js\\)$\")",
+      "Bash(npx tsc *)",
+      "PowerShell(Get-Command node -ErrorAction SilentlyContinue)",
+      "PowerShell($env:PATH)",
+      "Read(//c/Program Files/nodejs/**)",
+      "PowerShell($env:PATH = \"C:\\\\Program Files\\\\nodejs;\" + $env:PATH; cd C:\\\\Users\\\\lukas\\\\dorfly; npx tsc --noEmit 2>&1 | Select-Object -First 80)",
+      "Read(//c/Users/lukas/dorfly/src/**)",
+      "Read(//c/Users/lukas/dorfly/**)",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(xargs grep *)",
+      "Bash(git -C c:/Users/lukas/dorfly diff --stat)",
+      "Bash(git -C c:/Users/lukas/dorfly status)",
+      "Bash(git -C c:/Users/lukas/dorfly add src/app/homepage/page.tsx)",
+      "Bash(git -C c:/Users/lukas/dorfly commit -m ' *)",
+      "Bash(git -C c:/Users/lukas/dorfly push)",
+      "Read(//c/c/Users/lukas/**)",
+      "Bash(cat README.md)",
+      "Bash(cat readme.md)",
+      "Bash(vercel --version)",
+      "Bash(gh --version)",
+      "Bash(cat)",
+      "Read(//tmp/**)",
+      "Bash(grep -E \"\\\\.tsx$|^d\")",
+      "PowerShell(Get-Command npm -ErrorAction SilentlyContinue)",
+      "PowerShell($env:PATH -split \";\")",
+      "PowerShell($env:PATH = \"C:\\\\Program Files\\\\nodejs;\" + $env:PATH; cd \"c:\\\\Users\\\\lukas\\\\dorfly\"; npx vitest run --reporter=verbose 2>&1)",
+      "Bash(node -e \"const {createCanvas} = require\\('canvas'\\); console.log\\('canvas ok'\\)\")",
+      "Bash(\"/c/Program Files/nodejs/node.exe\" --experimental-vm-modules generate-icons.mjs)",
+      "Bash(git -C c:/Users/lukas/dorfly diff)",
+      "Bash(git -C c:/Users/lukas/dorfly add src/app/api/cron/abfall-benachrichtigungen/route.ts)",
+      "Bash(git -C c:/Users/lukas/dorfly push origin master)",
+      "Bash(git -C c:/Users/lukas/dorfly add src/app/\\\\\\(app\\\\\\)/abfallkalender/einstellungen/AbfallEinstellungenClient.tsx src/app/\\\\\\(app\\\\\\)/abfallkalender/einstellungen/page.tsx)",
+      "Bash(node node_modules/.bin/tsc --noEmit)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\lukas\\dorfly\\src\\features\\gewerbe",
+      "c:\\Users\\lukas\\dorfly\\src\\features\\feed",
+      "c:\\Users\\lukas\\dorfly\\src\\lib",
+      "c:\\Users\\lukas\\dorfly\\src\\components\\dashboard",
+      "c:\\Users\\lukas\\dorfly\\src\\types",
+      "c:\\Users\\lukas\\dorfly\\src\\components",
+      "c:\\Users\\lukas\\dorfly"
+    ]
+  }
+}

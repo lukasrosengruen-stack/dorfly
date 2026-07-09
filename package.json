@@ -9,7 +9,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint",
-    "db:types": "npx supabase gen types typescript --project-id jzdstuexffwsdhsaohcm --schema public > src/types/supabase.ts"
+    "db:types": "npx supabase gen types typescript --project-id hzptnylfdfibijkgtfhf --schema public > src/types/supabase.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
