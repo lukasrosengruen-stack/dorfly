@@ -60,7 +60,7 @@ export default async function FeedPage() {
 
   const authorIds = [...new Set(posts.map(p => p.author_id).filter((id): id is string => id != null))]
   const { data: authorProfiles } = authorIds.length > 0
-    ? await supabase.from('profiles').select('id, display_name, verein_name, role, avatar_url').in('id', authorIds)
+    ? await supabase.from('profiles_public').select('id, display_name, verein_name, role, avatar_url').in('id', authorIds)
     : { data: [] }
 
   const postsWithProfiles = posts.map((post) => ({

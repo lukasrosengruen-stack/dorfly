@@ -24,7 +24,7 @@ export default async function VeranstaltungenPage() {
   const { data: veranstaltungen } = profile?.gemeinde_id
     ? await supabase
         .from('posts')
-        .select('id, titel, inhalt, bild_url, veranstaltung_datum, veranstaltung_ort, channel, tag, profiles(display_name, verein_name)')
+        .select('id, titel, inhalt, bild_url, veranstaltung_datum, veranstaltung_ort, channel, tag, profiles:profiles_public!posts_author_id_fkey(display_name, verein_name)')
         .eq('gemeinde_id', profile.gemeinde_id)
         .eq('status', 'published')
         .eq('tag', 'veranstaltung')

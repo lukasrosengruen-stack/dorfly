@@ -66,7 +66,7 @@ export default function BuergermeisterClient({ fragen: initialFragen, profile, t
           oeffentlich,
           status: 'offen',
         })
-        .select('*, profiles(display_name, avatar_url)')
+        .select('*')
         .single()
 
       if (error) throw error
@@ -232,7 +232,7 @@ export default function BuergermeisterClient({ fragen: initialFragen, profile, t
                       {renderFrageText(f.frage)}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      {canAnswer ? (f.profiles?.display_name ?? 'Bürger') : 'Bürger'} · {f.created_at ? formatDistanceToNow(new Date(f.created_at), { addSuffix: true, locale: de }) : ''}
+                      Anonyme Frage · {f.created_at ? formatDistanceToNow(new Date(f.created_at), { addSuffix: true, locale: de }) : ''}
                     </p>
                   </div>
                   {expanded ? <ChevronUp className="w-4 h-4 text-gray-400 shrink-0 mt-1" aria-hidden="true" /> : <ChevronDown className="w-4 h-4 text-gray-400 shrink-0 mt-1" aria-hidden="true" />}
