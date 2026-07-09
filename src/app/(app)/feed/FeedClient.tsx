@@ -63,7 +63,7 @@ export default function FeedClient({ posts: initialPosts, profile, umfragen: ini
     : null
 
   const filtered = initialPosts.filter(p => {
-    if (cutoff && new Date(p.published_at) < cutoff) return false
+    if (cutoff && p.published_at && new Date(p.published_at) < cutoff) return false
     // Gewerbe-Posts nur für Abonnenten
     if (p.channel === 'gewerbe' && p.org_id && !gewerbeAbonnements.includes(p.org_id)) return false
     // Verein-Posts: nur für Abonnenten, außer sichtbarkeit === 'alle'

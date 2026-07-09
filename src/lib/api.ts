@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import type { UserRole } from '@/types/supabase'
+import type { UserRole } from '@/types/database'
 import type { Profile } from '@/types/database'
 import type { User } from '@supabase/supabase-js'
 

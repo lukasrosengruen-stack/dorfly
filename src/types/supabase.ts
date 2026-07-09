@@ -454,8 +454,10 @@ export type Database = {
           lat: number | null
           lng: number | null
           melder_id: string
+          nachricht_an_buerger: string | null
           notiz_intern: string | null
           status: Database["public"]["Enums"]["maengel_status"] | null
+          status_updated_at: string | null
           titel: string
           updated_at: string | null
         }
@@ -469,8 +471,10 @@ export type Database = {
           lat?: number | null
           lng?: number | null
           melder_id: string
+          nachricht_an_buerger?: string | null
           notiz_intern?: string | null
           status?: Database["public"]["Enums"]["maengel_status"] | null
+          status_updated_at?: string | null
           titel: string
           updated_at?: string | null
         }
@@ -484,8 +488,10 @@ export type Database = {
           lat?: number | null
           lng?: number | null
           melder_id?: string
+          nachricht_an_buerger?: string | null
           notiz_intern?: string | null
           status?: Database["public"]["Enums"]["maengel_status"] | null
+          status_updated_at?: string | null
           titel?: string
           updated_at?: string | null
         }

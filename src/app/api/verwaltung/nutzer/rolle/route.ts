@@ -3,7 +3,7 @@ import { withAuth, apiError } from '@/lib/api'
 import { validate, rolleZuweisenSchema } from '@/lib/validations'
 import { createServiceClient } from '@/lib/supabase/server'
 import { sendeRollenentzugEmail, sendeRollenzuweisungEmail } from '@/lib/email'
-import type { UserRole } from '@/types/supabase'
+import type { UserRole } from '@/types/database'
 
 // PATCH /api/verwaltung/nutzer/rolle – Einem bestehenden Nutzer eine Rolle direkt zuweisen
 export const PATCH = withAuth(

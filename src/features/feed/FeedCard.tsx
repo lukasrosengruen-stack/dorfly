@@ -35,6 +35,7 @@ const CHANNEL_COLORS: Record<PostChannel, string> = {
   verein:      'bg-violet-600 text-white',
   gewerbe:     'bg-orange-500 text-white',
   gemeinderat: 'bg-primary-700 text-white',
+  warnung:     'bg-red-600 text-white',
 }
 
 // ── Komponente ──────────────────────────────────────────────────────────────
@@ -64,6 +65,7 @@ export function FeedCard({ post, expanded, onToggleExpand, gemeindeName }: FeedC
     verein:      'Verein',
     gewerbe:     'Gewerbe',
     gemeinderat: 'Gemeinderat',
+    warnung:     'Warnung',
   }
 
   const badgeLabel = autor?.verein_name
@@ -126,7 +128,7 @@ export function FeedCard({ post, expanded, onToggleExpand, gemeindeName }: FeedC
               {tagMeta.label}
             </span>
             <span className="text-xs text-gray-500 ml-auto">
-              {formatDistanceToNow(new Date(post.published_at), { addSuffix: true, locale: de })}
+              {post.published_at ? formatDistanceToNow(new Date(post.published_at), { addSuffix: true, locale: de }) : ''}
             </span>
             <ReportButton inhaltTyp="post" inhaltId={post.id} />
           </div>

@@ -1,6 +1,6 @@
 import { createServiceClient, createClient } from '@/lib/supabase/server'
 import { getGemeindeSlug } from '@/lib/gemeinde'
-import type { UserRole } from '@/types/supabase'
+import type { UserRole } from '@/types/database'
 
 export interface RegistrierungsDaten {
   email?: string
