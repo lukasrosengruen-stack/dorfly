@@ -12,6 +12,9 @@
     "db:types": "npx supabase gen types typescript --project-id hzptnylfdfibijkgtfhf --schema public > src/types/supabase.ts"
   },
   "dependencies": {
+    "@capacitor/cli": "^8.4.1",
+    "@capacitor/core": "^8.4.1",
+    "@capacitor/ios": "^8.4.1",
     "@hookform/resolvers": "^5.2.2",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.104.0",
