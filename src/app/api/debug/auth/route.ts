@@ -6,6 +6,7 @@ export async function GET() {
 
   const { data: { user }, error: userError } = await supabase.auth.getUser()
 
+  // @ts-ignore – debug_auth fehlt in den generierten Typen, Route wird gelöscht
   const { data, error } = await supabase.rpc('debug_auth')
 
   return NextResponse.json({
