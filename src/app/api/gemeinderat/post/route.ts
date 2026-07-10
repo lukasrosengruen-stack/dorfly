@@ -4,7 +4,6 @@ import { withAuth } from '@/lib/api'
 import { z } from 'zod'
 
 const schema = z.object({
-  gemeindeId: z.string().uuid(),
   titel: z.string().min(1).max(200),
   inhalt: z.string().min(1).max(10000),
   tag: z.string(),
@@ -17,7 +16,9 @@ const schema = z.object({
 })
 
 export const POST = withAuth(
-  async (req, { user }) => {
+  async (req, { user, profile }) => {
+    if (!profile.gemeinde_id) return NextResponse.json({ error: 'Keine Gemeinde zugewiesen' }, { status: 400 })
+
     const body = await req.json()
     const v = schema.safeParse(body)
     if (!v.success) return NextResponse.json({ error: 'Ungültige Daten' }, { status: 400 })
@@ -25,7 +26,7 @@ export const POST = withAuth(
     const d = v.data
     const service = await createServiceClient()
     const { error } = await service.from('posts').insert({
-      gemeinde_id: d.gemeindeId,
+      gemeinde_id: profile.gemeinde_id,
       author_id: user.id,
       channel: 'gemeinderat',
       titel: d.titel,
