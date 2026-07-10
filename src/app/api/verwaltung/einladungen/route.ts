@@ -57,6 +57,7 @@ export const POST = withAuth(
         .single()
 
       if (error || !neu) {
+        console.error('[einladungen] Insert fehlgeschlagen:', { email: einladung.email, gemeindeId, fehler: error?.message })
         ergebnisse.push({ email: einladung.email, ok: false, fehler: error?.message })
         continue
       }

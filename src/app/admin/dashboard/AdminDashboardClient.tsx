@@ -138,7 +138,7 @@ export default function AdminDashboardClient({ data }: { data: DashboardData }) 
         </div>
 
         {/* Einladungen */}
-        <AdminEinladungSection gemeinden={data.gemeinden} />
+        <AdminEinladungSection gemeindeId={data.activeGemeindeId} />
 
         {/* Gemeinden */}
         <GemeindenSection gemeinden={data.gemeinden} />
