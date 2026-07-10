@@ -65,6 +65,9 @@ export async function profilAnlegen(userId: string, daten: RegistrierungsDaten =
   // Kein Token oder Einladung ungültig: Gemeinde per Subdomain-Slug ermitteln
   if (!gemeindeId) {
     const slug = await getGemeindeSlug()
+    if (slug === null) {
+      throw new Error('profilAnlegen: Kein Gemeinde-Slug vorhanden. Registrierung ohne Subdomain-Kontext nicht möglich.')
+    }
     const { data: gemeinde } = await publicClient
       .from('gemeinden')
       .select('id')

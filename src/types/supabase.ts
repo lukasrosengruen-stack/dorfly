@@ -265,6 +265,7 @@ export type Database = {
           haushalte: number | null
           homepage_url: string | null
           id: string
+          ist_oeffentlich: boolean
           logo_url: string | null
           mitteilungsblatt_url: string | null
           name: string
@@ -283,6 +284,7 @@ export type Database = {
           haushalte?: number | null
           homepage_url?: string | null
           id?: string
+          ist_oeffentlich?: boolean
           logo_url?: string | null
           mitteilungsblatt_url?: string | null
           name: string
@@ -301,6 +303,7 @@ export type Database = {
           haushalte?: number | null
           homepage_url?: string | null
           id?: string
+          ist_oeffentlich?: boolean
           logo_url?: string | null
           mitteilungsblatt_url?: string | null
           name?: string

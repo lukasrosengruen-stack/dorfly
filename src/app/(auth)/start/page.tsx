@@ -9,6 +9,7 @@ export default async function StartPage() {
   const { data: gemeinden } = await supabase
     .from('gemeinden')
     .select('id, name, slug')
+    .eq('ist_oeffentlich', true)
     .order('name', { ascending: true })
 
   const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'
