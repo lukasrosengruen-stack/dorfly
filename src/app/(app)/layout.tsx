@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getGemeinde } from '@/lib/gemeinde'
 import BottomNav from '@/components/layout/BottomNav'
+import AppInit from '@/components/AppInit'
 import { getFeatures, getBuergermeisterLabel } from '@/lib/features'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -28,6 +29,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <main id="main-content" tabIndex={-1} className="max-w-lg mx-auto pb-20 outline-none">
         {children}
       </main>
+      <AppInit />
       <BottomNav
         role={profile?.role}
         features={features}
