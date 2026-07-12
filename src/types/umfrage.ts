@@ -5,20 +5,20 @@
  * Hier nur noch Join-Typen (mit verschachtelten Daten) und Input-/Ergebnis-Typen.
  */
 
-import type { Row } from './supabase'
+import type { Tables } from './supabase'
 
-// ── Re-Export für einfachen Zugriff ──────────────────────────────────────────
-export type { FrageTyp } from './supabase'
+// ── Lokaler Typ: Fragetyp (DB-Check-Constraint auf umfrage_fragen.typ) ────────
+export type FrageTyp = 'ja_nein' | 'einzelauswahl' | 'mehrfachauswahl' | 'bewertung'
 
 // ── Umfrage mit verschachtelten Daten (kommt von Supabase-Joins) ──────────────
 
-export type UmfrageOption = Row<'umfrage_optionen'>
+export type UmfrageOption = Tables<'umfrage_optionen'>
 
-export type UmfrageFrage = Row<'umfrage_fragen'> & {
+export type UmfrageFrage = Tables<'umfrage_fragen'> & {
   umfrage_optionen?: UmfrageOption[]
 }
 
-export type Umfrage = Row<'umfragen'> & {
+export type Umfrage = Tables<'umfragen'> & {
   umfrage_fragen?: UmfrageFrage[]
 }
 
@@ -38,7 +38,7 @@ export type UmfrageAntwort = UmfrageAntwortInput
 export interface FrageErgebnis {
   frage_id: string
   frage_text: string
-  typ: Row<'umfrage_fragen'>['typ']
+  typ: Tables<'umfrage_fragen'>['typ']
   gesamt_antworten: number
   optionen: {
     label: string

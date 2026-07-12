@@ -303,7 +303,7 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
                             </div>
                           </div>
                           <p className="text-xs text-gray-400 mt-2">
-                            {formatDistanceToNow(new Date(post.published_at), { addSuffix: true, locale: de })}
+                            {post.published_at ? formatDistanceToNow(new Date(post.published_at), { addSuffix: true, locale: de }) : ''}
                           </p>
                         </div>
                       </Card>

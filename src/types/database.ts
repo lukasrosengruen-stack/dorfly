@@ -5,10 +5,15 @@
  * Nie manuell anpassen – stattdessen supabase.ts aktualisieren.
  */
 
-import type { Row } from './supabase'
+import type { Tables, Enums } from './supabase'
 
-// ── Re-Export der Enum-Typen ──────────────────────────────────────────────────
-export type { UserRole, OrgType, PostChannel, PostStatus, MaengelStatus, FrageStatus, FrageTyp } from './supabase'
+// ── Enum-Typen ────────────────────────────────────────────────────────────────
+export type UserRole     = Enums<'user_role'>
+export type OrgType      = Enums<'org_type'>
+export type PostChannel  = Enums<'post_channel'>
+export type PostStatus   = Enums<'post_status'>
+export type MaengelStatus = Enums<'maengel_status'>
+export type FrageStatus  = Enums<'frage_status'>
 export type Gewerbetreibender      = Organisation & { typ: 'gewerbe' }
 export type OrganisationMitBranche = Organisation & {
   gewerbe_branchen: Pick<Gewerbebranche, 'id' | 'name'> | null
@@ -18,23 +23,23 @@ export type VereinMitKategorie = Verein & {
 }
 
 // ── Basis-Tabellen-Typen (nur DB-Felder, keine Joins) ─────────────────────────
-export type Gemeinde            = Row<'gemeinden'>
-export type Profile             = Row<'profiles'>
-export type Organisation        = Row<'organisationen'>
-export type Gewerbebranche      = Row<'gewerbe_branchen'>
-export type GewerbeAbonnement   = Row<'gewerbe_abonnements'>
-export type Post                = Row<'posts'>
-export type Mangel              = Row<'maengel'>
-export type Frage               = Row<'fragen'>
-export type GemeinderatFrage    = Row<'gemeinderat_fragen'>
-export type Umfrage             = Row<'umfragen'>
-export type UmfrageFrage        = Row<'umfrage_fragen'>
-export type UmfrageOption       = Row<'umfrage_optionen'>
-export type UmfrageAntwort      = Row<'umfrage_antworten'>
-export type UmfrageTeilnahme    = Row<'umfrage_teilnahmen'>
-export type Verein              = Row<'vereine'>
-export type VereinKategorie     = Row<'verein_kategorien'>
-export type VereinAbonnement    = Row<'verein_abonnements'>
+export type Gemeinde            = Tables<'gemeinden'>
+export type Profile             = Tables<'profiles'>
+export type Organisation        = Tables<'organisationen'>
+export type Gewerbebranche      = Tables<'gewerbe_branchen'>
+export type GewerbeAbonnement   = Tables<'gewerbe_abonnements'>
+export type Post                = Tables<'posts'>
+export type Mangel              = Tables<'maengel'>
+export type Frage               = Tables<'fragen'>
+export type GemeinderatFrage    = Tables<'gemeinderat_fragen'>
+export type Umfrage             = Tables<'umfragen'>
+export type UmfrageFrage        = Tables<'umfrage_fragen'>
+export type UmfrageOption       = Tables<'umfrage_optionen'>
+export type UmfrageAntwort      = Tables<'umfrage_antworten'>
+export type UmfrageTeilnahme    = Tables<'umfrage_teilnahmen'>
+export type Verein              = Tables<'vereine'>
+export type VereinKategorie     = Tables<'verein_kategorien'>
+export type VereinAbonnement    = Tables<'verein_abonnements'>
 
 // ── Join-Typen (für Supabase-Queries mit .select('*, profiles(...)')) ─────────
 // Diese Typen werden verwendet wenn Supabase mehrere Tabellen zusammen lädt.
@@ -59,13 +64,13 @@ export type GemeinderatFrageMitProfil = GemeinderatFrage & {
 }
 
 // ── Abfallkalender ────────────────────────────────────────────────────────────
-export type Abfalltermin              = Row<'abfalltermine'>
-export type AbfallkalenderEinstellung = Row<'abfallkalender_einstellungen'>
-export type AbfallkalenderPraeferenz  = Row<'abfallkalender_praeferenzen'>
+export type Abfalltermin              = Tables<'abfalltermine'>
+export type AbfallkalenderEinstellung = Tables<'abfallkalender_einstellungen'>
+export type AbfallkalenderPraeferenz  = Tables<'abfallkalender_praeferenzen'>
 
 // ── Rollenverwaltung ──────────────────────────────────────────────────────────
-export type Einladung    = Row<'einladungen'>
-export type RollenLog    = Row<'rollen_log'>
+export type Einladung    = Tables<'einladungen'>
+export type RollenLog    = Tables<'rollen_log'>
 
 export type EinladungRolle  = 'buerger' | 'verein' | 'organisation' | 'gewerbe' | 'gemeinderat'
 export type EinladungStatus = 'offen' | 'angenommen' | 'abgelaufen' | 'widerrufen'

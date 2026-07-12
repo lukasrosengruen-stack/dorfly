@@ -79,7 +79,7 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            gemeindeId, titel: form.titel, inhalt: form.inhalt, tag: form.tag,
+            titel: form.titel, inhalt: form.inhalt, tag: form.tag,
             bildUrl: bild_url, bilderUrls: bilder_urls,
             publishAt, publishedAt: publishAt ?? new Date().toISOString(),
             veranstaltungDatum, veranstaltungOrt,

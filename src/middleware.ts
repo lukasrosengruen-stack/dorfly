@@ -1,32 +1,34 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
-const PUBLIC_ROUTES = ['/login', '/api/', '/auth/']
+const PUBLIC_ROUTES = ['/login', '/start', '/posts/', '/api/', '/auth/']
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'
-const DEFAULT_SLUG = process.env.NEXT_PUBLIC_DEFAULT_GEMEINDE_SLUG ?? 'ehningen'
 
-function extractSlug(hostname: string): string {
-  // Reines localhost (ohne Subdomain) → Default-Slug
-  if (hostname === 'localhost' || /^localhost:\d+$/.test(hostname)) {
-    return DEFAULT_SLUG
+function extractSlug(hostname: string): string | null {
+  // Port strippen, damit dorfly.de:3000 korrekt als Root-Domain erkannt wird
+  const host = hostname.replace(/:\d+$/, '')
+
+  // Reines localhost (ohne Subdomain) → Env-Variable oder null
+  if (host === 'localhost') {
+    return process.env.NEXT_PUBLIC_DEFAULT_GEMEINDE_SLUG ?? null
   }
 
   // *.localhost (z.B. ehningen.localhost:3000) → Subdomain extrahieren
-  if (hostname.includes('.localhost')) {
-    return hostname.split('.localhost')[0]
+  if (host.includes('.localhost')) {
+    return host.split('.localhost')[0]
   }
 
-  // Vercel Preview-Deployments → Default-Slug
-  if (hostname.includes('vercel.app')) {
-    return DEFAULT_SLUG
+  // Vercel Preview-Deployments → kein Slug
+  if (host.includes('vercel.app')) {
+    return null
   }
 
-  // Root-Domain (dorfly.de / www.dorfly.de) → Default-Slug
-  if (hostname === ROOT_DOMAIN || hostname === `www.${ROOT_DOMAIN}`) {
-    return DEFAULT_SLUG
+  // Root-Domain (dorfly.de / www.dorfly.de) → kein Slug
+  if (host === ROOT_DOMAIN || host === `www.${ROOT_DOMAIN}`) {
+    return null
   }
 
   // Subdomain (ehningen.dorfly.de) → Slug extrahieren
-  return hostname.replace(`.${ROOT_DOMAIN}`, '')
+  return host.replace(`.${ROOT_DOMAIN}`, '')
 }
 
 export default function proxy(request: NextRequest) {
@@ -35,12 +37,22 @@ export default function proxy(request: NextRequest) {
   const slug = extractSlug(hostname)
 
   const requestHeaders = new Headers(request.headers)
-  requestHeaders.set('x-gemeinde-slug', slug)
+  if (slug !== null) {
+    requestHeaders.set('x-gemeinde-slug', slug)
+  }
 
   const isPublic = PUBLIC_ROUTES.some(route => pathname.startsWith(route))
-  const hasSession = request.cookies.getAll().some(c => c.name.startsWith('sb-') && c.name.includes('-auth-token'))
 
-  if (!hasSession && !isPublic) {
+  if (isPublic) {
+    return NextResponse.next({ request: { headers: requestHeaders } })
+  }
+
+  if (slug === null) {
+    return NextResponse.redirect(new URL('/start', request.url))
+  }
+
+  const hasSession = request.cookies.getAll().some(c => c.name.startsWith('sb-') && c.name.includes('-auth-token'))
+  if (!hasSession) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 

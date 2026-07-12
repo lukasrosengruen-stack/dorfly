@@ -48,7 +48,7 @@ interface GefundenerNutzer {
 }
 
 type Props = {
-  gemeinden: { id: string; name: string }[]
+  gemeindeId: string | null
 }
 
 function statusBadge(status: EinladungStatus) {
@@ -75,8 +75,7 @@ function neueZeile(): EinladungZeile {
   return { id: String(++zeilenCounter), email: '', rolle: 'verwaltung', orgName: '', hinweis: '' }
 }
 
-export default function AdminEinladungSection({ gemeinden }: Props) {
-  const [selectedGemeindeId, setSelectedGemeindeId] = useState<string>(gemeinden[0]?.id ?? '')
+export default function AdminEinladungSection({ gemeindeId }: Props) {
   const [tab, setTab] = useState<'einladen' | 'nutzer' | 'uebersicht'>('einladen')
 
   // ── Tab: Einladen ──────────────────────────────────────────────────────────
@@ -88,7 +87,7 @@ export default function AdminEinladungSection({ gemeinden }: Props) {
   }
 
   async function einladungenSenden() {
-    if (!selectedGemeindeId) { toast.error('Bitte eine Gemeinde auswählen'); return }
+    if (!gemeindeId) { toast.error('Bitte eine Gemeinde auswählen'); return }
     const gueltig = zeilen.filter(z => z.email.trim())
     if (!gueltig.length) { toast.error('Bitte mindestens eine E-Mail eingeben'); return }
 
@@ -98,7 +97,7 @@ export default function AdminEinladungSection({ gemeinden }: Props) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          gemeinde_id: selectedGemeindeId,
+          gemeinde_id: gemeindeId,
           einladungen: gueltig.map(z => ({
             email: z.email.trim(),
             rolle: z.rolle,
@@ -133,12 +132,12 @@ export default function AdminEinladungSection({ gemeinden }: Props) {
   const [speichernLaden, setSpeichernLaden] = useState(false)
 
   async function nutzerSuchen() {
-    if (!suchEmail.trim() || !selectedGemeindeId) return
+    if (!suchEmail.trim() || !gemeindeId) return
     setSuchLaden(true)
     setGefundenerNutzer(null)
     try {
       const res = await fetch(
-        `/api/verwaltung/nutzer/suche?email=${encodeURIComponent(suchEmail.trim())}&gemeinde_id=${selectedGemeindeId}`
+        `/api/verwaltung/nutzer/suche?email=${encodeURIComponent(suchEmail.trim())}&gemeinde_id=${gemeindeId}`
       )
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`)
@@ -152,14 +151,14 @@ export default function AdminEinladungSection({ gemeinden }: Props) {
   }
 
   async function rolleSpeichern() {
-    if (!gefundenerNutzer || gefundenerNutzer === 'nicht-gefunden' || !selectedGemeindeId) return
+    if (!gefundenerNutzer || gefundenerNutzer === 'nicht-gefunden' || !gemeindeId) return
     setSpeichernLaden(true)
     try {
       const res = await fetch('/api/verwaltung/nutzer/rolle', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          gemeinde_id: selectedGemeindeId,
+          gemeinde_id: gemeindeId,
           email: suchEmail.trim(),
           neueRolle,
           organisation_name: neueOrgName.trim() || undefined,
@@ -184,10 +183,10 @@ export default function AdminEinladungSection({ gemeinden }: Props) {
   const [aktionLaden, setAktionLaden] = useState<string | null>(null)
 
   const ladeEinladungen = useCallback(async () => {
-    if (!selectedGemeindeId) return
+    if (!gemeindeId) return
     setUebersichtLaden(true)
     try {
-      const res = await fetch(`/api/verwaltung/einladungen?gemeinde_id=${selectedGemeindeId}`)
+      const res = await fetch(`/api/verwaltung/einladungen?gemeinde_id=${gemeindeId}`)
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       setEinladungen(data.einladungen ?? [])
@@ -196,7 +195,7 @@ export default function AdminEinladungSection({ gemeinden }: Props) {
     } finally {
       setUebersichtLaden(false)
     }
-  }, [selectedGemeindeId])
+  }, [gemeindeId])
 
   useEffect(() => {
     if (tab === 'uebersicht') ladeEinladungen()
@@ -208,7 +207,7 @@ export default function AdminEinladungSection({ gemeinden }: Props) {
     setSuchEmail('')
     setGefundenerNutzer(null)
     setEinladungen([])
-  }, [selectedGemeindeId])
+  }, [gemeindeId])
 
   async function widerrufen(id: string) {
     setAktionLaden(id)
@@ -242,24 +241,16 @@ export default function AdminEinladungSection({ gemeinden }: Props) {
 
   return (
     <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="px-6 py-4 border-b border-gray-100">
         <h2 className="text-base font-semibold text-gray-900">Nutzer & Einladungen</h2>
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-500 whitespace-nowrap">Gemeinde:</label>
-          <select
-            value={selectedGemeindeId}
-            onChange={e => setSelectedGemeindeId(e.target.value)}
-            className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            {gemeinden.length === 0 && <option value="">Keine Gemeinden</option>}
-            {gemeinden.map(g => (
-              <option key={g.id} value={g.id}>{g.name}</option>
-            ))}
-          </select>
-        </div>
       </div>
 
       <div className="p-6">
+        {!gemeindeId && (
+          <div className="mb-4 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+            Bitte wählen Sie oben im Dashboard eine Gemeinde aus.
+          </div>
+        )}
         {/* Tabs */}
         <div className="flex bg-gray-100 rounded-xl p-1 mb-6 gap-1">
           {([
@@ -348,7 +339,7 @@ export default function AdminEinladungSection({ gemeinden }: Props) {
               </button>
               <button
                 onClick={einladungenSenden}
-                disabled={sending || !selectedGemeindeId}
+                disabled={sending || !gemeindeId}
                 className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
               >
                 {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
@@ -372,7 +363,7 @@ export default function AdminEinladungSection({ gemeinden }: Props) {
               />
               <button
                 onClick={nutzerSuchen}
-                disabled={suchLaden || !suchEmail.trim() || !selectedGemeindeId}
+                disabled={suchLaden || !suchEmail.trim() || !gemeindeId}
                 className="flex items-center gap-2 bg-gray-900 hover:bg-gray-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors"
               >
                 {suchLaden ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}

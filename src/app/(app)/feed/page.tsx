@@ -58,14 +58,14 @@ export default async function FeedPage() {
 
   const posts = postsResult.data ?? []
 
-  const authorIds = [...new Set(posts.map((p: { author_id: string }) => p.author_id).filter(Boolean))]
+  const authorIds = [...new Set(posts.map(p => p.author_id).filter((id): id is string => id != null))]
   const { data: authorProfiles } = authorIds.length > 0
-    ? await supabase.from('profiles').select('id, display_name, verein_name, role, avatar_url').in('id', authorIds)
+    ? await supabase.from('profiles_public').select('id, display_name, verein_name, role, avatar_url').in('id', authorIds)
     : { data: [] }
 
-  const postsWithProfiles = posts.map((post: Record<string, unknown> & { author_id: string }) => ({
+  const postsWithProfiles = posts.map((post) => ({
     ...post,
-    profiles: (authorProfiles ?? []).find((p: { id: string }) => p.id === post.author_id) ?? null,
+    profiles: (authorProfiles ?? []).find(p => p.id === post.author_id) ?? null,
   })) as unknown as Parameters<typeof FeedClient>[0]['posts']
 
   const vereine = (vereineResult.data ?? [])

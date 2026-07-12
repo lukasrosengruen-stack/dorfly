@@ -126,7 +126,7 @@ export default function GewerbeProfil({ betrieb, posts, istAbonniert: initialAbo
                       Angebot
                     </span>
                     <span className="text-xs text-gray-400 ml-auto">
-                      {formatDistanceToNow(new Date(post.published_at), { addSuffix: true, locale: de })}
+                      {post.published_at ? formatDistanceToNow(new Date(post.published_at), { addSuffix: true, locale: de }) : ''}
                     </span>
                   </div>
                   <p className="text-sm text-gray-700 leading-relaxed">{post.inhalt}</p>

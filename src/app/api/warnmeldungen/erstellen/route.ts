@@ -45,6 +45,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: insertError.message }, { status: 500 })
   }
 
+  let pushWarning: string | undefined
+
   if (parsed.data.sendPush) {
     const { data: gemeinde } = await service
       .from('gemeinden')
@@ -53,26 +55,38 @@ export async function POST(req: Request) {
       .single()
 
     if (gemeinde) {
+      const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'
       const controller = new AbortController()
       const tid = setTimeout(() => controller.abort(), 5000)
-      fetch('https://onesignal.com/api/v1/notifications', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Key ${process.env.ONESIGNAL_REST_API_KEY}`,
-        },
-        body: JSON.stringify({
-          app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID,
-          filters: [{ field: 'tag', key: 'gemeinde_slug', relation: '=', value: gemeinde.slug }],
-          headings: { de: 'Warnmeldung', en: 'Warnmeldung' },
-          contents: { de: parsed.data.titel, en: parsed.data.titel },
-          url: `${process.env.NEXT_PUBLIC_APP_URL}/warnmeldungen`,
-        }),
-        signal: controller.signal,
-      }).catch((e) => console.error('[Warnmeldung] Push-Fehler:', e))
-        .finally(() => clearTimeout(tid))
+      try {
+        const pushRes = await fetch('https://onesignal.com/api/v1/notifications', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Key ${process.env.ONESIGNAL_REST_API_KEY}`,
+          },
+          body: JSON.stringify({
+            app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID,
+            filters: [{ field: 'tag', key: 'gemeinde_slug', relation: '=', value: gemeinde.slug }],
+            headings: { de: 'Warnmeldung', en: 'Warnmeldung' },
+            contents: { de: parsed.data.titel, en: parsed.data.titel },
+            url: `https://${gemeinde.slug}.${rootDomain}/warnmeldungen`,
+          }),
+          signal: controller.signal,
+        })
+        if (!pushRes.ok) {
+          const body = await pushRes.text()
+          console.error('[Warnmeldung] Push-Fehler HTTP', pushRes.status, body)
+          pushWarning = `Push fehlgeschlagen (${pushRes.status})`
+        }
+      } catch (e) {
+        console.error('[Warnmeldung] Push-Fehler:', e)
+        pushWarning = 'Push konnte nicht gesendet werden'
+      } finally {
+        clearTimeout(tid)
+      }
     }
   }
 
-  return NextResponse.json({ success: true })
+  return NextResponse.json({ success: true, ...(pushWarning && { pushWarning }) })
 }

@@ -166,22 +166,20 @@ export default async function DashboardPage() {
   const erledigteMaengel = maengel.filter(m => m.status === 'erledigt').length
   const offeneFragen = fragen.filter(f => f.status === 'offen').length
 
-  // Umfragen-Ergebnisse — N+1-Fix: 2 Bulk-Queries statt 2n Einzelabfragen
-  const umfragenIds = umfragen.map(u => u.id)
-  const [alleAntwortenResult, alleTeilnahmenResult] = umfragenIds.length > 0
-    ? await Promise.all([
-        supabase.from('umfrage_antworten').select('umfrage_id, frage_id, antwort_text, option_id').in('umfrage_id', umfragenIds),
-        supabase.from('umfrage_teilnahmen').select('umfrage_id').in('umfrage_id', umfragenIds),
+  // Umfragen-Ergebnisse — aggregierte RPC-Funktionen, eine pro Umfrage
+  type ErgebnisZeile = { frage_id: string; option_id: string | null; antwort_text: string | null; anzahl: number }
+
+  const umfragenMitErgebnissen = await Promise.all(
+    umfragen.map(async (umfrage) => {
+      const [ergebnisResult, teilnehmerResult] = await Promise.all([
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase.rpc as any)('umfrage_ergebnisse', { p_umfrage_id: umfrage.id }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase.rpc as any)('umfrage_teilnehmer_anzahl', { p_umfrage_id: umfrage.id }),
       ])
-    : [{ data: [] as { umfrage_id: string; frage_id: string; antwort_text: string | null; option_id: string | null }[] },
-       { data: [] as { umfrage_id: string }[] }]
 
-  const alleAntworten = alleAntwortenResult.data ?? []
-  const alleTeilnahmen = alleTeilnahmenResult.data ?? []
-
-  const umfragenMitErgebnissen = umfragen.map((umfrage) => {
-      const antworten = alleAntworten.filter(a => a.umfrage_id === umfrage.id)
-      const teilnehmer = alleTeilnahmen.filter(t => t.umfrage_id === umfrage.id).length
+      const antworten: ErgebnisZeile[] = ergebnisResult.data ?? []
+      const teilnehmer: number = teilnehmerResult.data ?? 0
 
       const ergebnisse: FrageErgebnis[] = (umfrage.umfrage_fragen ?? []).map((frage: {
         id: string; frage_text: string; typ: string;
@@ -189,26 +187,37 @@ export default async function DashboardPage() {
       }) => {
         const fa = antworten.filter(a => a.frage_id === frage.id)
         if (frage.typ === 'ja_nein') {
-          const ja = fa.filter(a => a.antwort_text === 'ja').length
-          const nein = fa.filter(a => a.antwort_text === 'nein').length
+          const ja   = fa.filter(a => a.antwort_text === 'ja').reduce((s, a) => s + a.anzahl, 0)
+          const nein = fa.filter(a => a.antwort_text === 'nein').reduce((s, a) => s + a.anzahl, 0)
           const g = ja + nein || 1
           return { frage_id: frage.id, frage_text: frage.frage_text, typ: 'ja_nein' as const, gesamt_antworten: ja + nein,
             optionen: [{ label: 'Ja', anzahl: ja, prozent: Math.round((ja/g)*100) }, { label: 'Nein', anzahl: nein, prozent: Math.round((nein/g)*100) }] }
         }
         if (frage.typ === 'bewertung') {
-          const werte = fa.map(a => parseInt(a.antwort_text ?? '0')).filter(v => v > 0)
-          const avg = werte.length ? werte.reduce((s, v) => s + v, 0) / werte.length : 0
+          const sumAnzahl    = fa.reduce((s, a) => s + a.anzahl, 0)
+          const sumGewichtet = fa.reduce((s, a) => s + parseInt(a.antwort_text ?? '0') * a.anzahl, 0)
+          const avg = sumAnzahl ? sumGewichtet / sumAnzahl : 0
           return { frage_id: frage.id, frage_text: frage.frage_text, typ: 'bewertung' as const,
-            gesamt_antworten: werte.length, durchschnitt: avg,
-            optionen: [1,2,3,4,5].map(v => { const a = werte.filter(w=>w===v).length; return { label: String(v), anzahl: a, prozent: Math.round((a/(werte.length||1))*100) } }) }
+            gesamt_antworten: sumAnzahl, durchschnitt: avg,
+            optionen: [1,2,3,4,5].map(v => {
+              const row = fa.find(a => parseInt(a.antwort_text ?? '') === v)
+              const a = row?.anzahl ?? 0
+              return { label: String(v), anzahl: a, prozent: Math.round((a / (sumAnzahl || 1)) * 100) }
+            }) }
         }
         const opts = (frage.umfrage_optionen ?? []).sort((a: {reihenfolge:number}, b: {reihenfolge:number}) => a.reihenfolge - b.reihenfolge)
-        const g = fa.length || 1
-        return { frage_id: frage.id, frage_text: frage.frage_text, typ: frage.typ as 'einzelauswahl'|'mehrfachauswahl', gesamt_antworten: fa.length,
-          optionen: opts.map((o: {id:string; option_text:string}) => { const a = fa.filter(x=>x.option_id===o.id).length; return { label: o.option_text, anzahl: a, prozent: Math.round((a/g)*100), option_id: o.id } }) }
+        const gesamt = fa.reduce((s, a) => s + a.anzahl, 0)
+        const g = gesamt || 1
+        return { frage_id: frage.id, frage_text: frage.frage_text, typ: frage.typ as 'einzelauswahl'|'mehrfachauswahl', gesamt_antworten: gesamt,
+          optionen: opts.map((o: {id:string; option_text:string}) => {
+            const row = fa.find(x => x.option_id === o.id)
+            const a = row?.anzahl ?? 0
+            return { label: o.option_text, anzahl: a, prozent: Math.round((a/g)*100), option_id: o.id }
+          }) }
       })
       return { umfrage, ergebnisse, teilnehmer }
     })
+  )
 
   const reichweite = gemeinde?.haushalte
     ? Math.min(100, Math.round((nutzerAnzahl / gemeinde.haushalte) * 100))

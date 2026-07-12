@@ -22,7 +22,7 @@ interface MangelKarteProps {
 }
 
 export function MangelKarte({ mangel: m }: MangelKarteProps) {
-  const meta = STATUS_META[m.status]
+  const meta = STATUS_META[m.status ?? 'offen']
   const Icon = meta.icon
 
   return (
@@ -51,7 +51,7 @@ export function MangelKarte({ mangel: m }: MangelKarteProps) {
         )}
 
         <p className="text-xs text-gray-400 mt-2">
-          {formatDistanceToNow(new Date(m.created_at), { addSuffix: true, locale: de })}
+          {m.created_at ? formatDistanceToNow(new Date(m.created_at), { addSuffix: true, locale: de }) : ''}
         </p>
       </div>
     </div>

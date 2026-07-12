@@ -62,7 +62,7 @@ export default async function MeineDatenPage() {
           {posts?.slice(0, 5).map(p => (
             <div key={p.id} className="px-4 py-3 border-b border-gray-50 last:border-0">
               <p className="text-sm font-medium text-gray-800 truncate">{p.titel}</p>
-              <p className="text-xs text-gray-400 mt-0.5">{format(new Date(p.created_at), 'd. MMM yyyy', { locale: de })}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{p.created_at ? format(new Date(p.created_at), 'd. MMM yyyy', { locale: de }) : '–'}</p>
             </div>
           ))}
           {(posts?.length ?? 0) > 5 && (
@@ -97,7 +97,7 @@ export default async function MeineDatenPage() {
               <AlertTriangle className="w-4 h-4 text-gray-400 shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-gray-700 truncate">{m.titel}</p>
-                <p className="text-xs text-gray-400">{MAENGEL_STATUS[m.status] ?? m.status}</p>
+                <p className="text-xs text-gray-400">{m.status ? (MAENGEL_STATUS[m.status] ?? m.status) : '–'}</p>
               </div>
             </div>
           ))}
@@ -109,7 +109,7 @@ export default async function MeineDatenPage() {
           {teilnahmen?.map((t, i) => (
             <div key={i} className="flex items-center gap-3 px-4 py-3 border-b border-gray-50 last:border-0">
               <BarChart2 className="w-4 h-4 text-gray-400 shrink-0" />
-              <span className="text-xs text-gray-400">{format(new Date(t.created_at), 'd. MMM yyyy', { locale: de })}</span>
+              <span className="text-xs text-gray-400">{t.created_at ? format(new Date(t.created_at), 'd. MMM yyyy', { locale: de }) : '–'}</span>
             </div>
           ))}
         </Section>

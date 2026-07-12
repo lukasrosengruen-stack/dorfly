@@ -23,7 +23,7 @@ interface Post {
 }
 
 interface Rat {
-  id: string
+  id: string | null
   display_name: string | null
   verein_name: string | null
   fraktion: string | null
@@ -206,7 +206,7 @@ export default function GemeinderatClient({ posts, raete, meineFragen, gemeindeI
               const hatGesendet = sent === rat.id
               const isExpanded = expandedRat === rat.id
               return (
-                <div key={rat.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                <div key={rat.id ?? ''} className="bg-white rounded-2xl shadow-sm overflow-hidden">
                   <div className="p-4 flex items-center gap-3">
                     <button
                       onClick={() => setExpandedRat(isExpanded ? null : rat.id)}

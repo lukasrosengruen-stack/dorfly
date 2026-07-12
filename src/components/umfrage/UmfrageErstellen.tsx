@@ -38,7 +38,7 @@ function fragenAusUmfrage(umfrage: Umfrage): FormFrage[] {
     .map(f => ({
       tempId: crypto.randomUUID(),
       frage_text: f.frage_text,
-      typ: f.typ,
+      typ: f.typ as FrageTyp,
       optionen: f.umfrage_optionen?.map(o => o.option_text) ?? ['', ''],
       bilder_urls: f.bilder_urls ?? [],
     }))
