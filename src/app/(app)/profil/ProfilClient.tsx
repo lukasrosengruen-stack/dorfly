@@ -50,6 +50,7 @@ export default function ProfilClient({ profile, email, gemeindeSlug }: { profile
         const { default: OneSignal } = await import('onesignal-cordova-plugin')
         OneSignal.initialize('93b42ea5-8ef7-4c9e-9d26-116cf64ad62d')
         OneSignal.Notifications.addEventListener('click', (event) => {
+          console.log('[PushClick] EVENT:', JSON.stringify(event))
           const pfad = (event.notification.additionalData as { pfad?: string } | null)?.pfad
           if (!pfad) return
           routerRef.current.push(pfad)
