@@ -5,7 +5,8 @@ const config: CapacitorConfig = {
   webDir: 'public',
   server: {
     url: 'https://dorfly.de',
-    cleartext: false
+    cleartext: false,
+    allowNavigation: ['*.dorfly.de']
   }
 };
 export default config;
