@@ -2,7 +2,7 @@
 
 import { Capacitor } from '@capacitor/core'
 import { toast } from 'sonner'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Profile } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
 import { updateProfil } from '@/app/actions/profil'
@@ -31,6 +31,7 @@ type FullProfile = Profile & {
 
 export default function ProfilClient({ profile, email, gemeindeSlug }: { profile: FullProfile | null; email: string | null; gemeindeSlug: string | null }) {
   const router = useRouter()
+  const routerRef = useRef(router)
   const supabase = createClient()
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -44,17 +45,27 @@ export default function ProfilClient({ profile, email, gemeindeSlug }: { profile
   const [pushLoading, setPushLoading] = useState(false)
 
   useEffect(() => {
-    const checkPermission = async () => {
+    const initAndCheck = async () => {
       if (Capacitor.isNativePlatform()) {
         const { default: OneSignal } = await import('onesignal-cordova-plugin')
+        OneSignal.initialize('93b42ea5-8ef7-4c9e-9d26-116cf64ad62d')
+        OneSignal.Notifications.addEventListener('click', (event) => {
+          const url = event.result?.url
+          if (!url) return
+          try {
+            routerRef.current.push(new URL(url).pathname)
+          } catch {
+            // ungültige URL, nichts tun
+          }
+        })
         const granted = await OneSignal.Notifications.getPermissionAsync()
         setPushPermission(granted ? 'granted' : 'default')
       } else if ('Notification' in window) {
         setPushPermission(Notification.permission)
       }
     }
-    checkPermission()
-  }, [])
+    initAndCheck()
+  }, []) // läuft einmalig beim Mount; routerRef ist eine stabile Ref-Referenz
   const nameParts = (profile?.display_name ?? '').trim().split(/\s+/)
   const [form, setForm] = useState({
     vorname:  nameParts[0] ?? '',
@@ -107,7 +118,6 @@ export default function ProfilClient({ profile, email, gemeindeSlug }: { profile
       }
       try {
         const { default: OneSignal } = await import('onesignal-cordova-plugin')
-        OneSignal.initialize('93b42ea5-8ef7-4c9e-9d26-116cf64ad62d')
         const granted = await OneSignal.Notifications.requestPermission(true)
         if (granted) {
           if (profile?.id) OneSignal.login(profile.id)
