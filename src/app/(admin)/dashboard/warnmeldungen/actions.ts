@@ -63,7 +63,8 @@ export async function createWarnmeldungAction(values: WarnmeldungFormValues): Pr
             filters: [{ field: 'tag', key: 'gemeinde_slug', relation: '=', value: gemeinde.slug }],
             headings: { de: 'Warnmeldung', en: 'Warnmeldung' },
             contents: { de: parsed.data.titel, en: parsed.data.titel },
-            url: `${process.env.NEXT_PUBLIC_APP_URL}/warnmeldungen`,
+            web_url: `${process.env.NEXT_PUBLIC_APP_URL}/warnmeldungen`,
+            data: { pfad: '/warnmeldungen' },
           }),
           signal: controller.signal,
         }).catch((e) => console.error('[Warnmeldung] Push-Fehler:', e))

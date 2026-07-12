@@ -130,7 +130,8 @@ async function sendPush(userId: string, abfallart: string, gemeindeSlug: string)
       target_channel: 'push',
       headings: { de: 'Abfuhr-Erinnerung', en: 'Abfuhr-Erinnerung' },
       contents: { de: nachricht, en: nachricht },
-      url: `https://${gemeindeSlug}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'}/abfallkalender`,
+      web_url: `https://${gemeindeSlug}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'}/abfallkalender`,
+      data: { pfad: '/abfallkalender' },
     }),
   }).catch(e => console.error('[Abfallkalender Cron] Push-Fehler:', e))
 }

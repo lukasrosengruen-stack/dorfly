@@ -29,7 +29,13 @@ export const POST = withAuth(
         ],
         headings: { de: title, en: title },
         contents: { de: message, en: message },
-        ...(url && { url: `${process.env.NEXT_PUBLIC_APP_URL}${url}` }),
+        ...(url && (() => {
+          const pfad = url.startsWith('/') ? url : `/${url}`
+          return {
+            web_url: `${process.env.NEXT_PUBLIC_APP_URL}${pfad}`,
+            data: { pfad },
+          }
+        })()),
       }),
     })
 
