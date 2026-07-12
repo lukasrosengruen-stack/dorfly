@@ -96,7 +96,8 @@ async function sendPushNotification(gemeindeSlug: string, titel: string) {
       filters: [{ field: 'tag', key: 'gemeinde_slug', relation: '=', value: gemeindeSlug }],
       headings: { de: 'DWD-Warnung', en: 'DWD-Warnung' },
       contents: { de: titel, en: titel },
-      url: `https://${gemeindeSlug}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'}/warnmeldungen`,
+      web_url: `https://${gemeindeSlug}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'}/warnmeldungen`,
+      data: { pfad: '/warnmeldungen' },
     }),
   }).catch((e) => console.error('[DWD Cron] Push-Fehler:', e))
 }

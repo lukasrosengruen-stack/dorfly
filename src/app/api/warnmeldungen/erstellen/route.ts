@@ -70,7 +70,8 @@ export async function POST(req: Request) {
             filters: [{ field: 'tag', key: 'gemeinde_slug', relation: '=', value: gemeinde.slug }],
             headings: { de: 'Warnmeldung', en: 'Warnmeldung' },
             contents: { de: parsed.data.titel, en: parsed.data.titel },
-            url: `https://${gemeinde.slug}.${rootDomain}/warnmeldungen`,
+            web_url: `https://${gemeinde.slug}.${rootDomain}/warnmeldungen`,
+            data: { pfad: '/warnmeldungen' },
           }),
           signal: controller.signal,
         })
