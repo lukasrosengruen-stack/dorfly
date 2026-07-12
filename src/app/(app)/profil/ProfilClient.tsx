@@ -1,5 +1,6 @@
 'use client'
 
+import { Capacitor } from '@capacitor/core'
 import { toast } from 'sonner'
 import { useState, useEffect } from 'react'
 import { Profile } from '@/types/database'
@@ -28,7 +29,7 @@ type FullProfile = Profile & {
   verein_name?: string | null
 }
 
-export default function ProfilClient({ profile, email }: { profile: FullProfile | null; email: string | null }) {
+export default function ProfilClient({ profile, email, gemeindeSlug }: { profile: FullProfile | null; email: string | null; gemeindeSlug: string | null }) {
   const router = useRouter()
   const supabase = createClient()
   const [editing, setEditing] = useState(false)
@@ -88,9 +89,37 @@ export default function ProfilClient({ profile, email }: { profile: FullProfile 
     setTimeout(() => { setPwDone(false); setShowPwForm(false) }, 2000)
   }
 
-  function enablePush() {
+  async function enablePush() {
     setPushLoading(true)
 
+    if (Capacitor.isNativePlatform()) {
+      if (!gemeindeSlug) {
+        toast.error('Gemeinde nicht erkannt – Push konnte nicht aktiviert werden')
+        setPushLoading(false)
+        return
+      }
+      try {
+        const { default: OneSignal } = await import('onesignal-cordova-plugin')
+        OneSignal.initialize('93b42ea5-8ef7-4c9e-9d26-116cf64ad62d')
+        const granted = await OneSignal.Notifications.requestPermission(true)
+        if (granted) {
+          if (profile?.id) OneSignal.login(profile.id)
+          OneSignal.User.addTag('gemeinde_slug', gemeindeSlug)
+          setPushPermission('granted')
+          toast.success('Push-Benachrichtigungen aktiviert!')
+        } else {
+          setPushPermission('denied')
+        }
+      } catch (e) {
+        console.error('[Push]', e)
+        toast.error('Push konnte nicht aktiviert werden')
+      } finally {
+        setPushLoading(false)
+      }
+      return
+    }
+
+    // Web-Pfad — unverändert, Slug aus Prop oder Fallback auf hostname
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const win = window as any
 
@@ -105,11 +134,13 @@ export default function ProfilClient({ profile, email }: { profile: FullProfile 
 
         if (granted) {
           if (profile?.id) await OneSignal.login(profile.id)
-          const hostname = window.location.hostname
-          const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'
-          const slug = hostname.endsWith(`.${rootDomain}`)
-            ? hostname.replace(`.${rootDomain}`, '')
-            : hostname
+          const slug = gemeindeSlug ?? (() => {
+            const hostname = window.location.hostname
+            const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'
+            return hostname.endsWith(`.${rootDomain}`)
+              ? hostname.replace(`.${rootDomain}`, '')
+              : hostname
+          })()
           OneSignal.User.addTag('gemeinde_slug', slug)
           setPushPermission('granted')
           toast.success('Push-Benachrichtigungen aktiviert!')

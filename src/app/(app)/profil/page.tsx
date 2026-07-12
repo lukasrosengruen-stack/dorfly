@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import ProfilClient from './ProfilClient'
@@ -16,5 +17,8 @@ export default async function ProfilPage() {
     .eq('id', user.id)
     .single()
 
-  return <ProfilClient profile={profile} email={user.email ?? null} />
+  const headersList = await headers()
+  const gemeindeSlug = headersList.get('x-gemeinde-slug')
+
+  return <ProfilClient profile={profile} email={user.email ?? null} gemeindeSlug={gemeindeSlug} />
 }
