@@ -50,10 +50,18 @@ export default function ProfilClient({ profile, email, gemeindeSlug }: { profile
         const { default: OneSignal } = await import('onesignal-cordova-plugin')
         OneSignal.initialize('93b42ea5-8ef7-4c9e-9d26-116cf64ad62d')
         OneSignal.Notifications.addEventListener('click', (event) => {
-          console.log('[PushClick] EVENT:', JSON.stringify(event))
-          const pfad = (event.notification.additionalData as { pfad?: string } | null)?.pfad
-          if (!pfad) return
-          routerRef.current.push(pfad)
+          const e = event as any
+          const roh = JSON.stringify(e).slice(0, 300)
+          toast(roh)
+
+          const ad = e?.notification?.additionalData
+          const data = e?.notification?.data
+          let ziel: string | undefined = ad?.pfad ?? data?.pfad
+          if (!ziel) {
+            const url: string | undefined = e?.result?.url ?? e?.notification?.launchURL
+            if (url) { try { ziel = new URL(url).pathname } catch {} }
+          }
+          if (ziel) routerRef.current.push(ziel)
         })
         const granted = await OneSignal.Notifications.getPermissionAsync()
         setPushPermission(granted ? 'granted' : 'default')
