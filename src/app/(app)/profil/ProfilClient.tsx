@@ -44,9 +44,16 @@ export default function ProfilClient({ profile, email, gemeindeSlug }: { profile
   const [pushLoading, setPushLoading] = useState(false)
 
   useEffect(() => {
-    if ('Notification' in window) {
-      setPushPermission(Notification.permission)
+    const checkPermission = async () => {
+      if (Capacitor.isNativePlatform()) {
+        const { default: OneSignal } = await import('onesignal-cordova-plugin')
+        const granted = await OneSignal.Notifications.getPermissionAsync()
+        setPushPermission(granted ? 'granted' : 'default')
+      } else if ('Notification' in window) {
+        setPushPermission(Notification.permission)
+      }
     }
+    checkPermission()
   }, [])
   const nameParts = (profile?.display_name ?? '').trim().split(/\s+/)
   const [form, setForm] = useState({
@@ -332,7 +339,7 @@ export default function ProfilClient({ profile, email, gemeindeSlug }: { profile
                     : 'Nicht aktiviert'}
               </p>
             </div>
-            {pushPermission === 'default' && (
+            {pushPermission !== 'granted' && pushPermission !== 'denied' && (
               <button
                 onClick={enablePush}
                 disabled={pushLoading}
