@@ -67,6 +67,17 @@ export const frageDeleteSchema = z.object({
 
 const urlOrEmpty = z.string().max(500).transform(v => v.trim() || null).nullable().optional()
 
+// Strenger als urlOrEmpty: erlaubt nur echte http(s)-URLs (oder leer/null).
+// Nur für logo_url verwendet — wird per Supabase-Storage-Upload befüllt und
+// in <img src={...}> gerendert, daher keine beliebigen Strings erlauben.
+const httpUrlOrEmpty = z.string().max(500)
+  .transform(v => v.trim() || null)
+  .nullable()
+  .optional()
+  .refine(v => v === null || v === undefined || /^https?:\/\//i.test(v), {
+    message: 'Muss eine http(s)-URL sein',
+  })
+
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Muss ein Hex-Farbcode sein (#rrggbb)').nullable().optional()
 
 export const gemeindeAktualisierenSchema = z.object({
@@ -80,7 +91,7 @@ export const gemeindeAktualisierenSchema = z.object({
   warncell_id: z.string().max(50).transform(v => v.trim() || null).nullable().optional(),
   primary_color: hexColor,
   accent_color:  hexColor,
-  logo_url:      urlOrEmpty,
+  logo_url:      httpUrlOrEmpty,
 })
 
 // ── Gemeinderat ───────────────────────────────────────────────────────────────
