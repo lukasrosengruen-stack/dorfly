@@ -1,4 +1,7 @@
 function relativeLuminance(hex: string): number {
+  if (!/^#[0-9a-fA-F]{6}$/.test(hex)) {
+    throw new Error(`relativeLuminance: invalid hex color "${hex}", expected format #rrggbb`)
+  }
   const channels = [0, 2, 4].map(i => parseInt(hex.slice(1 + i, 3 + i), 16) / 255)
   const linear = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
   const [r, g, b] = channels.map(linear)

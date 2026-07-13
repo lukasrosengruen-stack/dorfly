@@ -15,4 +15,14 @@ describe('getContrastRatio', () => {
     const b = getContrastRatio('#ffffff', '#0f2d6b')
     expect(a).toBeCloseTo(b, 5)
   })
+
+  it('wirft bei ungültigem Hex-Format', () => {
+    expect(() => getContrastRatio('not-a-color', '#ffffff')).toThrow()
+    expect(() => getContrastRatio('#ffffff', 'not-a-color')).toThrow()
+    expect(() => getContrastRatio('#fff', '#ffffff')).toThrow()
+  })
+
+  it('liefert ~4.5:1 für #767676 auf Weiß (WCAG-AA-Referenzpaar)', () => {
+    expect(getContrastRatio('#767676', '#ffffff')).toBeCloseTo(4.5, 1)
+  })
 })
