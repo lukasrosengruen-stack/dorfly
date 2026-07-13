@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Dorfly nutzt Ihren Standort, um den Ort eines Mangels zu bestimmen.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Dorfly greift auf Ihre Fotos zu, um ein vorhandenes Bild zu melden.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Dorfly nutzt die Kamera, um Fotos von Mängeln aufzunehmen.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
