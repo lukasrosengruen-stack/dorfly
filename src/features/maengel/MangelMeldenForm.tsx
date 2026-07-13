@@ -8,8 +8,11 @@
  */
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { X, MapPin, Camera, Loader2 } from 'lucide-react'
+import { X, MapPin, Camera as CameraIcon, Loader2 } from 'lucide-react'
 import { clsx } from 'clsx'
+import { Capacitor } from '@capacitor/core'
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
+import { Geolocation } from '@capacitor/geolocation'
 import { Profile, Mangel } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
 import { compressImage } from '@/lib/compressImage'
@@ -39,8 +42,61 @@ export function MangelMeldenForm({ profile, onClose, onSuccess }: MangelMeldenFo
     setFotoPreview(URL.createObjectURL(file))
   }
 
-  function getLocation() {
+  async function handleFotoNative() {
+    try {
+      const permission = await Camera.requestPermissions({ permissions: ['camera'] })
+      if (permission.camera === 'denied') {
+        toast.error('Kamera-Zugriff verweigert – bitte in den iOS-Einstellungen für Dorfly erlauben')
+        return
+      }
+
+      const foto = await Camera.getPhoto({
+        quality: 70,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Camera,
+      })
+      if (!foto.dataUrl) return
+
+      const blob = await fetch(foto.dataUrl).then(r => r.blob())
+      const file = new File([blob], `foto-${Date.now()}.jpg`, { type: blob.type || 'image/jpeg' })
+      setFotoFile(file)
+      setFotoPreview(foto.dataUrl)
+    } catch (e) {
+      if (e instanceof Error && /cancelled/i.test(e.message)) return
+      console.error('[Kamera]', e)
+      toast.error('Foto konnte nicht aufgenommen werden')
+    }
+  }
+
+  function handleFotoButtonClick() {
+    if (Capacitor.isNativePlatform()) {
+      handleFotoNative()
+      return
+    }
+    document.getElementById('foto-input')?.click()
+  }
+
+  async function getLocation() {
     setLocating(true)
+
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const permission = await Geolocation.requestPermissions()
+        if (permission.location === 'denied') {
+          toast.error('Standort-Zugriff verweigert – bitte in den iOS-Einstellungen für Dorfly erlauben')
+          return
+        }
+        const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true })
+        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+      } catch (e) {
+        console.error('[Standort]', e)
+        toast.error('Standort nicht verfügbar')
+      } finally {
+        setLocating(false)
+      }
+      return
+    }
+
     navigator.geolocation.getCurrentPosition(
       pos => {
         setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
@@ -182,10 +238,10 @@ export function MangelMeldenForm({ profile, onClose, onSuccess }: MangelMeldenFo
             onChange={handleFoto}
           />
           <button
-            onClick={() => document.getElementById('foto-input')?.click()}
+            onClick={handleFotoButtonClick}
             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-gray-300 text-sm font-medium text-gray-600"
           >
-            <Camera className="w-4 h-4" aria-hidden="true" />
+            <CameraIcon className="w-4 h-4" aria-hidden="true" />
             {fotoFile ? fotoFile.name : 'Foto aufnehmen'}
           </button>
 
