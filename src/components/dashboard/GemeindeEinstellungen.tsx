@@ -30,6 +30,11 @@ const DIENSTE = [
 const HEX_RE = /^#[0-9a-fA-F]{6}$/
 const MAX_LOGO_BYTES = 2 * 1024 * 1024
 const ALLOWED_LOGO_TYPES = ['image/png', 'image/jpeg', 'image/svg+xml']
+const EXT_BY_TYPE: Record<string, string> = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/svg+xml': 'svg',
+}
 
 export default function GemeindeEinstellungen({
   gemeindeId,
@@ -77,7 +82,7 @@ export default function GemeindeEinstellungen({
     setUploadingLogo(true)
     try {
       const supabase = createClient()
-      const ext = file.name.split('.').pop() ?? 'png'
+      const ext = EXT_BY_TYPE[file.type] ?? 'png'
       const path = `gemeinden/${gemeindeId}/logo_${Date.now()}.${ext}`
       const { error } = await supabase.storage.from('dorfly-media').upload(path, file, { upsert: true })
       if (error) throw error
@@ -87,11 +92,14 @@ export default function GemeindeEinstellungen({
       toast.error('Logo-Upload fehlgeschlagen')
     } finally {
       setUploadingLogo(false)
+      e.target.value = ''
     }
   }
 
   const primaryContrast = HEX_RE.test(primaryColor) ? getContrastRatio(primaryColor, '#ffffff') : null
-  const accentContrast  = HEX_RE.test(accentColor)  ? getContrastRatio(accentColor, '#ffffff')  : null
+  const accentContrast  = (HEX_RE.test(accentColor) && HEX_RE.test(primaryColor))
+    ? getContrastRatio(accentColor, primaryColor)
+    : null
 
   async function save() {
     setLoading(true)
@@ -139,7 +147,7 @@ export default function GemeindeEinstellungen({
 
             <div className="space-y-3">
               <div>
-                <label className="text-xs text-gray-500 block mb-1">Primärfarbe</label>
+                <label htmlFor="primary-color-hex" className="text-xs text-gray-500 block mb-1">Primärfarbe</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
@@ -149,6 +157,7 @@ export default function GemeindeEinstellungen({
                     aria-label="Primärfarbe auswählen"
                   />
                   <input
+                    id="primary-color-hex"
                     type="text"
                     value={primaryColor}
                     onChange={e => setPrimaryColor(e.target.value)}
@@ -157,14 +166,14 @@ export default function GemeindeEinstellungen({
                   />
                 </div>
                 {primaryContrast !== null && primaryContrast < 4.5 && (
-                  <p role="alert" className="text-xs text-amber-600 mt-1">
+                  <p role="status" className="text-xs text-amber-700 mt-1">
                     Kontrast zu Weiß ist niedrig ({primaryContrast.toFixed(1)}:1) – heller Text auf dieser Farbe könnte schwer lesbar sein.
                   </p>
                 )}
               </div>
 
               <div>
-                <label className="text-xs text-gray-500 block mb-1">Akzentfarbe</label>
+                <label htmlFor="accent-color-hex" className="text-xs text-gray-500 block mb-1">Akzentfarbe</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
@@ -174,6 +183,7 @@ export default function GemeindeEinstellungen({
                     aria-label="Akzentfarbe auswählen"
                   />
                   <input
+                    id="accent-color-hex"
                     type="text"
                     value={accentColor}
                     onChange={e => setAccentColor(e.target.value)}
@@ -182,8 +192,8 @@ export default function GemeindeEinstellungen({
                   />
                 </div>
                 {accentContrast !== null && accentContrast < 4.5 && (
-                  <p role="alert" className="text-xs text-amber-600 mt-1">
-                    Kontrast zu Weiß ist niedrig ({accentContrast.toFixed(1)}:1) – heller Text auf dieser Farbe könnte schwer lesbar sein.
+                  <p role="status" className="text-xs text-amber-700 mt-1">
+                    Kontrast zur Primärfarbe ist niedrig ({accentContrast.toFixed(1)}:1) – der Gemeindename-Schriftzug im App-Header könnte schwer lesbar sein.
                   </p>
                 )}
               </div>
