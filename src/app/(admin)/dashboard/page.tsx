@@ -126,6 +126,7 @@ export default async function DashboardPage() {
     ratsinformation_url: string | null; notfallnummern_url: string | null;
     homepage_url: string | null; mitteilungsblatt_url: string | null;
     warncell_id: string | null;
+    primary_color: string | null; accent_color: string | null; logo_url: string | null;
   } | null
 
   const service = await createServiceClient()
@@ -245,6 +246,9 @@ export default async function DashboardPage() {
                 initialHomepageUrl={gemeinde?.homepage_url ?? null}
                 initialMitteilungsblattUrl={gemeinde?.mitteilungsblatt_url ?? null}
                 initialWarncellId={gemeinde?.warncell_id ?? null}
+                initialPrimaryColor={gemeinde?.primary_color ?? null}
+                initialAccentColor={gemeinde?.accent_color ?? null}
+                initialLogoUrl={gemeinde?.logo_url ?? null}
               />
             )}
           </div>
