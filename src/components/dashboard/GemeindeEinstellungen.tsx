@@ -97,8 +97,11 @@ export default function GemeindeEinstellungen({
   }
 
   const primaryContrast = HEX_RE.test(primaryColor) ? getContrastRatio(primaryColor, '#ffffff') : null
-  const accentContrast  = (HEX_RE.test(accentColor) && HEX_RE.test(primaryColor))
+  const accentVsPrimaryContrast = (HEX_RE.test(accentColor) && HEX_RE.test(primaryColor))
     ? getContrastRatio(accentColor, primaryColor)
+    : null
+  const accentVsWhiteContrast = HEX_RE.test(accentColor)
+    ? getContrastRatio(accentColor, '#ffffff')
     : null
 
   async function save() {
@@ -191,9 +194,14 @@ export default function GemeindeEinstellungen({
                     className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
-                {accentContrast !== null && accentContrast < 4.5 && (
+                {accentVsPrimaryContrast !== null && accentVsPrimaryContrast < 4.5 && (
                   <p role="status" className="text-xs text-amber-700 mt-1">
-                    Kontrast zur Primärfarbe ist niedrig ({accentContrast.toFixed(1)}:1) – der Gemeindename-Schriftzug im App-Header könnte schwer lesbar sein.
+                    Kontrast zur Primärfarbe ist niedrig ({accentVsPrimaryContrast.toFixed(1)}:1) – der Gemeindename-Schriftzug im App-Header könnte schwer lesbar sein.
+                  </p>
+                )}
+                {accentVsWhiteContrast !== null && accentVsWhiteContrast < 4.5 && (
+                  <p role="status" className="text-xs text-amber-700 mt-1">
+                    Kontrast zu Weiß ist niedrig ({accentVsWhiteContrast.toFixed(1)}:1) – helle Schrift auf dieser Farbe (z.B. in Badges) könnte schwer lesbar sein.
                   </p>
                 )}
               </div>
