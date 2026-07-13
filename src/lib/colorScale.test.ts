@@ -37,4 +37,15 @@ describe('generateColorScale', () => {
       expect(hex).toMatch(/^#[0-9a-f]{6}$/)
     }
   })
+
+  it('wirft bei ungültigem Hex-Format', () => {
+    expect(() => generateColorScale('not-a-color')).toThrow()
+    expect(() => generateColorScale('#fff')).toThrow()
+  })
+
+  it('behandelt Schwarz, Weiß und Grau ohne Fehler', () => {
+    expect(() => generateColorScale('#000000')).not.toThrow()
+    expect(() => generateColorScale('#ffffff')).not.toThrow()
+    expect(() => generateColorScale('#808080')).not.toThrow()
+  })
 })

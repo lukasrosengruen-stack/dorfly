@@ -36,18 +36,30 @@ function hslToHex(h: number, s: number, l: number): string {
 const LIGHTER_MIX = { '50': 0.92, '100': 0.8, '200': 0.6, '300': 0.4, '400': 0.18 } as const
 const DARKER_MIX = { '600': 0.15, '700': 0.3, '800': 0.45, '900': 0.6 } as const
 
+/**
+ * Maps every value of a record through `fn`, preserving the exact key set in
+ * the type system. Used so that `ColorScale`'s key set drives both the
+ * lightness-mix table and the final hex map — adding a shade to `ColorScale`
+ * without a corresponding entry becomes a compile error instead of a
+ * silent `undefined` at runtime.
+ */
+function mapRecord<K extends string, V, R>(record: Record<K, V>, fn: (value: V, key: K) => R): Record<K, R> {
+  return Object.fromEntries(
+    (Object.entries(record) as [K, V][]).map(([key, value]) => [key, fn(value, key)]),
+  ) as Record<K, R>
+}
+
 export function generateColorScale(baseHex: string): ColorScale {
+  if (!/^#[0-9a-fA-F]{6}$/.test(baseHex)) {
+    throw new Error(`generateColorScale: invalid hex color "${baseHex}", expected format #rrggbb`)
+  }
   const { h, s, l } = hexToHsl(baseHex)
-  const scale = { '500': hslToHex(h, s, l) } as ColorScale
 
-  for (const shade of Object.keys(LIGHTER_MIX) as (keyof typeof LIGHTER_MIX)[]) {
-    const mix = LIGHTER_MIX[shade]
-    scale[shade] = hslToHex(h, s, l + (1 - l) * mix)
-  }
-  for (const shade of Object.keys(DARKER_MIX) as (keyof typeof DARKER_MIX)[]) {
-    const mix = DARKER_MIX[shade]
-    scale[shade] = hslToHex(h, s, l * (1 - mix))
+  const lightness: Record<keyof ColorScale, number> = {
+    ...mapRecord(LIGHTER_MIX, mix => l + (1 - l) * mix),
+    '500': l,
+    ...mapRecord(DARKER_MIX, mix => l * (1 - mix)),
   }
 
-  return scale
+  return mapRecord(lightness, lVal => hslToHex(h, s, lVal))
 }
