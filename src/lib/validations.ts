@@ -67,6 +67,8 @@ export const frageDeleteSchema = z.object({
 
 const urlOrEmpty = z.string().max(500).transform(v => v.trim() || null).nullable().optional()
 
+const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Muss ein Hex-Farbcode sein (#rrggbb)').nullable().optional()
+
 export const gemeindeAktualisierenSchema = z.object({
   gemeindeId: uuid,
   einwohner: z.number().int().positive().nullable(),
@@ -76,6 +78,9 @@ export const gemeindeAktualisierenSchema = z.object({
   homepage_url:         urlOrEmpty,
   mitteilungsblatt_url: urlOrEmpty,
   warncell_id: z.string().max(50).transform(v => v.trim() || null).nullable().optional(),
+  primary_color: hexColor,
+  accent_color:  hexColor,
+  logo_url:      urlOrEmpty,
 })
 
 // ── Gemeinderat ───────────────────────────────────────────────────────────────

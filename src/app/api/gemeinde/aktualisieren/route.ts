@@ -26,6 +26,9 @@ export const POST = withAuth(
         homepage_url:         v.data.homepage_url         ?? null,
         mitteilungsblatt_url: v.data.mitteilungsblatt_url ?? null,
         warncell_id:          v.data.warncell_id          ?? null,
+        primary_color:        v.data.primary_color        ?? null,
+        accent_color:         v.data.accent_color         ?? null,
+        logo_url:             v.data.logo_url             ?? null,
       })
       .eq('id', v.data.gemeindeId)
 
