@@ -21,15 +21,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect('/feed')
   }
 
-  const primaryColor = gemeinde?.primary_color ?? '#0f2d6b'
   const features = getFeatures(gemeinde)
   const { short: buergermeisterShortLabel } = getBuergermeisterLabel(gemeinde)
 
   return (
-    <div
-      className="min-h-screen bg-[#F4F6F9]"
-      style={{ '--color-primary': primaryColor } as React.CSSProperties}
-    >
+    <div className="min-h-screen bg-[#F4F6F9]">
       <main className="pb-20">
         {children}
       </main>

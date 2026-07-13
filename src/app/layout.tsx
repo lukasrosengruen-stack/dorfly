@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next'
 import { Plus_Jakarta_Sans, DM_Sans } from 'next/font/google'
 import { Toaster } from 'sonner'
+import { getGemeinde } from '@/lib/gemeinde'
+import { generateColorScale } from '@/lib/colorScale'
 import './globals.css'
 
 const jakarta = Plus_Jakarta_Sans({
@@ -36,11 +38,36 @@ export const viewport: Viewport = {
   initialScale: 1,
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+const HEX_RE = /^#[0-9a-fA-F]{6}$/
+
+function buildThemeStyle(primaryColor?: string | null, accentColor?: string | null): string | null {
+  const declarations: string[] = []
+
+  if (primaryColor && HEX_RE.test(primaryColor)) {
+    const scale = generateColorScale(primaryColor)
+    for (const [shade, hex] of Object.entries(scale)) {
+      declarations.push(`--gemeinde-primary-${shade}: ${hex};`)
+    }
+  }
+  if (accentColor && HEX_RE.test(accentColor)) {
+    const scale = generateColorScale(accentColor)
+    for (const [shade, hex] of Object.entries(scale)) {
+      declarations.push(`--gemeinde-accent-${shade}: ${hex};`)
+    }
+  }
+
+  return declarations.length > 0 ? `:root { ${declarations.join(' ')} }` : null
+}
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const gemeinde = await getGemeinde()
+  const themeStyle = buildThemeStyle(gemeinde?.primary_color, gemeinde?.accent_color)
+
   return (
     <html lang="de" className={`${jakarta.variable} ${dmSans.variable} h-full antialiased`}>
       <head>
         <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+        {themeStyle && <style dangerouslySetInnerHTML={{ __html: themeStyle }} />}
       </head>
       <body className="min-h-full bg-gray-50 font-sans">
         <a

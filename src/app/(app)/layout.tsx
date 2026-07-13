@@ -17,15 +17,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   ])
 
   const profile = profileResult.data
-  const primaryColor = gemeinde?.primary_color ?? '#0f2d6b'
   const features = getFeatures(gemeinde)
   const { short: buergermeisterShortLabel } = getBuergermeisterLabel(gemeinde)
 
   return (
-    <div
-      className="min-h-screen bg-[#F4F6F9]"
-      style={{ '--color-primary': primaryColor } as React.CSSProperties}
-    >
+    <div className="min-h-screen bg-[#F4F6F9]">
       <main id="main-content" tabIndex={-1} className="max-w-lg mx-auto pb-20 outline-none">
         {children}
       </main>
