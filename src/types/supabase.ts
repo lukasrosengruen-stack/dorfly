@@ -258,6 +258,7 @@ export type Database = {
       }
       gemeinden: {
         Row: {
+          accent_color: string | null
           bundesland: string
           created_at: string | null
           einwohner: number | null
@@ -277,6 +278,7 @@ export type Database = {
           warncell_id: string | null
         }
         Insert: {
+          accent_color?: string | null
           bundesland: string
           created_at?: string | null
           einwohner?: number | null
@@ -296,6 +298,7 @@ export type Database = {
           warncell_id?: string | null
         }
         Update: {
+          accent_color?: string | null
           bundesland?: string
           created_at?: string | null
           einwohner?: number | null
