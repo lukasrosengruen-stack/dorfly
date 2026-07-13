@@ -3,6 +3,8 @@
 import { toast } from 'sonner'
 import { useState } from 'react'
 import { Settings, Check, X, Loader2 } from 'lucide-react'
+import { getContrastRatio } from '@/lib/contrast'
+import { createClient } from '@/lib/supabase/client'
 
 interface Props {
   gemeindeId: string
@@ -13,6 +15,9 @@ interface Props {
   initialHomepageUrl: string | null
   initialMitteilungsblattUrl: string | null
   initialWarncellId: string | null
+  initialPrimaryColor: string | null
+  initialAccentColor: string | null
+  initialLogoUrl: string | null
 }
 
 const DIENSTE = [
@@ -21,6 +26,10 @@ const DIENSTE = [
   { key: 'homepage_url',         label: 'Homepage',               placeholder: 'https://www.gemeinde.de' },
   { key: 'mitteilungsblatt_url', label: 'Mitteilungsblatt',       placeholder: 'https://...' },
 ] as const
+
+const HEX_RE = /^#[0-9a-fA-F]{6}$/
+const MAX_LOGO_BYTES = 2 * 1024 * 1024
+const ALLOWED_LOGO_TYPES = ['image/png', 'image/jpeg', 'image/svg+xml']
 
 export default function GemeindeEinstellungen({
   gemeindeId,
@@ -31,6 +40,9 @@ export default function GemeindeEinstellungen({
   initialHomepageUrl,
   initialMitteilungsblattUrl,
   initialWarncellId,
+  initialPrimaryColor,
+  initialAccentColor,
+  initialLogoUrl,
 }: Props) {
   const [open, setOpen] = useState(false)
   const [einwohner, setEinwohner] = useState(String(initialEinwohner ?? ''))
@@ -42,8 +54,44 @@ export default function GemeindeEinstellungen({
     homepage_url:         initialHomepageUrl         ?? '',
     mitteilungsblatt_url: initialMitteilungsblattUrl ?? '',
   })
+  const [primaryColor, setPrimaryColor] = useState(initialPrimaryColor ?? '#0f2d6b')
+  const [accentColor, setAccentColor] = useState(initialAccentColor ?? '#e8a020')
+  const [logoUrl, setLogoUrl] = useState(initialLogoUrl ?? '')
+  const [uploadingLogo, setUploadingLogo] = useState(false)
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
+
+  async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!ALLOWED_LOGO_TYPES.includes(file.type)) {
+      toast.error('Nur PNG, JPEG oder SVG erlaubt')
+      return
+    }
+    if (file.size > MAX_LOGO_BYTES) {
+      toast.error('Datei zu groß (max. 2 MB)')
+      return
+    }
+
+    setUploadingLogo(true)
+    try {
+      const supabase = createClient()
+      const ext = file.name.split('.').pop() ?? 'png'
+      const path = `gemeinden/${gemeindeId}/logo_${Date.now()}.${ext}`
+      const { error } = await supabase.storage.from('dorfly-media').upload(path, file, { upsert: true })
+      if (error) throw error
+      const { data: { publicUrl } } = supabase.storage.from('dorfly-media').getPublicUrl(path)
+      setLogoUrl(publicUrl)
+    } catch {
+      toast.error('Logo-Upload fehlgeschlagen')
+    } finally {
+      setUploadingLogo(false)
+    }
+  }
+
+  const primaryContrast = HEX_RE.test(primaryColor) ? getContrastRatio(primaryColor, '#ffffff') : null
+  const accentContrast  = HEX_RE.test(accentColor)  ? getContrastRatio(accentColor, '#ffffff')  : null
 
   async function save() {
     setLoading(true)
@@ -56,6 +104,9 @@ export default function GemeindeEinstellungen({
           einwohner: einwohner ? parseInt(einwohner) : null,
           haushalte: haushalte ? parseInt(haushalte) : null,
           warncell_id: warncellId,
+          primary_color: primaryColor,
+          accent_color: accentColor,
+          logo_url: logoUrl || null,
           ...urls,
         }),
       })
@@ -82,6 +133,88 @@ export default function GemeindeEinstellungen({
 
       {open && (
         <div className="mt-3 bg-white border border-gray-200 rounded-xl p-4 space-y-4">
+          {/* Design */}
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Design</p>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-gray-500 block mb-1">Primärfarbe</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={HEX_RE.test(primaryColor) ? primaryColor : '#0f2d6b'}
+                    onChange={e => setPrimaryColor(e.target.value)}
+                    className="w-9 h-9 rounded-lg border border-gray-300 cursor-pointer"
+                    aria-label="Primärfarbe auswählen"
+                  />
+                  <input
+                    type="text"
+                    value={primaryColor}
+                    onChange={e => setPrimaryColor(e.target.value)}
+                    placeholder="#0f2d6b"
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+                {primaryContrast !== null && primaryContrast < 4.5 && (
+                  <p role="alert" className="text-xs text-amber-600 mt-1">
+                    Kontrast zu Weiß ist niedrig ({primaryContrast.toFixed(1)}:1) – heller Text auf dieser Farbe könnte schwer lesbar sein.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-xs text-gray-500 block mb-1">Akzentfarbe</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={HEX_RE.test(accentColor) ? accentColor : '#e8a020'}
+                    onChange={e => setAccentColor(e.target.value)}
+                    className="w-9 h-9 rounded-lg border border-gray-300 cursor-pointer"
+                    aria-label="Akzentfarbe auswählen"
+                  />
+                  <input
+                    type="text"
+                    value={accentColor}
+                    onChange={e => setAccentColor(e.target.value)}
+                    placeholder="#e8a020"
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+                {accentContrast !== null && accentContrast < 4.5 && (
+                  <p role="alert" className="text-xs text-amber-600 mt-1">
+                    Kontrast zu Weiß ist niedrig ({accentContrast.toFixed(1)}:1) – heller Text auf dieser Farbe könnte schwer lesbar sein.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-xs text-gray-500 block mb-1">Gemeindewappen / Logo</label>
+                <div className="flex items-center gap-3">
+                  {logoUrl ? (
+                    <img src={logoUrl} alt="Wappen-Vorschau" className="w-12 h-12 rounded-lg object-contain border border-gray-200 bg-white" />
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
+                      Kein Logo
+                    </div>
+                  )}
+                  <label className="cursor-pointer">
+                    <span className="text-xs font-bold text-primary-500 bg-primary-50 px-3 py-2 rounded-lg">
+                      {uploadingLogo ? 'Lädt…' : 'Bild auswählen'}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/svg+xml"
+                      className="hidden"
+                      onChange={handleLogoChange}
+                      disabled={uploadingLogo}
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Statistiken */}
           <div className="flex flex-wrap items-end gap-4">
             <div>
