@@ -61,10 +61,11 @@ export function MangelMeldenForm({ profile, onClose, onSuccess }: MangelMeldenFo
       const file = new File([blob], `foto-${Date.now()}.jpg`, { type: blob.type || 'image/jpeg' })
       setFotoFile(file)
       setFotoPreview(foto.dataUrl)
-    } catch (e) {
+    } catch (e: unknown) {
       if (e instanceof Error && /cancelled/i.test(e.message)) return
       console.error('[Kamera]', e)
-      toast.error('Foto konnte nicht aufgenommen werden')
+      const msg = e instanceof Error ? e.message : String(e)
+      toast.error('Foto fehlgeschlagen: ' + msg)
     }
   }
 
@@ -88,9 +89,10 @@ export function MangelMeldenForm({ profile, onClose, onSuccess }: MangelMeldenFo
         }
         const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true })
         setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-      } catch (e) {
+      } catch (e: unknown) {
         console.error('[Standort]', e)
-        toast.error('Standort nicht verfügbar')
+        const msg = e instanceof Error ? e.message : String(e)
+        toast.error('Standort fehlgeschlagen: ' + msg)
       } finally {
         setLocating(false)
       }
