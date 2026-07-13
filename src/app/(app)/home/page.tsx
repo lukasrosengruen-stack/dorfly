@@ -82,10 +82,21 @@ export default async function HomePage() {
     <div className="min-h-screen bg-[#f5f7fc]">
       {/* Header */}
       <div className="bg-primary-500 px-6 pt-14 pb-6">
-        <p className="text-[10px] font-bold tracking-[3px] text-gold-500 uppercase">{gemeindeName}</p>
-        <h1 className="text-white font-extrabold text-[28px] mt-1.5 leading-snug">
-          Guten Morgen,<br />{vorname}!
-        </h1>
+        <div className="flex items-center gap-3">
+          {gemeinde?.logo_url && (
+            <img
+              src={gemeinde.logo_url}
+              alt=""
+              className="w-10 h-10 rounded-lg object-contain bg-white/10 p-1 shrink-0"
+            />
+          )}
+          <div>
+            <p className="text-[10px] font-bold tracking-[3px] text-gold-500 uppercase">{gemeindeName}</p>
+            <h1 className="text-white font-extrabold text-[28px] mt-1.5 leading-snug">
+              Guten Morgen,<br />{vorname}!
+            </h1>
+          </div>
+        </div>
         <p className="text-white/60 text-[13px] mt-1.5">Was möchtest du heute tun?</p>
       </div>
 
