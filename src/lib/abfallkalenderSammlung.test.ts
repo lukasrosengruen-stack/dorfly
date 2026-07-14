@@ -32,12 +32,12 @@ describe('SAMMLUNG_ART_OPTIONEN / SAMMLUNG_ART_CONFIG', () => {
 })
 
 describe('mapSammlungPostsZuTerminen', () => {
-  it('mappt einen veröffentlichten Sammlungs-Post auf einen Kalender-Termin', () => {
+  it('mappt einen veröffentlichten Sammlungs-Post auf einen Kalender-Termin und trennt Tag und Zeitpunkt', () => {
     const result = mapSammlungPostsZuTerminen([
-      { id: 'p1', sammlung_art: 'altpapier', sammlung_datum: '2026-08-01', sammlung_organisator: 'TSV Musterdorf' },
+      { id: 'p1', sammlung_art: 'altpapier', sammlung_datum: '2026-08-01T09:00:00+00:00', sammlung_organisator: 'TSV Musterdorf' },
     ])
     expect(result).toEqual([
-      { id: 'p1', typ: 'sammlung_altpapier', datum: '2026-08-01', organisator: 'TSV Musterdorf' },
+      { id: 'p1', typ: 'sammlung_altpapier', datum: '2026-08-01', zeitpunkt: '2026-08-01T09:00:00+00:00', organisator: 'TSV Musterdorf' },
     ])
   })
 

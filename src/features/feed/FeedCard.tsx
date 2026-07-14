@@ -6,7 +6,7 @@
  * Zustandsfrei: bekommt alles per Props.
  * Expand/Collapse wird durch den Parent (FeedClient) verwaltet.
  */
-import { Calendar, MapPin, Images, Pin } from 'lucide-react'
+import { Calendar, MapPin, Images, Pin, Users } from 'lucide-react'
 import { clsx } from 'clsx'
 import { formatDistanceToNow, format } from 'date-fns'
 import { de } from 'date-fns/locale'
@@ -19,13 +19,14 @@ import { useState } from 'react'
 
 // ── Typen & Konstanten ──────────────────────────────────────────────────────
 
-const TAGS = ['nachricht', 'veranstaltung', 'bekanntmachung', 'eigene_position', 'fraktionsposition'] as const
+const TAGS = ['nachricht', 'veranstaltung', 'bekanntmachung', 'sammlung', 'eigene_position', 'fraktionsposition'] as const
 type PostTag = typeof TAGS[number]
 
 const TAG_META: Record<PostTag, { label: string; color: string }> = {
   nachricht:         { label: 'Nachricht',         color: 'bg-primary-100 text-primary-700' },
   veranstaltung:     { label: 'Veranstaltung',     color: 'bg-purple-100 text-purple-700' },
   bekanntmachung:    { label: 'Bekanntmachung',    color: 'bg-amber-100 text-amber-700' },
+  sammlung:          { label: 'Sammlung',          color: 'bg-emerald-100 text-emerald-700' },
   eigene_position:   { label: 'Eigene Position',   color: 'bg-teal-100 text-teal-700' },
   fraktionsposition: { label: 'Fraktionsposition', color: 'bg-sky-100 text-sky-700' },
 }
@@ -149,6 +150,23 @@ export function FeedCard({ post, expanded, onToggleExpand, gemeindeName }: FeedC
                 <div className="flex items-center gap-1.5">
                   <MapPin className="w-4 h-4 text-purple-600 shrink-0" />
                   <span className="text-sm text-purple-700">{post.veranstaltung_ort}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {post.sammlung_datum && (
+            <div className="mt-2 px-3 py-2 bg-emerald-50 rounded-xl space-y-1">
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span className="text-sm text-emerald-700 font-bold">
+                  {format(new Date(post.sammlung_datum), 'EEEE, d. MMMM yyyy · HH:mm', { locale: de })} Uhr
+                </span>
+              </div>
+              {post.sammlung_organisator && (
+                <div className="flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span className="text-sm text-emerald-700">{post.sammlung_organisator}</span>
                 </div>
               )}
             </div>

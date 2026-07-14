@@ -33,6 +33,11 @@ export async function GET(req: NextRequest) {
   const morgen = new Date()
   morgen.setDate(morgen.getDate() + 1)
   const morgenStr = morgen.toISOString().slice(0, 10) // 'YYYY-MM-DD'
+  // sammlung_datum ist timestamptz (Datum + Uhrzeit) — exakter String-Vergleich
+  // würde nur Mitternacht treffen, daher Bereich [morgen, übermorgen) verwenden.
+  const uebermorgen = new Date(morgen)
+  uebermorgen.setDate(uebermorgen.getDate() + 1)
+  const uebermorgenStr = uebermorgen.toISOString().slice(0, 10)
 
   // Alle Nutzer mit aktivierten Präferenzen laden
   const { data: praeferenzen, error: praeferenzenError } = await service
@@ -49,10 +54,11 @@ export async function GET(req: NextRequest) {
     service.from('abfalltermine').select('gemeinde_id, typ').eq('datum', morgenStr),
     service
       .from('posts')
-      .select('gemeinde_id, sammlung_art, sammlung_organisator')
+      .select('gemeinde_id, sammlung_art, sammlung_datum, sammlung_organisator')
       .eq('tag', 'sammlung')
       .eq('status', 'published')
-      .eq('sammlung_datum', morgenStr),
+      .gte('sammlung_datum', morgenStr)
+      .lt('sammlung_datum', uebermorgenStr),
   ])
 
   if ((!morgenTermine || morgenTermine.length === 0) && (!morgenSammlungen || morgenSammlungen.length === 0)) {
@@ -66,12 +72,21 @@ export async function GET(req: NextRequest) {
     termineByGemeinde.set(t.gemeinde_id, [...existing, t.typ])
   }
 
-  // Gemeinde → Sammlungen-Map aufbauen (Art + Organisator, mehrere pro Gemeinde möglich)
-  const sammlungenByGemeinde = new Map<string, { art: SammlungArtSchluessel; organisator: string }[]>()
+  // Gemeinde → Sammlungen-Map aufbauen (Art + Uhrzeit + Organisator, mehrere pro Gemeinde möglich)
+  const sammlungenByGemeinde = new Map<string, { art: SammlungArtSchluessel; uhrzeit: string | null; organisator: string }[]>()
   for (const s of morgenSammlungen ?? []) {
     if (!s.sammlung_art) continue
     const existing = sammlungenByGemeinde.get(s.gemeinde_id) ?? []
-    existing.push({ art: s.sammlung_art as SammlungArtSchluessel, organisator: s.sammlung_organisator ?? 'unbekannt' })
+    existing.push({
+      art: s.sammlung_art as SammlungArtSchluessel,
+      // Server läuft nicht notwendigerweise in deutscher Zeitzone (Vercel-Funktionen
+      // sind i.d.R. UTC) — explizit auf Europe/Berlin formatieren statt UTC-Uhrzeit
+      // aus dem ISO-String zu schneiden.
+      uhrzeit: s.sammlung_datum
+        ? new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Berlin' }).format(new Date(s.sammlung_datum))
+        : null,
+      organisator: s.sammlung_organisator ?? 'unbekannt',
+    })
     sammlungenByGemeinde.set(s.gemeinde_id, existing)
   }
 
@@ -113,7 +128,7 @@ export async function GET(req: NextRequest) {
       t => `${ABFALL_TYP_CONFIG[t as AbfallTypSchluessel]?.label ?? t} wird abgeholt`,
     )
     const sammlungZeilen = betroffeneSammlungen.map(
-      s => `${SAMMLUNG_ART_CONFIG[s.art].label} (organisiert von ${s.organisator})`,
+      s => `${SAMMLUNG_ART_CONFIG[s.art].label}${s.uhrzeit ? ` um ${s.uhrzeit} Uhr` : ''} (organisiert von ${s.organisator})`,
     )
     const alleZeilen = [...abfuhrZeilen, ...sammlungZeilen]
 
@@ -126,7 +141,8 @@ export async function GET(req: NextRequest) {
       }
       for (const s of betroffeneSammlungen) {
         const label = SAMMLUNG_ART_CONFIG[s.art].label
-        await sendPush(pref.user_id, `Morgen findet die ${label} statt (organisiert von ${s.organisator}).`, gemeindeSlug)
+        const zeit = s.uhrzeit ? ` um ${s.uhrzeit} Uhr` : ''
+        await sendPush(pref.user_id, `Morgen findet die ${label}${zeit} statt (organisiert von ${s.organisator}).`, gemeindeSlug)
       }
     }
 

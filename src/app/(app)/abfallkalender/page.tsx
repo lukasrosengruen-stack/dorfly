@@ -30,6 +30,9 @@ export default async function AbfallkalenderPage() {
   // 90 Tage Zeitraum (maximales Filter-Fenster)
   const start = now.toISOString().slice(0, 10)
   const end = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+  // sammlung_datum ist timestamptz (Datum + Uhrzeit) — obere Grenze muss exklusiv sein
+  // (ein Tag später), sonst fallen Sammlungen am letzten Tag nach Mitternacht heraus.
+  const endExklusiv = new Date(now.getTime() + 91 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
   const [termineResult, sammlungPostsResult, praeferenzenResult, einstellungenResult] = await Promise.all([
     gemeindeId
@@ -49,7 +52,7 @@ export default async function AbfallkalenderPage() {
           .eq('tag', 'sammlung')
           .eq('status', 'published')
           .gte('sammlung_datum', start)
-          .lte('sammlung_datum', end)
+          .lt('sammlung_datum', endExklusiv)
           .order('sammlung_datum', { ascending: true })
       : Promise.resolve({ data: [] }),
     gemeindeId

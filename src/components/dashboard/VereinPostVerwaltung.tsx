@@ -47,14 +47,14 @@ const TAGS = ['nachricht', 'veranstaltung', 'bekanntmachung', 'sammlung'] as con
 type FormState = {
   titel: string; inhalt: string; tag: string
   veranstaltung_datum: string; veranstaltung_uhrzeit: string; veranstaltung_ort: string
-  sammlungArt: string; sammlungDatum: string; sammlungOrganisator: string
+  sammlungArt: string; sammlungDatum: string; sammlungUhrzeit: string; sammlungOrganisator: string
   geplant: boolean; scheduled_date: string; scheduled_time: string
 }
 
 const emptyForm: FormState = {
   titel: '', inhalt: '', tag: 'nachricht',
   veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '',
-  sammlungArt: '', sammlungDatum: '', sammlungOrganisator: '',
+  sammlungArt: '', sammlungDatum: '', sammlungUhrzeit: '', sammlungOrganisator: '',
   geplant: false, scheduled_date: '', scheduled_time: '',
 }
 
@@ -118,7 +118,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
     setForm({
       titel: post.titel, inhalt: post.inhalt, tag: post.tag ?? 'nachricht',
       veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '',
-      sammlungArt: '', sammlungDatum: '', sammlungOrganisator: '',
+      sammlungArt: '', sammlungDatum: '', sammlungUhrzeit: '', sammlungOrganisator: '',
       geplant: hasFutureSchedule,
       scheduled_date: hasFutureSchedule ? post.publish_at!.split('T')[0] : '',
       scheduled_time: hasFutureSchedule ? (post.publish_at!.split('T')[1]?.slice(0, 5) ?? '') : '',
@@ -174,7 +174,8 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
             ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null,
           veranstaltungOrt: form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null,
           sammlungArt: form.tag === 'sammlung' ? form.sammlungArt : undefined,
-          sammlungDatum: form.tag === 'sammlung' ? form.sammlungDatum : undefined,
+          sammlungDatum: form.tag === 'sammlung' && form.sammlungDatum
+            ? new Date(`${form.sammlungDatum}T${form.sammlungUhrzeit || '00:00'}`).toISOString() : undefined,
           sammlungOrganisator: form.tag === 'sammlung' ? form.sammlungOrganisator : undefined,
         }),
       })
@@ -362,11 +363,19 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
                         ))}
                       </select>
                     </div>
-                    <div>
-                      <label htmlFor="sammlung-datum" className="block text-xs font-bold text-gray-500 mb-1">Datum</label>
-                      <input id="sammlung-datum" type="date" value={form.sammlungDatum}
-                        onChange={e => setForm(f => ({ ...f, sammlungDatum: e.target.value }))}
-                        className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label htmlFor="sammlung-datum" className="block text-xs font-bold text-gray-500 mb-1">Datum</label>
+                        <input id="sammlung-datum" type="date" value={form.sammlungDatum}
+                          onChange={e => setForm(f => ({ ...f, sammlungDatum: e.target.value }))}
+                          className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                      </div>
+                      <div>
+                        <label htmlFor="sammlung-uhrzeit" className="block text-xs font-bold text-gray-500 mb-1">Anfangszeit</label>
+                        <input id="sammlung-uhrzeit" type="time" value={form.sammlungUhrzeit}
+                          onChange={e => setForm(f => ({ ...f, sammlungUhrzeit: e.target.value }))}
+                          className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                      </div>
                     </div>
                     <div>
                       <label htmlFor="sammlung-organisator" className="block text-xs font-bold text-gray-500 mb-1">Organisation/Verein</label>

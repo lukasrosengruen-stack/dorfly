@@ -38,7 +38,7 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
     tag: (defaultChannel === 'gemeinderat' ? 'eigene_position' : 'nachricht') as PostTag,
     channel: (defaultChannel ?? 'gemeinde') as 'gemeinde' | 'verein' | 'gewerbe' | 'gemeinderat',
     veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '',
-    sammlung_art: '', sammlung_datum: '', sammlung_organisator: '',
+    sammlung_art: '', sammlung_datum: '', sammlung_uhrzeit: '', sammlung_organisator: '',
     pinned: false, push: false, geplant: false, scheduled_date: '', scheduled_time: '',
   })
   const supabase = createClient()
@@ -70,7 +70,7 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
       tag: defaultChannel === 'gemeinderat' ? 'eigene_position' : 'nachricht',
       channel: (defaultChannel ?? 'gemeinde') as 'gemeinde' | 'verein' | 'gewerbe' | 'gemeinderat',
       veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '',
-      sammlung_art: '', sammlung_datum: '', sammlung_organisator: '',
+      sammlung_art: '', sammlung_datum: '', sammlung_uhrzeit: '', sammlung_organisator: '',
       pinned: false, push: false, geplant: false, scheduled_date: '', scheduled_time: '',
     })
     setBildFiles([]); setBildPreviews([]); setBildrechteBestaetigt(false)
@@ -88,6 +88,8 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
       const veranstaltungDatum = form.tag === 'veranstaltung' && form.veranstaltung_datum
         ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null
       const veranstaltungOrt = form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null
+      const sammlungDatum = form.tag === 'sammlung' && form.sammlung_datum
+        ? new Date(`${form.sammlung_datum}T${form.sammlung_uhrzeit || '00:00'}`).toISOString() : null
 
       if (form.channel === 'gemeinderat') {
         const res = await fetch('/api/gemeinderat/post', {
@@ -112,7 +114,7 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
           veranstaltung_datum: veranstaltungDatum,
           veranstaltung_ort: veranstaltungOrt,
           sammlung_art: form.tag === 'sammlung' ? form.sammlung_art : null,
-          sammlung_datum: form.tag === 'sammlung' ? form.sammlung_datum : null,
+          sammlung_datum: sammlungDatum,
           sammlung_organisator: form.tag === 'sammlung' ? form.sammlung_organisator : null,
         }).select('id').single()
         if (error) throw error
@@ -214,11 +216,19 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <label htmlFor="post-sammlung-datum" className="block text-xs font-bold text-gray-500 mb-1">Datum</label>
-                    <input id="post-sammlung-datum" type="date" value={form.sammlung_datum}
-                      onChange={e => setForm(f => ({ ...f, sammlung_datum: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="post-sammlung-datum" className="block text-xs font-bold text-gray-500 mb-1">Datum</label>
+                      <input id="post-sammlung-datum" type="date" value={form.sammlung_datum}
+                        onChange={e => setForm(f => ({ ...f, sammlung_datum: e.target.value }))}
+                        className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                    </div>
+                    <div>
+                      <label htmlFor="post-sammlung-uhrzeit" className="block text-xs font-bold text-gray-500 mb-1">Anfangszeit</label>
+                      <input id="post-sammlung-uhrzeit" type="time" value={form.sammlung_uhrzeit}
+                        onChange={e => setForm(f => ({ ...f, sammlung_uhrzeit: e.target.value }))}
+                        className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                    </div>
                   </div>
                   <div>
                     <label htmlFor="post-sammlung-organisator" className="block text-xs font-bold text-gray-500 mb-1">Organisation/Verein</label>

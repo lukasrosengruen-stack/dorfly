@@ -48,9 +48,17 @@ export interface SammlungTermin {
   id: string
   typ: string
   datum: string
+  zeitpunkt: string
   organisator: string | null
 }
 
+/**
+ * sammlung_datum ist ein timestamptz (Datum + Uhrzeit, analog veranstaltung_datum).
+ * `datum` wird auf den reinen Kalendertag gekürzt, damit die Tages-Gruppierung im
+ * Bürger-Kalender (die auf exakten String-Gleichheit von `datum` beruht) für
+ * Sammlungen genauso funktioniert wie für die tagesgenauen Abfuhrtermine.
+ * `zeitpunkt` behält den vollen Zeitstempel für die Uhrzeit-Anzeige.
+ */
 export function mapSammlungPostsZuTerminen(posts: SammlungPost[]): SammlungTermin[] {
   return posts
     .filter((p): p is SammlungPost & { sammlung_art: SammlungArtSchluessel; sammlung_datum: string } =>
@@ -58,7 +66,8 @@ export function mapSammlungPostsZuTerminen(posts: SammlungPost[]): SammlungTermi
     .map(p => ({
       id: p.id,
       typ: sammlungPraeferenzSchluessel(p.sammlung_art),
-      datum: p.sammlung_datum,
+      datum: p.sammlung_datum.slice(0, 10),
+      zeitpunkt: p.sammlung_datum,
       organisator: p.sammlung_organisator,
     }))
 }

@@ -14,6 +14,7 @@ interface Termin {
   id: string
   typ: string
   datum: string
+  zeitpunkt?: string | null
   organisator?: string | null
 }
 
@@ -200,6 +201,7 @@ export default function AbfallkalenderClient({
                         </p>
                         {termin.organisator && (
                           <p className="text-xs text-gray-500 mt-0.5">
+                            {termin.zeitpunkt && `${format(parseISO(termin.zeitpunkt), 'HH:mm', { locale: de })} Uhr · `}
                             organisiert von {termin.organisator}
                           </p>
                         )}

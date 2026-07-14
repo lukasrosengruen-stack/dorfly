@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { notFound } from 'next/navigation'
 import { format } from 'date-fns'
 import { de } from 'date-fns/locale'
-import { Calendar, MapPin, MessageSquare } from 'lucide-react'
+import { Calendar, MapPin, MessageSquare, Users } from 'lucide-react'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 
@@ -14,7 +14,7 @@ const supabase = createClient(
 async function getPost(id: string) {
   const { data } = await supabase
     .from('posts')
-    .select('id, titel, inhalt, bild_url, bilder_urls, tag, channel, veranstaltung_datum, veranstaltung_ort, published_at, gemeinde_id, profiles(display_name, verein_name), gemeinden(name)')
+    .select('id, titel, inhalt, bild_url, bilder_urls, tag, channel, veranstaltung_datum, veranstaltung_ort, sammlung_datum, sammlung_organisator, published_at, gemeinde_id, profiles(display_name, verein_name), gemeinden(name)')
     .eq('id', id)
     .eq('status', 'published')
     .single()
@@ -54,9 +54,10 @@ const TAG_COLORS: Record<string, string> = {
   nachricht:      'bg-primary-100 text-primary-700',
   veranstaltung:  'bg-purple-100 text-purple-700',
   bekanntmachung: 'bg-amber-100 text-amber-700',
+  sammlung:       'bg-emerald-100 text-emerald-700',
 }
 const TAG_LABELS: Record<string, string> = {
-  nachricht: 'Nachricht', veranstaltung: 'Veranstaltung', bekanntmachung: 'Bekanntmachung',
+  nachricht: 'Nachricht', veranstaltung: 'Veranstaltung', bekanntmachung: 'Bekanntmachung', sammlung: 'Sammlung',
 }
 
 export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
@@ -115,6 +116,23 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                 <div className="flex items-center gap-1.5">
                   <MapPin className="w-4 h-4 text-purple-600 shrink-0" />
                   <span className="text-sm text-purple-700">{post.veranstaltung_ort}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {post.sammlung_datum && (
+            <div className="mb-4 px-3 py-2 bg-emerald-50 rounded-xl space-y-1">
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span className="text-sm text-emerald-700 font-bold">
+                  {format(new Date(post.sammlung_datum), 'EEEE, d. MMMM yyyy · HH:mm', { locale: de })} Uhr
+                </span>
+              </div>
+              {post.sammlung_organisator && (
+                <div className="flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span className="text-sm text-emerald-700">{post.sammlung_organisator}</span>
                 </div>
               )}
             </div>
