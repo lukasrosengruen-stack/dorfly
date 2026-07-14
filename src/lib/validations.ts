@@ -267,13 +267,19 @@ export const vereinPostSchema = z.object({
   vereinId: uuid,
   titel: z.string().min(1).max(200),
   inhalt: z.string().min(1).max(10000),
-  tag: z.enum(['nachricht', 'veranstaltung', 'bekanntmachung']).optional(),
+  tag: z.enum(['nachricht', 'veranstaltung', 'bekanntmachung', 'sammlung']).optional(),
   bildUrl: z.string().nullable().optional(),
   bilderUrls: z.array(z.string()).optional(),
   publishAt: z.string().nullable().optional(),
   veranstaltungDatum: z.string().nullable().optional(),
   veranstaltungOrt: z.string().nullable().optional(),
-})
+  sammlungArt: z.enum(['altpapier', 'altkleider', 'altglas', 'schrott']).optional(),
+  sammlungDatum: z.string().optional(),
+  sammlungOrganisator: z.string().min(1).max(200).optional(),
+}).refine(
+  data => data.tag !== 'sammlung' || (data.sammlungArt && data.sammlungDatum && data.sammlungOrganisator),
+  { message: 'Sammlungsart, Datum und Organisator sind bei Kategorie "Sammlung" erforderlich', path: ['sammlungArt'] },
+)
 
 export const vereinPostUpdateSchema = z.object({
   postId: uuid,
