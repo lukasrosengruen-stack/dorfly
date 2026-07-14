@@ -1,7 +1,9 @@
+// src/app/api/cron/abfall-benachrichtigungen/route.ts
 /**
  * Täglicher Cronjob: Abfallkalender-Benachrichtigungen
  *
- * Sendet Push-Notifications und E-Mails an Nutzer, die morgen eine Abfuhr haben.
+ * Sendet Push-Notifications und E-Mails an Nutzer, die morgen eine Abfuhr
+ * oder eine abonnierte Sammlung (Altpapier/Altkleider/Altglas/Schrott) haben.
  * Wird per Vercel Cron täglich um 18:00 Uhr MEZ aufgerufen (vercel.json).
  *
  * Hinweis: Die individuelle notificationTime je Nutzer wird gespeichert, aber da
@@ -15,6 +17,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { ABFALL_TYP_CONFIG } from '@/lib/icsParser'
 import type { AbfallTypSchluessel } from '@/lib/icsParser'
+import { SAMMLUNG_ART_CONFIG, sammlungPraeferenzSchluessel } from '@/lib/abfallkalenderSammlung'
+import type { SammlungArtSchluessel } from '@/lib/abfallkalenderSammlung'
 import { Resend } from 'resend'
 
 export async function GET(req: NextRequest) {
@@ -41,20 +45,34 @@ export async function GET(req: NextRequest) {
   }
 
   // Alle morgen anfallenden Termine laden (einmalig, dann per Code filtern)
-  const { data: morgenTermine } = await service
-    .from('abfalltermine')
-    .select('gemeinde_id, typ')
-    .eq('datum', morgenStr)
+  const [{ data: morgenTermine }, { data: morgenSammlungen }] = await Promise.all([
+    service.from('abfalltermine').select('gemeinde_id, typ').eq('datum', morgenStr),
+    service
+      .from('posts')
+      .select('gemeinde_id, sammlung_art, sammlung_organisator')
+      .eq('tag', 'sammlung')
+      .eq('status', 'published')
+      .eq('sammlung_datum', morgenStr),
+  ])
 
-  if (!morgenTermine || morgenTermine.length === 0) {
+  if ((!morgenTermine || morgenTermine.length === 0) && (!morgenSammlungen || morgenSammlungen.length === 0)) {
     return NextResponse.json({ ok: true, versendet: 0, nachricht: 'Keine Termine morgen' })
   }
 
   // Gemeinde → Termintypen-Map aufbauen
   const termineByGemeinde = new Map<string, string[]>()
-  for (const t of morgenTermine) {
+  for (const t of morgenTermine ?? []) {
     const existing = termineByGemeinde.get(t.gemeinde_id) ?? []
     termineByGemeinde.set(t.gemeinde_id, [...existing, t.typ])
+  }
+
+  // Gemeinde → Sammlungen-Map aufbauen (Art + Organisator, mehrere pro Gemeinde möglich)
+  const sammlungenByGemeinde = new Map<string, { art: SammlungArtSchluessel; organisator: string }[]>()
+  for (const s of morgenSammlungen ?? []) {
+    if (!s.sammlung_art) continue
+    const existing = sammlungenByGemeinde.get(s.gemeinde_id) ?? []
+    existing.push({ art: s.sammlung_art as SammlungArtSchluessel, organisator: s.sammlung_organisator ?? 'unbekannt' })
+    sammlungenByGemeinde.set(s.gemeinde_id, existing)
   }
 
   // Gemeinde-Slugs für korrekte Notification-URLs laden
@@ -78,23 +96,37 @@ export async function GET(req: NextRequest) {
 
   for (const pref of praeferenzen) {
     const termineGemeinde = termineByGemeinde.get(pref.gemeinde_id) ?? []
-    if (termineGemeinde.length === 0) continue
+    const sammlungenGemeinde = sammlungenByGemeinde.get(pref.gemeinde_id) ?? []
 
-    // Schnittmenge: Welche der ausgewählten Typen werden morgen abgeholt?
-    const betroffeneTypen = (pref.ausgewaehlte_typen as string[]).filter(t =>
-      termineGemeinde.includes(t),
-    )
-    if (betroffeneTypen.length === 0) continue
+    const ausgewaehlteTypen = pref.ausgewaehlte_typen as string[]
 
-    const typLabels = betroffeneTypen.map(
-      t => ABFALL_TYP_CONFIG[t as AbfallTypSchluessel]?.label ?? t,
+    // Schnittmenge: Welche der ausgewählten Abfuhr-Typen werden morgen abgeholt?
+    const betroffeneTypen = ausgewaehlteTypen.filter(t => termineGemeinde.includes(t))
+    // Schnittmenge: Welche der ausgewählten Sammlungsarten finden morgen statt?
+    const betroffeneSammlungen = sammlungenGemeinde.filter(s =>
+      ausgewaehlteTypen.includes(sammlungPraeferenzSchluessel(s.art)),
     )
+
+    if (betroffeneTypen.length === 0 && betroffeneSammlungen.length === 0) continue
+
+    const abfuhrZeilen = betroffeneTypen.map(
+      t => `${ABFALL_TYP_CONFIG[t as AbfallTypSchluessel]?.label ?? t} wird abgeholt`,
+    )
+    const sammlungZeilen = betroffeneSammlungen.map(
+      s => `${SAMMLUNG_ART_CONFIG[s.art].label} (organisiert von ${s.organisator})`,
+    )
+    const alleZeilen = [...abfuhrZeilen, ...sammlungZeilen]
 
     // ── Push-Notification ────────────────────────────────────────────────────
     const gemeindeSlug = slugByGemeinde.get(pref.gemeinde_id) ?? ''
     if (pref.push_aktiviert) {
-      for (const label of typLabels) {
-        await sendPush(pref.user_id, label, gemeindeSlug)
+      for (const typ of betroffeneTypen) {
+        const label = ABFALL_TYP_CONFIG[typ as AbfallTypSchluessel]?.label ?? typ
+        await sendPush(pref.user_id, `Morgen wird ${label} abgeholt. Tonne bitte bis 06:00 Uhr bereitstellen.`, gemeindeSlug)
+      }
+      for (const s of betroffeneSammlungen) {
+        const label = SAMMLUNG_ART_CONFIG[s.art].label
+        await sendPush(pref.user_id, `Morgen findet die ${label} statt (organisiert von ${s.organisator}).`, gemeindeSlug)
       }
     }
 
@@ -103,7 +135,7 @@ export async function GET(req: NextRequest) {
       const email = profileMap.get(pref.user_id)?.email
       const displayName = profileMap.get(pref.user_id)?.display_name ?? 'Hallo'
       if (email) {
-        await sendEmail(resend, email, displayName, typLabels)
+        await sendEmail(resend, email, displayName, alleZeilen)
       }
     }
 
@@ -115,9 +147,7 @@ export async function GET(req: NextRequest) {
 
 // ─── Push über OneSignal (einzelner Nutzer via external_id) ──────────────────
 
-async function sendPush(userId: string, abfallart: string, gemeindeSlug: string) {
-  const nachricht = `Morgen wird ${abfallart} abgeholt. Tonne bitte bis 06:00 Uhr bereitstellen.`
-
+async function sendPush(userId: string, nachricht: string, gemeindeSlug: string) {
   await fetch('https://onesignal.com/api/v1/notifications', {
     method: 'POST',
     headers: {
@@ -138,9 +168,9 @@ async function sendPush(userId: string, abfallart: string, gemeindeSlug: string)
 
 // ─── E-Mail über Resend ───────────────────────────────────────────────────────
 
-async function sendEmail(resend: Resend, email: string, name: string, typen: string[]) {
-  const typenHtml = typen
-    .map(t => `<li><strong>${t}</strong></li>`)
+async function sendEmail(resend: Resend, email: string, name: string, zeilen: string[]) {
+  const zeilenHtml = zeilen
+    .map(z => `<li><strong>${z}</strong></li>`)
     .join('')
 
   await resend.emails
@@ -150,9 +180,9 @@ async function sendEmail(resend: Resend, email: string, name: string, typen: str
       subject: `Abfuhr-Erinnerung: morgen wird abgeholt`,
       html: `
         <p>Hallo ${name},</p>
-        <p>morgen werden folgende Abfälle abgeholt:</p>
-        <ul>${typenHtml}</ul>
-        <p>Bitte stelle deine Tonne(n) bis <strong>06:00 Uhr</strong> bereit.</p>
+        <p>morgen stehen folgende Termine an:</p>
+        <ul>${zeilenHtml}</ul>
+        <p>Bitte stelle deine Tonne(n) bis <strong>06:00 Uhr</strong> bereit, falls eine Abfuhr dabei ist.</p>
         <p>Dein Dorfly-Team</p>
       `,
     })
