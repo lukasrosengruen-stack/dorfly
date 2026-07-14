@@ -11,6 +11,7 @@ import { clsx } from 'clsx'
 import BilderUpload from './BilderUpload'
 import { VereinProfilForm, AbonnentenStats } from '@/features/verein'
 import type { Verein, VereinKategorie } from '@/types/database'
+import { SAMMLUNG_ART_OPTIONEN } from '@/lib/abfallkalenderSammlung'
 
 interface Post {
   id: string
@@ -41,11 +42,21 @@ const STATUS_META = {
   rejected:  { label: 'Abgelehnt',      color: 'bg-red-100 text-red-700',          icon: XCircle },
 }
 
-const TAGS = ['nachricht', 'veranstaltung', 'bekanntmachung'] as const
+const TAGS = ['nachricht', 'veranstaltung', 'bekanntmachung', 'sammlung'] as const
 
-type FormState = { titel: string; inhalt: string; tag: string; veranstaltung_datum: string; veranstaltung_uhrzeit: string; veranstaltung_ort: string; geplant: boolean; scheduled_date: string; scheduled_time: string }
+type FormState = {
+  titel: string; inhalt: string; tag: string
+  veranstaltung_datum: string; veranstaltung_uhrzeit: string; veranstaltung_ort: string
+  sammlungArt: string; sammlungDatum: string; sammlungOrganisator: string
+  geplant: boolean; scheduled_date: string; scheduled_time: string
+}
 
-const emptyForm: FormState = { titel: '', inhalt: '', tag: 'nachricht', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', geplant: false, scheduled_date: '', scheduled_time: '' }
+const emptyForm: FormState = {
+  titel: '', inhalt: '', tag: 'nachricht',
+  veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '',
+  sammlungArt: '', sammlungDatum: '', sammlungOrganisator: '',
+  geplant: false, scheduled_date: '', scheduled_time: '',
+}
 
 export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, profileId, vereinName, role, vereinProfil: initialVereinProfil, kategorien = [], abonnentenStats }: Props) {
   const [vereinProfil, setVereinProfil] = useState(initialVereinProfil ?? null)
@@ -92,7 +103,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
 
   function openNew() {
     setEditingId(null)
-    setForm(emptyForm)
+    setForm({ ...emptyForm, sammlungOrganisator: vereinName ?? '' })
     setBildFiles([]); setBildPreviews([]); setBildrechteBestaetigt(false)
     setShowNewForm(true)
   }
@@ -104,6 +115,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
     setForm({
       titel: post.titel, inhalt: post.inhalt, tag: post.tag ?? 'nachricht',
       veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '',
+      sammlungArt: '', sammlungDatum: '', sammlungOrganisator: '',
       geplant: hasFutureSchedule,
       scheduled_date: hasFutureSchedule ? post.publish_at!.split('T')[0] : '',
       scheduled_time: hasFutureSchedule ? (post.publish_at!.split('T')[1]?.slice(0, 5) ?? '') : '',
@@ -157,6 +169,9 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
           veranstaltungDatum: form.tag === 'veranstaltung' && form.veranstaltung_datum
             ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null,
           veranstaltungOrt: form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null,
+          sammlungArt: form.tag === 'sammlung' ? form.sammlungArt : undefined,
+          sammlungDatum: form.tag === 'sammlung' ? form.sammlungDatum : undefined,
+          sammlungOrganisator: form.tag === 'sammlung' ? form.sammlungOrganisator : undefined,
         }),
       })
       const text = await res.text()
@@ -276,7 +291,11 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
             <div className="space-y-3">
               <div className="flex gap-2 flex-wrap">
                 {TAGS.map(tag => (
-                  <button key={tag} onClick={() => setForm(f => ({ ...f, tag }))}
+                  <button key={tag} onClick={() => setForm(f => ({
+                    ...f,
+                    tag,
+                    sammlungOrganisator: tag === 'sammlung' && !f.sammlungOrganisator ? (vereinName ?? '') : f.sammlungOrganisator,
+                  }))}
                     className={clsx('px-3 py-1.5 rounded-full text-xs font-bold border-2 transition-colors',
                       form.tag === tag ? 'border-primary-500 bg-primary-50 text-primary-600' : 'border-gray-200 text-gray-500')}>
                     {tag.charAt(0).toUpperCase() + tag.slice(1)}
@@ -321,6 +340,30 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
                     className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
                 </div>
               )}
+              {form.tag === 'sammlung' && (
+                isEditing ? (
+                  <p className="text-xs text-gray-500 bg-gray-50 rounded-xl px-3 py-2.5">
+                    Sammlungsart, Datum und Organisator können nach dem Erstellen nicht mehr geändert werden.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    <select value={form.sammlungArt}
+                      onChange={e => setForm(f => ({ ...f, sammlungArt: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                      <option value="">Sammlungsart wählen</option>
+                      {SAMMLUNG_ART_OPTIONEN.map(o => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                    <input type="date" value={form.sammlungDatum}
+                      onChange={e => setForm(f => ({ ...f, sammlungDatum: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                    <input type="text" placeholder="Organisation/Verein" value={form.sammlungOrganisator}
+                      onChange={e => setForm(f => ({ ...f, sammlungOrganisator: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                  </div>
+                )
+              )}
               <div className="border border-gray-200 rounded-xl overflow-hidden">
                 <label className="flex items-center gap-2 px-3 py-2.5 text-sm text-gray-700 cursor-pointer bg-gray-50">
                   <input type="checkbox" checked={form.geplant}
@@ -347,7 +390,9 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
                 </p>
               )}
               <button onClick={isEditing ? submitEdit : submitNew}
-                disabled={loading || !form.titel || !form.inhalt || (form.geplant && !form.scheduled_date) || (bildFiles.length > 0 && !bildrechteBestaetigt)}
+                disabled={loading || !form.titel || !form.inhalt || (form.geplant && !form.scheduled_date)
+                  || (bildFiles.length > 0 && !bildrechteBestaetigt)
+                  || (form.tag === 'sammlung' && !isEditing && (!form.sammlungArt || !form.sammlungDatum || !form.sammlungOrganisator))}
                 className="w-full bg-primary-500 text-white font-bold py-3 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2">
                 {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                 {isEditing ? 'Änderungen einreichen' : 'Zur Prüfung einreichen'}
