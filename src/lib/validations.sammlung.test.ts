@@ -24,6 +24,16 @@ describe('vereinPostSchema mit tag "sammlung"', () => {
     expect(result.success).toBe(true)
   })
 
+  it('lehnt einen Sammlung-Beitrag mit nur teilweise ausgefüllten Feldern ab', () => {
+    const result = vereinPostSchema.safeParse({
+      ...basePayload,
+      tag: 'sammlung',
+      sammlungArt: 'altpapier',
+      // sammlungDatum und sammlungOrganisator fehlen
+    })
+    expect(result.success).toBe(false)
+  })
+
   it('lehnt eine ungültige sammlungArt ab', () => {
     const result = vereinPostSchema.safeParse({
       ...basePayload,

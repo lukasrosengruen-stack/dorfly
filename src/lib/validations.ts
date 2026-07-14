@@ -276,11 +276,20 @@ export const vereinPostSchema = z.object({
   sammlungArt: z.enum(['altpapier', 'altkleider', 'altglas', 'schrott']).optional(),
   sammlungDatum: z.string().optional(),
   sammlungOrganisator: z.string().min(1).max(200).optional(),
-}).refine(
-  data => data.tag !== 'sammlung' || (data.sammlungArt && data.sammlungDatum && data.sammlungOrganisator),
-  { message: 'Sammlungsart, Datum und Organisator sind bei Kategorie "Sammlung" erforderlich', path: ['sammlungArt'] },
-)
+})
+  .refine(data => data.tag !== 'sammlung' || !!data.sammlungArt, {
+    message: 'Sammlungsart ist bei Kategorie "Sammlung" erforderlich', path: ['sammlungArt'],
+  })
+  .refine(data => data.tag !== 'sammlung' || !!data.sammlungDatum, {
+    message: 'Datum ist bei Kategorie "Sammlung" erforderlich', path: ['sammlungDatum'],
+  })
+  .refine(data => data.tag !== 'sammlung' || !!data.sammlungOrganisator, {
+    message: 'Organisator ist bei Kategorie "Sammlung" erforderlich', path: ['sammlungOrganisator'],
+  })
 
+// 'sammlung' bewusst nicht im tag-Enum: Bearbeiten eines bestehenden Sammlung-Beitrags
+// über diese Route würde die sammlung_*-Spalten nicht mitschicken und den
+// CHECK-Constraint aus 051_posts_sammlung_felder.sql verletzen (siehe Design-Spec).
 export const vereinPostUpdateSchema = z.object({
   postId: uuid,
   titel: z.string().min(1).max(200),
