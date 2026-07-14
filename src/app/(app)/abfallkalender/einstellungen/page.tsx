@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getGemeinde } from '@/lib/gemeinde'
 import { isFeatureAktiv } from '@/lib/features'
+import { SAMMLUNG_PRAEFERENZ_SCHLUESSEL } from '@/lib/abfallkalenderSammlung'
 import AbfallEinstellungenClient from './AbfallEinstellungenClient'
 
 export default async function AbfallEinstellungenPage() {
@@ -41,12 +42,13 @@ export default async function AbfallEinstellungenPage() {
 
   const praeferenzen = praeferenzenResult.data
   const verfuegbareTypen = einstellungenResult.data?.verfuegbare_typen ?? []
+  const alleVerfuegbarenTypen = [...verfuegbareTypen, ...SAMMLUNG_PRAEFERENZ_SCHLUESSEL]
 
   return (
     <AbfallEinstellungenClient
       gemeindeName={gemeinde?.name ?? ''}
       verfuegbareTypen={verfuegbareTypen}
-      initialAusgewaehlt={praeferenzen?.ausgewaehlte_typen ?? verfuegbareTypen}
+      initialAusgewaehlt={praeferenzen?.ausgewaehlte_typen ?? alleVerfuegbarenTypen}
       initialPush={praeferenzen?.push_aktiviert ?? false}
       initialEmail={praeferenzen?.email_aktiviert ?? false}
     />

@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { ABFALL_TYP_CONFIG } from '@/lib/icsParser'
 import type { AbfallTypSchluessel } from '@/lib/icsParser'
 import { Trash2 } from 'lucide-react'
+import { SAMMLUNG_ART_OPTIONEN, SAMMLUNG_ART_CONFIG, sammlungPraeferenzSchluessel } from '@/lib/abfallkalenderSammlung'
 
 interface Props {
   gemeindeName: string
@@ -97,6 +98,48 @@ export default function AbfallEinstellungenClient({
                 <button
                   key={typ}
                   onClick={() => toggleTyp(typ)}
+                  className={clsx(
+                    'w-full flex items-center gap-3 p-3 rounded-xl transition-colors text-left',
+                    aktiv ? 'bg-gray-50 ring-1 ring-gray-200' : 'bg-gray-50/50 opacity-60',
+                  )}
+                >
+                  <div
+                    className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ background: config.bgFarbe }}
+                  >
+                    <Trash2 className="w-4 h-4" style={{ color: config.farbe }} strokeWidth={1.5} />
+                  </div>
+                  <span className="flex-1 font-semibold text-gray-800 text-sm">{config.label}</span>
+                  <div
+                    className={clsx(
+                      'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors',
+                      aktiv ? 'border-primary-500 bg-primary-500' : 'border-gray-300',
+                    )}
+                  >
+                    {aktiv && <CheckCircle className="w-3 h-3 text-white" />}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </section>
+
+        {/* Sammlungen auswählen */}
+        <section className="bg-white rounded-2xl shadow-sm p-5">
+          <h2 className="font-black text-gray-900 text-sm uppercase tracking-wide mb-4">
+            Sammlungen
+          </h2>
+          <div className="space-y-2">
+            {SAMMLUNG_ART_OPTIONEN.map(option => {
+              const schluessel = sammlungPraeferenzSchluessel(option.value)
+              const config = SAMMLUNG_ART_CONFIG[option.value]
+              const aktiv = ausgewaehlt.includes(schluessel)
+
+              return (
+                <button
+                  key={schluessel}
+                  onClick={() => toggleTyp(schluessel)}
+                  aria-pressed={aktiv}
                   className={clsx(
                     'w-full flex items-center gap-3 p-3 rounded-xl transition-colors text-left',
                     aktiv ? 'bg-gray-50 ring-1 ring-gray-200' : 'bg-gray-50/50 opacity-60',
