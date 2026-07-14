@@ -9,7 +9,10 @@ export const POST = withAuth(
     const v = validate(vereinPostSchema, body)
     if (!v.success) return v.error
 
-    const { vereinId, titel, inhalt, tag, bildUrl, bilderUrls, publishAt, veranstaltungDatum, veranstaltungOrt } = v.data
+    const {
+      vereinId, titel, inhalt, tag, bildUrl, bilderUrls, publishAt, veranstaltungDatum, veranstaltungOrt,
+      sammlungArt, sammlungDatum, sammlungOrganisator,
+    } = v.data
 
     const supabase = await createClient()
 
@@ -41,6 +44,9 @@ export const POST = withAuth(
         publish_at: publishAt ?? null,
         veranstaltung_datum: veranstaltungDatum ?? null,
         veranstaltung_ort: veranstaltungOrt ?? null,
+        sammlung_art: tag === 'sammlung' ? sammlungArt : null,
+        sammlung_datum: tag === 'sammlung' ? sammlungDatum : null,
+        sammlung_organisator: tag === 'sammlung' ? sammlungOrganisator : null,
       })
       .select('id, titel, inhalt, status, created_at, tag, bild_url, publish_at')
       .single()
