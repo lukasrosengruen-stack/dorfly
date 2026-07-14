@@ -9,12 +9,13 @@ import { createClient } from '@/lib/supabase/client'
 import { compressImage } from '@/lib/compressImage'
 import { clsx } from 'clsx'
 import BilderUpload from './BilderUpload'
+import { SAMMLUNG_ART_OPTIONEN } from '@/lib/abfallkalenderSammlung'
 
-const TAGS = ['nachricht', 'veranstaltung', 'bekanntmachung'] as const
+const TAGS = ['nachricht', 'veranstaltung', 'bekanntmachung', 'sammlung'] as const
 const GEMEINDERAT_TAGS = ['eigene_position', 'fraktionsposition'] as const
 type PostTag = typeof TAGS[number] | typeof GEMEINDERAT_TAGS[number]
 const TAG_LABELS: Record<PostTag, string> = {
-  nachricht: 'Nachricht', veranstaltung: 'Veranstaltung', bekanntmachung: 'Bekanntmachung',
+  nachricht: 'Nachricht', veranstaltung: 'Veranstaltung', bekanntmachung: 'Bekanntmachung', sammlung: 'Sammlung',
   eigene_position: 'Eigene Position', fraktionsposition: 'Fraktionsposition',
 }
 
@@ -32,7 +33,14 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
   const [bildFiles, setBildFiles] = useState<File[]>([])
   const [bildPreviews, setBildPreviews] = useState<string[]>([])
   const [bildrechteBestaetigt, setBildrechteBestaetigt] = useState(false)
-  const [form, setForm] = useState({ titel: '', inhalt: '', tag: (defaultChannel === 'gemeinderat' ? 'eigene_position' : 'nachricht') as PostTag, channel: (defaultChannel ?? 'gemeinde') as 'gemeinde' | 'verein' | 'gewerbe' | 'gemeinderat', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', pinned: false, push: false, geplant: false, scheduled_date: '', scheduled_time: '' })
+  const [form, setForm] = useState({
+    titel: '', inhalt: '',
+    tag: (defaultChannel === 'gemeinderat' ? 'eigene_position' : 'nachricht') as PostTag,
+    channel: (defaultChannel ?? 'gemeinde') as 'gemeinde' | 'verein' | 'gewerbe' | 'gemeinderat',
+    veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '',
+    sammlung_art: '', sammlung_datum: '', sammlung_organisator: '',
+    pinned: false, push: false, geplant: false, scheduled_date: '', scheduled_time: '',
+  })
   const supabase = createClient()
 
   function addBilder(files: File[]) {
@@ -57,7 +65,14 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
 
   function reset() {
     setShowForm(false)
-    setForm({ titel: '', inhalt: '', tag: defaultChannel === 'gemeinderat' ? 'eigene_position' : 'nachricht', channel: (defaultChannel ?? 'gemeinde') as 'gemeinde' | 'verein' | 'gewerbe' | 'gemeinderat', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', pinned: false, push: false, geplant: false, scheduled_date: '', scheduled_time: '' })
+    setForm({
+      titel: '', inhalt: '',
+      tag: defaultChannel === 'gemeinderat' ? 'eigene_position' : 'nachricht',
+      channel: (defaultChannel ?? 'gemeinde') as 'gemeinde' | 'verein' | 'gewerbe' | 'gemeinderat',
+      veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '',
+      sammlung_art: '', sammlung_datum: '', sammlung_organisator: '',
+      pinned: false, push: false, geplant: false, scheduled_date: '', scheduled_time: '',
+    })
     setBildFiles([]); setBildPreviews([]); setBildrechteBestaetigt(false)
   }
 
@@ -96,6 +111,9 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
           published_at: publishAt ?? new Date().toISOString(),
           veranstaltung_datum: veranstaltungDatum,
           veranstaltung_ort: veranstaltungOrt,
+          sammlung_art: form.tag === 'sammlung' ? form.sammlung_art : null,
+          sammlung_datum: form.tag === 'sammlung' ? form.sammlung_datum : null,
+          sammlung_organisator: form.tag === 'sammlung' ? form.sammlung_organisator : null,
         }).select('id').single()
         if (error) throw error
         if (form.push) {
@@ -183,6 +201,33 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
                     className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
                 </div>
               )}
+              {form.tag === 'sammlung' && (
+                <div className="space-y-3">
+                  <div>
+                    <label htmlFor="post-sammlung-art" className="block text-xs font-bold text-gray-500 mb-1">Sammlungsart</label>
+                    <select id="post-sammlung-art" value={form.sammlung_art}
+                      onChange={e => setForm(f => ({ ...f, sammlung_art: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                      <option value="">Sammlungsart wählen</option>
+                      {SAMMLUNG_ART_OPTIONEN.map(o => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="post-sammlung-datum" className="block text-xs font-bold text-gray-500 mb-1">Datum</label>
+                    <input id="post-sammlung-datum" type="date" value={form.sammlung_datum}
+                      onChange={e => setForm(f => ({ ...f, sammlung_datum: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                  </div>
+                  <div>
+                    <label htmlFor="post-sammlung-organisator" className="block text-xs font-bold text-gray-500 mb-1">Organisation/Verein</label>
+                    <input id="post-sammlung-organisator" type="text" placeholder="Organisation/Verein" value={form.sammlung_organisator}
+                      onChange={e => setForm(f => ({ ...f, sammlung_organisator: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                  </div>
+                </div>
+              )}
               {canPin && (
                 <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
                   <input type="checkbox" checked={form.pinned} onChange={e => setForm(f => ({ ...f, pinned: e.target.checked }))} className="rounded" />
@@ -220,7 +265,10 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
                   ⏳ Dein Beitrag wird erst nach Freigabe durch die Verwaltung veröffentlicht.
                 </p>
               )}
-              <button onClick={submit} disabled={loading || !form.titel || !form.inhalt || (form.geplant && !form.scheduled_date) || (bildPreviews.length > 0 && !bildrechteBestaetigt)}
+              <button onClick={submit}
+                disabled={loading || !form.titel || !form.inhalt || (form.geplant && !form.scheduled_date)
+                  || (bildPreviews.length > 0 && !bildrechteBestaetigt)
+                  || (form.tag === 'sammlung' && (!form.sammlung_art || !form.sammlung_datum || !form.sammlung_organisator))}
                 className="w-full bg-primary-500 text-white font-bold py-3 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2">
                 {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                 {form.channel === 'gemeinderat' ? 'Zur Freigabe einreichen' : 'Veröffentlichen'}
