@@ -287,14 +287,16 @@ export const vereinPostSchema = z.object({
     message: 'Organisator ist bei Kategorie "Sammlung" erforderlich', path: ['sammlungOrganisator'],
   })
 
-// 'sammlung' bewusst nicht im tag-Enum: Bearbeiten eines bestehenden Sammlung-Beitrags
-// über diese Route würde die sammlung_*-Spalten nicht mitschicken und den
-// CHECK-Constraint aus 051_posts_sammlung_felder.sql verletzen (siehe Design-Spec).
+// 'sammlung' ist im tag-Enum erlaubt (sonst kann ein bestehender Sammlung-Beitrag
+// nicht einmal mehr im Titel/Inhalt bearbeitet werden), aber sammlung_art/
+// sammlung_datum/sammlung_organisator sind hier bewusst NICHT im Schema — die
+// PATCH-Route rührt diese Spalten nicht an, sodass der CHECK-Constraint aus
+// 051_posts_sammlung_felder.sql unberührt bleibt (siehe Design-Spec).
 export const vereinPostUpdateSchema = z.object({
   postId: uuid,
   titel: z.string().min(1).max(200),
   inhalt: z.string().min(1).max(10000),
-  tag: z.enum(['nachricht', 'veranstaltung', 'bekanntmachung']).optional(),
+  tag: z.enum(['nachricht', 'veranstaltung', 'bekanntmachung', 'sammlung']).optional(),
   bildUrl: z.string().nullable().optional(),
   bilderUrls: z.array(z.string()).optional(),
   publishAt: z.string().nullable().optional(),

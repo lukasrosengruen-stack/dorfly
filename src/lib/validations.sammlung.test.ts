@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { vereinPostSchema } from './validations'
+import { vereinPostSchema, vereinPostUpdateSchema } from './validations'
 
 const basePayload = {
   vereinId: '11111111-1111-1111-8111-111111111111',
@@ -47,6 +47,18 @@ describe('vereinPostSchema mit tag "sammlung"', () => {
 
   it('erlaubt weiterhin einen normalen Nachricht-Beitrag ohne Sammlung-Felder', () => {
     const result = vereinPostSchema.safeParse({ ...basePayload, tag: 'nachricht' })
+    expect(result.success).toBe(true)
+  })
+})
+
+describe('vereinPostUpdateSchema erlaubt tag "sammlung"', () => {
+  it('akzeptiert ein Update mit tag "sammlung" (nur Titel/Inhalt geändert)', () => {
+    const result = vereinPostUpdateSchema.safeParse({
+      postId: '11111111-1111-1111-8111-111111111111',
+      titel: 'Korrigierter Titel',
+      inhalt: 'Korrigierter Inhalt',
+      tag: 'sammlung',
+    })
     expect(result.success).toBe(true)
   })
 })

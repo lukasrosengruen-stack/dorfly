@@ -347,20 +347,29 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
                   </p>
                 ) : (
                   <div className="space-y-3">
-                    <select value={form.sammlungArt}
-                      onChange={e => setForm(f => ({ ...f, sammlungArt: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
-                      <option value="">Sammlungsart wählen</option>
-                      {SAMMLUNG_ART_OPTIONEN.map(o => (
-                        <option key={o.value} value={o.value}>{o.label}</option>
-                      ))}
-                    </select>
-                    <input type="date" value={form.sammlungDatum}
-                      onChange={e => setForm(f => ({ ...f, sammlungDatum: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
-                    <input type="text" placeholder="Organisation/Verein" value={form.sammlungOrganisator}
-                      onChange={e => setForm(f => ({ ...f, sammlungOrganisator: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                    <div>
+                      <label htmlFor="sammlung-art" className="block text-xs font-bold text-gray-500 mb-1">Sammlungsart</label>
+                      <select id="sammlung-art" value={form.sammlungArt}
+                        onChange={e => setForm(f => ({ ...f, sammlungArt: e.target.value }))}
+                        className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                        <option value="">Sammlungsart wählen</option>
+                        {SAMMLUNG_ART_OPTIONEN.map(o => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="sammlung-datum" className="block text-xs font-bold text-gray-500 mb-1">Datum</label>
+                      <input id="sammlung-datum" type="date" value={form.sammlungDatum}
+                        onChange={e => setForm(f => ({ ...f, sammlungDatum: e.target.value }))}
+                        className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                    </div>
+                    <div>
+                      <label htmlFor="sammlung-organisator" className="block text-xs font-bold text-gray-500 mb-1">Organisation/Verein</label>
+                      <input id="sammlung-organisator" type="text" placeholder="Organisation/Verein" value={form.sammlungOrganisator}
+                        onChange={e => setForm(f => ({ ...f, sammlungOrganisator: e.target.value }))}
+                        className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                    </div>
                   </div>
                 )
               )}
