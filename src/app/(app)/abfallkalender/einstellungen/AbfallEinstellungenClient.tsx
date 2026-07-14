@@ -98,6 +98,7 @@ export default function AbfallEinstellungenClient({
                 <button
                   key={typ}
                   onClick={() => toggleTyp(typ)}
+                  aria-pressed={aktiv}
                   className={clsx(
                     'w-full flex items-center gap-3 p-3 rounded-xl transition-colors text-left',
                     aktiv ? 'bg-gray-50 ring-1 ring-gray-200' : 'bg-gray-50/50 opacity-60',
