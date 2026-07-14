@@ -178,6 +178,11 @@ export default function PostVerwaltungSection({ posts: initialPosts, gemeindeId,
                   {TAG_LABELS[tag]}
                 </button>
               ))}
+              {form.tag === 'sammlung' && (
+                <span className="px-3 py-1.5 rounded-full text-xs font-bold border-2 border-primary-500 bg-primary-50 text-primary-600">
+                  Sammlung
+                </span>
+              )}
             </div>
             <div className="flex gap-2">
               {(['gemeinde', 'verein', 'gewerbe'] as const).map(ch => (

@@ -63,6 +63,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
   const [showProfilForm, setShowProfilForm] = useState(false)
   const [posts, setPosts] = useState(initialPosts)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingOriginalTag, setEditingOriginalTag] = useState<string | null>(null)
   const [showNewForm, setShowNewForm] = useState(false)
   const [loading, setLoading] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
@@ -103,6 +104,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
 
   function openNew() {
     setEditingId(null)
+    setEditingOriginalTag(null)
     setForm({ ...emptyForm, sammlungOrganisator: vereinName ?? '' })
     setBildFiles([]); setBildPreviews([]); setBildrechteBestaetigt(false)
     setShowNewForm(true)
@@ -111,6 +113,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
   function openEdit(post: Post) {
     setShowNewForm(false)
     setEditingId(post.id)
+    setEditingOriginalTag(post.tag ?? 'nachricht')
     const hasFutureSchedule = !!post.publish_at && new Date(post.publish_at) > new Date()
     setForm({
       titel: post.titel, inhalt: post.inhalt, tag: post.tag ?? 'nachricht',
@@ -127,6 +130,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
   function closeForm() {
     setShowNewForm(false)
     setEditingId(null)
+    setEditingOriginalTag(null)
     setForm(emptyForm)
     setBildFiles([]); setBildPreviews([]); setBildrechteBestaetigt(false)
   }
@@ -290,7 +294,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
             </div>
             <div className="space-y-3">
               <div className="flex gap-2 flex-wrap">
-                {TAGS.map(tag => (
+                {TAGS.filter(tag => tag !== 'sammlung' || !isEditing || editingOriginalTag === 'sammlung').map(tag => (
                   <button key={tag} onClick={() => setForm(f => ({
                     ...f,
                     tag,

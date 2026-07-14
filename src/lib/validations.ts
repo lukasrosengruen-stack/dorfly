@@ -145,7 +145,14 @@ export const postUpdateSchema = z.object({
   titel: z.string().max(200).optional(),
   inhalt: z.string().max(10000).optional(),
   pinned: z.boolean().optional(),
-  tag: z.string().nullable().optional(),
+  // 'sammlung' bleibt erlaubt, damit ein bestehender Sammlung-Beitrag (Verein/Organisation)
+  // über die Admin-Beitragsverwaltung weiterhin in Titel/Inhalt korrigiert werden kann, ohne
+  // dass der tag mitgeschickt werden müsste. Die Route rührt sammlung_art/sammlung_datum/
+  // sammlung_organisator nicht an; die PATCH-Route lehnt einen Wechsel AUF 'sammlung' von
+  // einem anderen tag separat ab (siehe route.ts), damit der CHECK-Constraint aus
+  // 051_posts_sammlung_felder.sql nicht verletzt werden kann.
+  // 'eigene_position'/'fraktionsposition' sind Gemeinderats-Post-Tags (siehe GemeinderatDashboard.tsx).
+  tag: z.enum(['nachricht', 'veranstaltung', 'bekanntmachung', 'sammlung', 'eigene_position', 'fraktionsposition']).nullable().optional(),
   status: z.enum(['pending', 'published', 'rejected']).optional(),
   publish_at: z.string().nullable().optional(),
 })

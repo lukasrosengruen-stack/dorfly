@@ -71,13 +71,17 @@ export const PATCH = withAuth(
 
     const { data: existing, error: fetchError } = await supabase
       .from('posts')
-      .select('id')
+      .select('id, tag')
       .eq('id', postId)
       .eq('author_id', profile.id)
       .single()
 
     if (fetchError || !existing) {
       return NextResponse.json({ error: 'Beitrag nicht gefunden' }, { status: 404 })
+    }
+
+    if (tag === 'sammlung' && existing.tag !== 'sammlung') {
+      return NextResponse.json({ error: 'Kategorie "Sammlung" kann nachträglich nicht gesetzt werden' }, { status: 400 })
     }
 
     const { error } = await service
