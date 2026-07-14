@@ -23,4 +23,16 @@ class DorflyWebViewController: CAPBridgeViewController, UIScrollViewDelegate {
     func viewForZooming(in scrollView: UIScrollView) -> UIView? {
         return webView
     }
+
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+
+        coordinator.animate(alongsideTransition: nil) { [weak self] _ in
+            guard let self = self, let scrollView = self.webView?.scrollView else { return }
+            scrollView.zoomScale = scrollView.minimumZoomScale
+            self.bridge?.webView?.setNeedsLayout()
+            self.bridge?.webView?.layoutIfNeeded()
+            self.bridge?.webView?.evaluateJavaScript("window.dispatchEvent(new Event('resize'))")
+        }
+    }
 }
