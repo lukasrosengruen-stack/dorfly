@@ -6,8 +6,7 @@ import { de } from 'date-fns/locale'
 import { ChevronLeft, Settings, Trash2, User } from 'lucide-react'
 import { clsx } from 'clsx'
 import Link from 'next/link'
-import { ABFALL_TYP_CONFIG } from '@/lib/icsParser'
-import type { AbfallTypSchluessel } from '@/lib/icsParser'
+import { getTerminAnzeigeConfig } from '@/lib/abfallkalenderSammlung'
 
 type Zeitraum = 7 | 30 | 90
 
@@ -15,6 +14,7 @@ interface Termin {
   id: string
   typ: string
   datum: string
+  organisator?: string | null
 }
 
 interface Props {
@@ -180,7 +180,7 @@ export default function AbfallkalenderClient({
               {/* Abfuhr-Karten für dieses Datum */}
               <div className="space-y-2 ml-1">
                 {tagesTermine.map(termin => {
-                  const config = ABFALL_TYP_CONFIG[termin.typ as AbfallTypSchluessel]
+                  const config = getTerminAnzeigeConfig(termin.typ)
                   if (!config) return null
 
                   return (
@@ -198,7 +198,12 @@ export default function AbfallkalenderClient({
                         <p className="font-bold text-gray-900 text-sm leading-snug">
                           {config.label}
                         </p>
-                        {(istHeute || istMorgen) && (
+                        {termin.organisator && (
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            organisiert von {termin.organisator}
+                          </p>
+                        )}
+                        {(istHeute || istMorgen) && !termin.organisator && (
                           <p className="text-xs text-gray-400 mt-0.5">
                             Tonne bis 06:00 Uhr bereitstellen
                           </p>

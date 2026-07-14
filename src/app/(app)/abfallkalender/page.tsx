@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getGemeinde } from '@/lib/gemeinde'
 import { isFeatureAktiv } from '@/lib/features'
+import { mapSammlungPostsZuTerminen, SAMMLUNG_PRAEFERENZ_SCHLUESSEL } from '@/lib/abfallkalenderSammlung'
 import AbfallkalenderClient from './AbfallkalenderClient'
 
 export const metadata: Metadata = { title: 'Abfallkalender – Dorfly' }
@@ -30,7 +31,7 @@ export default async function AbfallkalenderPage() {
   const start = now.toISOString().slice(0, 10)
   const end = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
-  const [termineResult, praeferenzenResult, einstellungenResult] = await Promise.all([
+  const [termineResult, sammlungPostsResult, praeferenzenResult, einstellungenResult] = await Promise.all([
     gemeindeId
       ? supabase
           .from('abfalltermine')
@@ -39,6 +40,16 @@ export default async function AbfallkalenderPage() {
           .gte('datum', start)
           .lte('datum', end)
           .order('datum', { ascending: true })
+      : Promise.resolve({ data: [] }),
+    gemeindeId
+      ? supabase
+          .from('posts')
+          .select('id, sammlung_art, sammlung_datum, sammlung_organisator')
+          .eq('gemeinde_id', gemeindeId)
+          .eq('tag', 'sammlung')
+          .eq('status', 'published')
+          .gte('sammlung_datum', start)
+          .lte('sammlung_datum', end)
       : Promise.resolve({ data: [] }),
     gemeindeId
       ? supabase
@@ -57,12 +68,16 @@ export default async function AbfallkalenderPage() {
       : Promise.resolve({ data: null }),
   ])
 
-  const termine = (termineResult.data ?? []) as { id: string; typ: string; datum: string }[]
+  const abfuhrTermine = (termineResult.data ?? []) as { id: string; typ: string; datum: string }[]
+  const sammlungTermine = mapSammlungPostsZuTerminen(sammlungPostsResult.data ?? [])
+  const termine = [...abfuhrTermine, ...sammlungTermine]
+
   const praeferenzen = praeferenzenResult.data
   const verfuegbareTypen = einstellungenResult.data?.verfuegbare_typen ?? []
+  const alleVerfuegbarenTypen = [...verfuegbareTypen, ...SAMMLUNG_PRAEFERENZ_SCHLUESSEL]
 
-  // Wenn keine Präferenzen: alle verfügbaren Typen vorauswählen
-  const ausgewaehlteTypen: string[] = praeferenzen?.ausgewaehlte_typen ?? verfuegbareTypen
+  // Wenn keine Präferenzen: alle verfügbaren Typen (inkl. Sammlungen) vorauswählen
+  const ausgewaehlteTypen: string[] = praeferenzen?.ausgewaehlte_typen ?? alleVerfuegbarenTypen
 
   return (
     <AbfallkalenderClient
