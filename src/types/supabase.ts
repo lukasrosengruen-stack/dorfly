@@ -703,6 +703,9 @@ export type Database = {
           publish_at: string | null
           published_at: string | null
           rejection_reason: string | null
+          sammlung_art: string | null
+          sammlung_datum: string | null
+          sammlung_organisator: string | null
           severity: number | null
           sichtbarkeit: string | null
           status: Database["public"]["Enums"]["post_status"]
@@ -728,6 +731,9 @@ export type Database = {
           publish_at?: string | null
           published_at?: string | null
           rejection_reason?: string | null
+          sammlung_art?: string | null
+          sammlung_datum?: string | null
+          sammlung_organisator?: string | null
           severity?: number | null
           sichtbarkeit?: string | null
           status?: Database["public"]["Enums"]["post_status"]
@@ -753,6 +759,9 @@ export type Database = {
           publish_at?: string | null
           published_at?: string | null
           rejection_reason?: string | null
+          sammlung_art?: string | null
+          sammlung_datum?: string | null
+          sammlung_organisator?: string | null
           severity?: number | null
           sichtbarkeit?: string | null
           status?: Database["public"]["Enums"]["post_status"]
@@ -1678,6 +1687,7 @@ export type Database = {
       geomfromewkt: { Args: { "": string }; Returns: unknown }
       get_einladung_by_token: { Args: { p_token: string }; Returns: Json }
       gettransactionid: { Args: never; Returns: unknown }
+      is_super_admin: { Args: never; Returns: boolean }
       is_verwaltung: { Args: never; Returns: boolean }
       longtransactionsenabled: { Args: never; Returns: boolean }
       populate_geometry_columns:
@@ -2320,6 +2330,19 @@ export type Database = {
       superadmin_rollen_stats: {
         Args: { p_gemeinde_id?: string }
         Returns: Json
+      }
+      umfrage_ergebnisse: {
+        Args: { p_umfrage_id: string }
+        Returns: {
+          antwort_text: string
+          anzahl: number
+          frage_id: string
+          option_id: string
+        }[]
+      }
+      umfrage_teilnehmer_anzahl: {
+        Args: { p_umfrage_id: string }
+        Returns: number
       }
       unlockrows: { Args: { "": string }; Returns: number }
       updategeometrysrid: {
