@@ -47,6 +47,13 @@ describe('mapSammlungPostsZuTerminen', () => {
     ])
     expect(result).toEqual([])
   })
+
+  it('filtert Posts mit unbekannter Sammlungsart heraus', () => {
+    const result = mapSammlungPostsZuTerminen([
+      { id: 'p3', sammlung_art: 'plastik', sammlung_datum: '2026-08-01', sammlung_organisator: 'Test' },
+    ])
+    expect(result).toEqual([])
+  })
 })
 
 describe('getTerminAnzeigeConfig', () => {

@@ -53,11 +53,11 @@ export interface SammlungTermin {
 
 export function mapSammlungPostsZuTerminen(posts: SammlungPost[]): SammlungTermin[] {
   return posts
-    .filter((p): p is SammlungPost & { sammlung_art: string; sammlung_datum: string } =>
-      !!p.sammlung_art && !!p.sammlung_datum)
+    .filter((p): p is SammlungPost & { sammlung_art: SammlungArtSchluessel; sammlung_datum: string } =>
+      !!p.sammlung_art && p.sammlung_art in SAMMLUNG_ART_CONFIG && !!p.sammlung_datum)
     .map(p => ({
       id: p.id,
-      typ: sammlungPraeferenzSchluessel(p.sammlung_art as SammlungArtSchluessel),
+      typ: sammlungPraeferenzSchluessel(p.sammlung_art),
       datum: p.sammlung_datum,
       organisator: p.sammlung_organisator,
     }))
