@@ -93,7 +93,7 @@ export default async function HomePage() {
             <img
               src={gemeinde.logo_url}
               alt=""
-              className="w-16 h-16 rounded-lg object-contain bg-white/10 p-1.5 shrink-0"
+              className="w-24 h-24 object-contain shrink-0"
             />
           )}
         </div>
