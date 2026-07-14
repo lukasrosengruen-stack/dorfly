@@ -50,6 +50,7 @@ export default async function AbfallkalenderPage() {
           .eq('status', 'published')
           .gte('sammlung_datum', start)
           .lte('sammlung_datum', end)
+          .order('sammlung_datum', { ascending: true })
       : Promise.resolve({ data: [] }),
     gemeindeId
       ? supabase

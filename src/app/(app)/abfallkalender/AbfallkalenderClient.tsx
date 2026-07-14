@@ -199,12 +199,12 @@ export default function AbfallkalenderClient({
                           {config.label}
                         </p>
                         {termin.organisator && (
-                          <p className="text-xs text-gray-400 mt-0.5">
+                          <p className="text-xs text-gray-500 mt-0.5">
                             organisiert von {termin.organisator}
                           </p>
                         )}
                         {(istHeute || istMorgen) && !termin.organisator && (
-                          <p className="text-xs text-gray-400 mt-0.5">
+                          <p className="text-xs text-gray-500 mt-0.5">
                             Tonne bis 06:00 Uhr bereitstellen
                           </p>
                         )}
