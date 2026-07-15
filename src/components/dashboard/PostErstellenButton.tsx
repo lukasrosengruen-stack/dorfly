@@ -3,7 +3,7 @@
 
 import { toast } from 'sonner'
 import { useState } from 'react'
-import { Plus, X, Loader2, Clock } from 'lucide-react'
+import { Plus, X, Loader2, Clock, Trash2 } from 'lucide-react'
 import { RichTextEditor } from '@/lib/richText'
 import { createClient } from '@/lib/supabase/client'
 import { compressImage } from '@/lib/compressImage'
@@ -18,6 +18,10 @@ const TAG_LABELS: Record<PostTag, string> = {
   nachricht: 'Nachricht', veranstaltung: 'Veranstaltung', bekanntmachung: 'Bekanntmachung', sammlung: 'Sammlung',
   eigene_position: 'Eigene Position', fraktionsposition: 'Fraktionsposition',
 }
+
+type WeitererTermin = { datum: string; uhrzeit: string }
+
+const MAX_WEITERE_TERMINE = 20
 
 interface Props {
   gemeindeId: string
@@ -38,10 +42,23 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
     tag: (defaultChannel === 'gemeinderat' ? 'eigene_position' : 'nachricht') as PostTag,
     channel: (defaultChannel ?? 'gemeinde') as 'gemeinde' | 'verein' | 'gewerbe' | 'gemeinderat',
     veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '',
+    weitereTermine: [] as WeitererTermin[],
     sammlung_art: '', sammlung_datum: '', sammlung_uhrzeit: '', sammlung_organisator: '',
     pinned: false, push: false, geplant: false, scheduled_date: '', scheduled_time: '',
   })
   const supabase = createClient()
+
+  function addWeitererTermin() {
+    setForm(f => f.weitereTermine.length >= MAX_WEITERE_TERMINE ? f : { ...f, weitereTermine: [...f.weitereTermine, { datum: '', uhrzeit: '' }] })
+  }
+
+  function updateWeitererTermin(index: number, patch: Partial<WeitererTermin>) {
+    setForm(f => ({ ...f, weitereTermine: f.weitereTermine.map((t, i) => i === index ? { ...t, ...patch } : t) }))
+  }
+
+  function removeWeitererTermin(index: number) {
+    setForm(f => ({ ...f, weitereTermine: f.weitereTermine.filter((_, i) => i !== index) }))
+  }
 
   function addBilder(files: File[]) {
     setBildFiles(prev => [...prev, ...files])
@@ -70,6 +87,7 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
       tag: defaultChannel === 'gemeinderat' ? 'eigene_position' : 'nachricht',
       channel: (defaultChannel ?? 'gemeinde') as 'gemeinde' | 'verein' | 'gewerbe' | 'gemeinderat',
       veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '',
+      weitereTermine: [] as WeitererTermin[],
       sammlung_art: '', sammlung_datum: '', sammlung_uhrzeit: '', sammlung_organisator: '',
       pinned: false, push: false, geplant: false, scheduled_date: '', scheduled_time: '',
     })
@@ -90,6 +108,9 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
       const veranstaltungOrt = form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null
       const sammlungDatum = form.tag === 'sammlung' && form.sammlung_datum
         ? new Date(`${form.sammlung_datum}T${form.sammlung_uhrzeit || '00:00'}`).toISOString() : null
+      const weitereTermine = form.tag === 'veranstaltung'
+        ? form.weitereTermine.filter(t => t.datum).map(t => new Date(`${t.datum}T${t.uhrzeit || '00:00'}`).toISOString())
+        : []
 
       if (form.channel === 'gemeinderat') {
         const res = await fetch('/api/gemeinderat/post', {
@@ -104,7 +125,7 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
         })
         if (!res.ok) throw new Error('API error')
       } else {
-        const { error } = await supabase.from('posts').insert({
+        const { data: inserted, error } = await supabase.from('posts').insert({
           gemeinde_id: gemeindeId, author_id: profileId,
           channel: form.channel, titel: form.titel, inhalt: form.inhalt,
           tag: form.tag, status: 'published', pinned: form.pinned,
@@ -118,6 +139,11 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
           sammlung_organisator: form.tag === 'sammlung' ? form.sammlung_organisator : null,
         }).select('id').single()
         if (error) throw error
+        if (weitereTermine.length > 0) {
+          await supabase.from('post_termine').insert(
+            weitereTermine.map(datum => ({ post_id: inserted.id, datum })),
+          )
+        }
         if (form.push) {
           await fetch('/api/notifications/send', {
             method: 'POST',
@@ -201,6 +227,31 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
                   <input type="text" placeholder="Ort (z.B. Gemeindehaus, Hauptstraße 1)" value={form.veranstaltung_ort}
                     onChange={e => setForm(f => ({ ...f, veranstaltung_ort: e.target.value }))}
                     className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold text-gray-500">Weitere Termine (mehrtägig oder wiederkehrend)</p>
+                    {form.weitereTermine.map((termin, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <label htmlFor={`post-weiterer-termin-datum-${i}`} className="sr-only">Datum von Termin {i + 2}</label>
+                        <input id={`post-weiterer-termin-datum-${i}`} type="date" value={termin.datum}
+                          onChange={e => updateWeitererTermin(i, { datum: e.target.value })}
+                          className="flex-1 border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                        <label htmlFor={`post-weiterer-termin-uhrzeit-${i}`} className="sr-only">Uhrzeit von Termin {i + 2}</label>
+                        <input id={`post-weiterer-termin-uhrzeit-${i}`} type="time" value={termin.uhrzeit}
+                          onChange={e => updateWeitererTermin(i, { uhrzeit: e.target.value })}
+                          className="flex-1 border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                        <button type="button" onClick={() => removeWeitererTermin(i)} aria-label={`Termin ${i + 2} entfernen`}
+                          className="p-2 rounded-lg bg-gray-100 hover:bg-red-100 transition-colors shrink-0">
+                          <Trash2 className="w-3.5 h-3.5 text-gray-500 hover:text-red-500" />
+                        </button>
+                      </div>
+                    ))}
+                    {form.weitereTermine.length < MAX_WEITERE_TERMINE && (
+                      <button type="button" onClick={addWeitererTermin}
+                        className="flex items-center gap-1.5 text-xs font-bold text-primary-600 hover:text-primary-700">
+                        <Plus className="w-3.5 h-3.5" /> weiteres Datum
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
               {form.tag === 'sammlung' && (

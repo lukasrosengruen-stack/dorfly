@@ -155,6 +155,11 @@ export const postUpdateSchema = z.object({
   tag: z.enum(['nachricht', 'veranstaltung', 'bekanntmachung', 'sammlung', 'eigene_position', 'fraktionsposition']).nullable().optional(),
   status: z.enum(['pending', 'published', 'rejected']).optional(),
   publish_at: z.string().nullable().optional(),
+  channel: z.enum(['gemeinde', 'verein', 'gewerbe', 'gemeinderat', 'warnung']).optional(),
+  bild_url: z.string().nullable().optional(),
+  veranstaltung_datum: z.string().nullable().optional(),
+  veranstaltung_ort: z.string().nullable().optional(),
+  weitereTermine: z.array(z.string()).max(20).optional(),
 })
 
 // ── Umfragen ──────────────────────────────────────────────────────────────────
@@ -280,6 +285,7 @@ export const vereinPostSchema = z.object({
   publishAt: z.string().nullable().optional(),
   veranstaltungDatum: z.string().nullable().optional(),
   veranstaltungOrt: z.string().nullable().optional(),
+  weitereTermine: z.array(z.string()).max(20).optional(),
   sammlungArt: z.enum(['altpapier', 'altkleider', 'altglas', 'schrott']).optional(),
   sammlungDatum: z.string().optional(),
   sammlungOrganisator: z.string().min(1).max(200).optional(),
@@ -309,6 +315,7 @@ export const vereinPostUpdateSchema = z.object({
   publishAt: z.string().nullable().optional(),
   veranstaltungDatum: z.string().nullable().optional(),
   veranstaltungOrt: z.string().nullable().optional(),
+  weitereTermine: z.array(z.string()).max(20).optional(),
 })
 
 export const vereinPostDeleteSchema = z.object({

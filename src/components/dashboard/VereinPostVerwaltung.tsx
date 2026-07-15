@@ -25,6 +25,7 @@ interface Post {
   rejection_reason?: string | null
   veranstaltung_datum?: string | null
   veranstaltung_ort?: string | null
+  post_termine?: { datum: string }[] | null
 }
 
 interface Props {
@@ -46,16 +47,22 @@ const STATUS_META = {
 
 const TAGS = ['nachricht', 'veranstaltung', 'bekanntmachung', 'sammlung'] as const
 
+type WeitererTermin = { datum: string; uhrzeit: string }
+
 type FormState = {
   titel: string; inhalt: string; tag: string
   veranstaltung_datum: string; veranstaltung_uhrzeit: string; veranstaltung_ort: string
+  weitereTermine: WeitererTermin[]
   sammlungArt: string; sammlungDatum: string; sammlungUhrzeit: string; sammlungOrganisator: string
   geplant: boolean; scheduled_date: string; scheduled_time: string
 }
 
+const MAX_WEITERE_TERMINE = 20
+
 const emptyForm: FormState = {
   titel: '', inhalt: '', tag: 'nachricht',
   veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '',
+  weitereTermine: [],
   sammlungArt: '', sammlungDatum: '', sammlungUhrzeit: '', sammlungOrganisator: '',
   geplant: false, scheduled_date: '', scheduled_time: '',
 }
@@ -123,6 +130,10 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
       veranstaltung_datum: veranstaltungDatum ? veranstaltungDatum.toISOString().split('T')[0] : '',
       veranstaltung_uhrzeit: veranstaltungDatum ? veranstaltungDatum.toTimeString().slice(0, 5) : '',
       veranstaltung_ort: post.veranstaltung_ort ?? '',
+      weitereTermine: (post.post_termine ?? []).map(t => {
+        const d = new Date(t.datum)
+        return { datum: d.toISOString().split('T')[0], uhrzeit: d.toTimeString().slice(0, 5) }
+      }),
       sammlungArt: '', sammlungDatum: '', sammlungUhrzeit: '', sammlungOrganisator: '',
       geplant: hasFutureSchedule,
       scheduled_date: hasFutureSchedule ? post.publish_at!.split('T')[0] : '',
@@ -130,6 +141,18 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
     })
     setBildFiles([]); setBildrechteBestaetigt(false)
     setBildPreviews(post.bild_url ? [post.bild_url] : [])
+  }
+
+  function addWeitererTermin() {
+    setForm(f => f.weitereTermine.length >= MAX_WEITERE_TERMINE ? f : { ...f, weitereTermine: [...f.weitereTermine, { datum: '', uhrzeit: '' }] })
+  }
+
+  function updateWeitererTermin(index: number, patch: Partial<WeitererTermin>) {
+    setForm(f => ({ ...f, weitereTermine: f.weitereTermine.map((t, i) => i === index ? { ...t, ...patch } : t) }))
+  }
+
+  function removeWeitererTermin(index: number) {
+    setForm(f => ({ ...f, weitereTermine: f.weitereTermine.filter((_, i) => i !== index) }))
   }
 
   function closeForm() {
@@ -155,6 +178,13 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
     finally { setDeleting(null) }
   }
 
+  function weitereTermineISO(): string[] {
+    if (form.tag !== 'veranstaltung') return []
+    return form.weitereTermine
+      .filter(t => t.datum)
+      .map(t => new Date(`${t.datum}T${t.uhrzeit || '00:00'}`).toISOString())
+  }
+
   async function submitNew() {
     if (!form.titel || !form.inhalt || !vereinProfil?.id) return
     setLoading(true)
@@ -178,6 +208,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
           veranstaltungDatum: form.tag === 'veranstaltung' && form.veranstaltung_datum
             ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null,
           veranstaltungOrt: form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null,
+          weitereTermine: weitereTermineISO(),
           sammlungArt: form.tag === 'sammlung' ? form.sammlungArt : undefined,
           sammlungDatum: form.tag === 'sammlung' && form.sammlungDatum
             ? new Date(`${form.sammlungDatum}T${form.sammlungUhrzeit || '00:00'}`).toISOString() : undefined,
@@ -206,6 +237,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
       const veranstaltungDatum = form.tag === 'veranstaltung' && form.veranstaltung_datum
         ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null
       const veranstaltungOrt = form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null
+      const weitereTermine = weitereTermineISO()
       const res = await fetch('/api/verein/post', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -219,12 +251,17 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
           publishAt,
           veranstaltungDatum,
           veranstaltungOrt,
+          weitereTermine,
         }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? 'Fehler')
       setPosts(prev => prev.map(p => p.id === editingId
-        ? { ...p, titel: form.titel, inhalt: form.inhalt, tag: form.tag, status: 'pending', veranstaltung_datum: veranstaltungDatum, veranstaltung_ort: veranstaltungOrt }
+        ? {
+            ...p, titel: form.titel, inhalt: form.inhalt, tag: form.tag, status: 'pending',
+            veranstaltung_datum: veranstaltungDatum, veranstaltung_ort: veranstaltungOrt,
+            post_termine: weitereTermine.map(datum => ({ datum })),
+          }
         : p))
       closeForm()
     } catch (e: unknown) { toast.error('Fehler beim Speichern: ' + (e instanceof Error ? e.message : JSON.stringify(e))) }
@@ -352,6 +389,31 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
                   <input type="text" placeholder="Ort (z.B. Gemeindehaus, Hauptstraße 1)" value={form.veranstaltung_ort}
                     onChange={e => setForm(f => ({ ...f, veranstaltung_ort: e.target.value }))}
                     className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold text-gray-500">Weitere Termine (mehrtägig oder wiederkehrend)</p>
+                    {form.weitereTermine.map((termin, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <label htmlFor={`weiterer-termin-datum-${i}`} className="sr-only">Datum von Termin {i + 2}</label>
+                        <input id={`weiterer-termin-datum-${i}`} type="date" value={termin.datum}
+                          onChange={e => updateWeitererTermin(i, { datum: e.target.value })}
+                          className="flex-1 border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                        <label htmlFor={`weiterer-termin-uhrzeit-${i}`} className="sr-only">Uhrzeit von Termin {i + 2}</label>
+                        <input id={`weiterer-termin-uhrzeit-${i}`} type="time" value={termin.uhrzeit}
+                          onChange={e => updateWeitererTermin(i, { uhrzeit: e.target.value })}
+                          className="flex-1 border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                        <button type="button" onClick={() => removeWeitererTermin(i)} aria-label={`Termin ${i + 2} entfernen`}
+                          className="p-2 rounded-lg bg-gray-100 hover:bg-red-100 transition-colors shrink-0">
+                          <Trash2 className="w-3.5 h-3.5 text-gray-500 hover:text-red-500" />
+                        </button>
+                      </div>
+                    ))}
+                    {form.weitereTermine.length < MAX_WEITERE_TERMINE && (
+                      <button type="button" onClick={addWeitererTermin}
+                        className="flex items-center gap-1.5 text-xs font-bold text-primary-600 hover:text-primary-700">
+                        <Plus className="w-3.5 h-3.5" /> weiteres Datum
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
               {form.tag === 'sammlung' && (

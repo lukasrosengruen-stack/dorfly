@@ -3,7 +3,7 @@
 
 import { toast } from 'sonner'
 import { useState } from 'react'
-import { Pencil, Trash2, Loader2, X, ImagePlus, Newspaper, CalendarClock } from 'lucide-react'
+import { Pencil, Trash2, Loader2, X, ImagePlus, Newspaper, CalendarClock, Plus } from 'lucide-react'
 import { RichTextEditor } from '@/lib/richText'
 import { createClient } from '@/lib/supabase/client'
 import { clsx } from 'clsx'
@@ -22,6 +22,7 @@ interface Post {
   bild_url: string | null
   veranstaltung_datum: string | null
   veranstaltung_ort: string | null
+  post_termine?: { datum: string }[] | null
   published_at: string
   publish_at?: string | null
   profiles?: { role?: string | null } | null
@@ -35,6 +36,10 @@ interface Props {
   canPush?: boolean
 }
 
+type WeitererTermin = { datum: string; uhrzeit: string }
+
+const MAX_WEITERE_TERMINE = 20
+
 type FormState = {
   titel: string
   inhalt: string
@@ -43,6 +48,7 @@ type FormState = {
   veranstaltung_datum: string
   veranstaltung_uhrzeit: string
   veranstaltung_ort: string
+  weitereTermine: WeitererTermin[]
   pinned: boolean
 }
 
@@ -69,8 +75,20 @@ export default function PostVerwaltungSection({ posts: initialPosts, gemeindeId,
   const [deleting, setDeleting] = useState<string | null>(null)
   const [bildFile, setBildFile] = useState<File | null>(null)
   const [bildPreview, setBildPreview] = useState<string | null>(null)
-  const [form, setForm] = useState<FormState>({ titel: '', inhalt: '', tag: 'nachricht', channel: 'gemeinde', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', pinned: false })
+  const [form, setForm] = useState<FormState>({ titel: '', inhalt: '', tag: 'nachricht', channel: 'gemeinde', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', weitereTermine: [], pinned: false })
   const supabase = createClient()
+
+  function addWeitererTermin() {
+    setForm(f => f.weitereTermine.length >= MAX_WEITERE_TERMINE ? f : { ...f, weitereTermine: [...f.weitereTermine, { datum: '', uhrzeit: '' }] })
+  }
+
+  function updateWeitererTermin(index: number, patch: Partial<WeitererTermin>) {
+    setForm(f => ({ ...f, weitereTermine: f.weitereTermine.map((t, i) => i === index ? { ...t, ...patch } : t) }))
+  }
+
+  function removeWeitererTermin(index: number) {
+    setForm(f => ({ ...f, weitereTermine: f.weitereTermine.filter((_, i) => i !== index) }))
+  }
 
   function openEdit(post: Post) {
     const datum = post.veranstaltung_datum ? new Date(post.veranstaltung_datum) : null
@@ -83,6 +101,10 @@ export default function PostVerwaltungSection({ posts: initialPosts, gemeindeId,
       veranstaltung_datum: datum ? datum.toISOString().split('T')[0] : '',
       veranstaltung_uhrzeit: datum ? datum.toTimeString().slice(0, 5) : '',
       veranstaltung_ort: post.veranstaltung_ort ?? '',
+      weitereTermine: (post.post_termine ?? []).map(t => {
+        const d = new Date(t.datum)
+        return { datum: d.toISOString().split('T')[0], uhrzeit: d.toTimeString().slice(0, 5) }
+      }),
       pinned: post.pinned,
     })
     setBildFile(null)
@@ -119,6 +141,9 @@ export default function PostVerwaltungSection({ posts: initialPosts, gemeindeId,
       const bild_url = uploadedUrl ?? (bildPreview ? posts.find(p => p.id === editingId)?.bild_url ?? null : null)
       const veranstaltung_datum = form.tag === 'veranstaltung' && form.veranstaltung_datum
         ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null
+      const weitereTermine = form.tag === 'veranstaltung'
+        ? form.weitereTermine.filter(t => t.datum).map(t => new Date(`${t.datum}T${t.uhrzeit || '00:00'}`).toISOString())
+        : []
       const res = await fetch('/api/posts/update', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -127,10 +152,13 @@ export default function PostVerwaltungSection({ posts: initialPosts, gemeindeId,
           titel: form.titel, inhalt: form.inhalt, tag: form.tag, channel: form.channel,
           pinned: form.pinned, bild_url, veranstaltung_datum,
           veranstaltung_ort: form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null,
+          weitereTermine,
         }),
       })
       if (!res.ok) throw new Error()
-      setPosts(prev => prev.map(p => p.id === editingId ? { ...p, ...form, bild_url, veranstaltung_datum } : p))
+      setPosts(prev => prev.map(p => p.id === editingId
+        ? { ...p, ...form, bild_url, veranstaltung_datum, post_termine: weitereTermine.map(datum => ({ datum })) }
+        : p))
       closeEdit()
     } catch { toast.error('Fehler beim Speichern') }
     finally { setLoading(false) }
@@ -231,6 +259,31 @@ export default function PostVerwaltungSection({ posts: initialPosts, gemeindeId,
                 <input type="text" placeholder="Ort" value={form.veranstaltung_ort}
                   onChange={e => setForm(f => ({ ...f, veranstaltung_ort: e.target.value }))}
                   className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                <div className="space-y-2">
+                  <p className="text-xs font-bold text-gray-500">Weitere Termine (mehrtägig oder wiederkehrend)</p>
+                  {form.weitereTermine.map((termin, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <label htmlFor={`verwaltung-weiterer-termin-datum-${i}`} className="sr-only">Datum von Termin {i + 2}</label>
+                      <input id={`verwaltung-weiterer-termin-datum-${i}`} type="date" value={termin.datum}
+                        onChange={e => updateWeitererTermin(i, { datum: e.target.value })}
+                        className="flex-1 border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                      <label htmlFor={`verwaltung-weiterer-termin-uhrzeit-${i}`} className="sr-only">Uhrzeit von Termin {i + 2}</label>
+                      <input id={`verwaltung-weiterer-termin-uhrzeit-${i}`} type="time" value={termin.uhrzeit}
+                        onChange={e => updateWeitererTermin(i, { uhrzeit: e.target.value })}
+                        className="flex-1 border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                      <button type="button" onClick={() => removeWeitererTermin(i)} aria-label={`Termin ${i + 2} entfernen`}
+                        className="p-2 rounded-lg bg-gray-100 hover:bg-red-100 transition-colors shrink-0">
+                        <Trash2 className="w-3.5 h-3.5 text-gray-500 hover:text-red-500" />
+                      </button>
+                    </div>
+                  ))}
+                  {form.weitereTermine.length < MAX_WEITERE_TERMINE && (
+                    <button type="button" onClick={addWeitererTermin}
+                      className="flex items-center gap-1.5 text-xs font-bold text-primary-600 hover:text-primary-700">
+                      <Plus className="w-3.5 h-3.5" /> weiteres Datum
+                    </button>
+                  )}
+                </div>
               </div>
             )}
             <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">

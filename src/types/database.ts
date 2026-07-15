@@ -49,6 +49,7 @@ export type PostMitProfil = Post & {
     verein_name?: string | null
   }) | null
   organisationen?: Pick<Organisation, 'name' | 'typ' | 'logo_url'> | null
+  post_termine?: { datum: string }[] | null
 }
 
 export type MangelMitProfil = Mangel & {

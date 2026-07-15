@@ -10,7 +10,7 @@ export const POST = withAuth(
     if (!v.success) return v.error
 
     const {
-      vereinId, titel, inhalt, tag, bildUrl, bilderUrls, publishAt, veranstaltungDatum, veranstaltungOrt,
+      vereinId, titel, inhalt, tag, bildUrl, bilderUrls, publishAt, veranstaltungDatum, veranstaltungOrt, weitereTermine,
       sammlungArt, sammlungDatum, sammlungOrganisator,
     } = v.data
 
@@ -53,6 +53,12 @@ export const POST = withAuth(
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+    if (tag === 'veranstaltung' && weitereTermine && weitereTermine.length > 0) {
+      await service.from('post_termine').insert(
+        weitereTermine.map(datum => ({ post_id: post.id, datum })),
+      )
+    }
+
     return NextResponse.json({ post })
   },
   { roles: ['verein', 'organisation'] },
@@ -64,7 +70,7 @@ export const PATCH = withAuth(
     const v = validate(vereinPostUpdateSchema, body)
     if (!v.success) return v.error
 
-    const { postId, titel, inhalt, tag, bildUrl, bilderUrls, publishAt, veranstaltungDatum, veranstaltungOrt } = v.data
+    const { postId, titel, inhalt, tag, bildUrl, bilderUrls, publishAt, veranstaltungDatum, veranstaltungOrt, weitereTermine } = v.data
 
     const supabase = await createClient()
     const service = await createServiceClient()
@@ -100,6 +106,13 @@ export const PATCH = withAuth(
       .eq('id', postId)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    await service.from('post_termine').delete().eq('post_id', postId)
+    if (tag === 'veranstaltung' && weitereTermine && weitereTermine.length > 0) {
+      await service.from('post_termine').insert(
+        weitereTermine.map(datum => ({ post_id: postId, datum })),
+      )
+    }
 
     return NextResponse.json({ ok: true })
   },

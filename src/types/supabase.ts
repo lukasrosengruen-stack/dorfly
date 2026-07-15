@@ -685,6 +685,35 @@ export type Database = {
           },
         ]
       }
+      post_termine: {
+        Row: {
+          created_at: string
+          datum: string
+          id: string
+          post_id: string
+        }
+        Insert: {
+          created_at?: string
+          datum: string
+          id?: string
+          post_id: string
+        }
+        Update: {
+          created_at?: string
+          datum?: string
+          id?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_termine_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           author_id: string | null

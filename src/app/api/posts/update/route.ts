@@ -9,7 +9,7 @@ export const PATCH = withAuth(
     const v = validate(postUpdateSchema, body)
     if (!v.success) return v.error
 
-    const { id, ...fields } = v.data
+    const { id, weitereTermine, ...fields } = v.data
     const tag = v.data.tag
     const isGemeinderat = profile.role === 'gemeinderat'
     const updateFields = isGemeinderat ? { ...fields, status: 'pending' as const } : fields
@@ -40,6 +40,16 @@ export const PATCH = withAuth(
       : service.from('posts').update(updateFields).eq('id', id).eq('gemeinde_id', profile.gemeinde_id!))
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    if (weitereTermine !== undefined) {
+      await service.from('post_termine').delete().eq('post_id', id)
+      if (tag === 'veranstaltung' && weitereTermine.length > 0) {
+        await service.from('post_termine').insert(
+          weitereTermine.map(datum => ({ post_id: id, datum })),
+        )
+      }
+    }
+
     return NextResponse.json({ ok: true })
   },
   { roles: ['verwaltung', 'super_admin', 'gemeinderat'] },

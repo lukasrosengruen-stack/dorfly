@@ -139,13 +139,18 @@ export function FeedCard({ post, expanded, onToggleExpand, gemeindeName }: FeedC
           </h2>
 
           {post.veranstaltung_datum && (
-            <div className="mt-2 px-3 py-2 bg-purple-50 rounded-xl space-y-1">
-              <div className="flex items-center gap-1.5">
-                <Calendar className="w-4 h-4 text-purple-600 shrink-0" />
-                <span className="text-sm text-purple-700 font-bold">
-                  {format(new Date(post.veranstaltung_datum), 'EEEE, d. MMMM yyyy · HH:mm', { locale: de })} Uhr
-                </span>
-              </div>
+            <div className="mt-2 px-3 py-2 bg-purple-50 rounded-xl space-y-1.5">
+              {[post.veranstaltung_datum, ...(post.post_termine ?? []).map(t => t.datum)].sort().map(datum => {
+                const vergangen = new Date(datum) < new Date()
+                return (
+                  <div key={datum} className={clsx('flex items-center gap-1.5', vergangen && 'opacity-50')}>
+                    <Calendar className="w-4 h-4 text-purple-600 shrink-0" />
+                    <span className="text-sm text-purple-700 font-bold">
+                      {format(new Date(datum), 'EEEE, d. MMMM yyyy · HH:mm', { locale: de })} Uhr
+                    </span>
+                  </div>
+                )
+              })}
               {post.veranstaltung_ort && (
                 <div className="flex items-center gap-1.5">
                   <MapPin className="w-4 h-4 text-purple-600 shrink-0" />
