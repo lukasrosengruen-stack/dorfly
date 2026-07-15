@@ -67,7 +67,7 @@ export default async function DashboardPage() {
     const [vereinPostsResult, vereinProfilResult, kategorienResult] = await Promise.all([
       supabase
         .from('posts')
-        .select('id, titel, inhalt, status, created_at, tag, bild_url, publish_at, rejection_reason')
+        .select('id, titel, inhalt, status, created_at, tag, bild_url, publish_at, rejection_reason, veranstaltung_datum, veranstaltung_ort')
         .eq('author_id', user!.id)
         .order('created_at', { ascending: false }),
       supabase

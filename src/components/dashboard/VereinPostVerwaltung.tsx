@@ -23,6 +23,8 @@ interface Post {
   bild_url?: string | null
   publish_at?: string | null
   rejection_reason?: string | null
+  veranstaltung_datum?: string | null
+  veranstaltung_ort?: string | null
 }
 
 interface Props {
@@ -115,9 +117,12 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
     setEditingId(post.id)
     setEditingOriginalTag(post.tag ?? 'nachricht')
     const hasFutureSchedule = !!post.publish_at && new Date(post.publish_at) > new Date()
+    const veranstaltungDatum = post.veranstaltung_datum ? new Date(post.veranstaltung_datum) : null
     setForm({
       titel: post.titel, inhalt: post.inhalt, tag: post.tag ?? 'nachricht',
-      veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '',
+      veranstaltung_datum: veranstaltungDatum ? veranstaltungDatum.toISOString().split('T')[0] : '',
+      veranstaltung_uhrzeit: veranstaltungDatum ? veranstaltungDatum.toTimeString().slice(0, 5) : '',
+      veranstaltung_ort: post.veranstaltung_ort ?? '',
       sammlungArt: '', sammlungDatum: '', sammlungUhrzeit: '', sammlungOrganisator: '',
       geplant: hasFutureSchedule,
       scheduled_date: hasFutureSchedule ? post.publish_at!.split('T')[0] : '',
@@ -198,6 +203,9 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
       const publishAt = form.geplant && form.scheduled_date
         ? new Date(`${form.scheduled_date}T${form.scheduled_time || '08:00'}`).toISOString()
         : null
+      const veranstaltungDatum = form.tag === 'veranstaltung' && form.veranstaltung_datum
+        ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null
+      const veranstaltungOrt = form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null
       const res = await fetch('/api/verein/post', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -209,14 +217,15 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
           bildUrl,
           ...(bilderUrls.length > 0 ? { bilderUrls } : {}),
           publishAt,
-          veranstaltungDatum: form.tag === 'veranstaltung' && form.veranstaltung_datum
-            ? new Date(`${form.veranstaltung_datum}T${form.veranstaltung_uhrzeit || '00:00'}`).toISOString() : null,
-          veranstaltungOrt: form.tag === 'veranstaltung' && form.veranstaltung_ort ? form.veranstaltung_ort : null,
+          veranstaltungDatum,
+          veranstaltungOrt,
         }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? 'Fehler')
-      setPosts(prev => prev.map(p => p.id === editingId ? { ...p, titel: form.titel, inhalt: form.inhalt, tag: form.tag, status: 'pending' } : p))
+      setPosts(prev => prev.map(p => p.id === editingId
+        ? { ...p, titel: form.titel, inhalt: form.inhalt, tag: form.tag, status: 'pending', veranstaltung_datum: veranstaltungDatum, veranstaltung_ort: veranstaltungOrt }
+        : p))
       closeForm()
     } catch (e: unknown) { toast.error('Fehler beim Speichern: ' + (e instanceof Error ? e.message : JSON.stringify(e))) }
     finally { setLoading(false) }
