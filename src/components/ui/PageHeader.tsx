@@ -11,8 +11,11 @@
  *   actions={<FilterButton />}
  * />
  */
+'use client'
+
 import Link from 'next/link'
-import { User } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { ArrowLeft, User } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
 export interface PageHeaderProps {
@@ -24,6 +27,8 @@ export interface PageHeaderProps {
   subtitle?: string
   /** Zusätzliche Elemente rechts neben dem Profil-Link (z. B. Filter-Button) */
   actions?: React.ReactNode
+  /** Zeigt einen "Zurück"-Button über dem Titel (nutzt router.back()) */
+  showBack?: boolean
   /** Sticky (fixiert beim Scrollen) – Standard: true */
   sticky?: boolean
   className?: string
@@ -34,9 +39,12 @@ export function PageHeader({
   title,
   subtitle,
   actions,
+  showBack = false,
   sticky = true,
   className,
 }: PageHeaderProps) {
+  const router = useRouter()
+
   return (
     <div
       className={cn(
@@ -45,6 +53,14 @@ export function PageHeader({
         className,
       )}
     >
+      {showBack && (
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-1 text-white/70 text-xs font-bold mb-3"
+        >
+          <ArrowLeft className="w-4 h-4" aria-hidden="true" /> Zurück
+        </button>
+      )}
       <div className="flex items-start justify-between gap-3">
         {/* Linke Seite: Gemeindename + Titel */}
         <div className="flex-1 min-w-0">

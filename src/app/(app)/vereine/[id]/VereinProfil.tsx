@@ -9,19 +9,11 @@ import { cn } from '@/lib/cn'
 import { PageHeader } from '@/components/ui'
 import { renderRichText } from '@/lib/richText'
 import type { VereinMitKategorie } from '@/types/database'
-
-interface Post {
-  id: string
-  titel: string
-  inhalt: string
-  bild_url: string | null
-  published_at: string
-  tag: string | null
-}
+import type { VereinPost } from '@/lib/verein'
 
 interface Props {
   verein: VereinMitKategorie
-  posts: Post[]
+  posts: VereinPost[]
   istAbonniert: boolean
   abonnentenAnzahl: number
 }
@@ -57,7 +49,7 @@ export default function VereinProfil({ verein, posts, istAbonniert: initialAbonn
 
   return (
     <div>
-      <PageHeader gemeindeName="" title={verein.verein_name} />
+      <PageHeader gemeindeName="" title={verein.verein_name} showBack />
 
       <div className="p-4 space-y-4 pt-4">
         {/* Kopfbereich */}
