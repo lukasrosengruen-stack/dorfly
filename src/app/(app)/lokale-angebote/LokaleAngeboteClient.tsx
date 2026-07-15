@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { Search, SlidersHorizontal, X } from 'lucide-react'
 import { PageHeader, EmptyState } from '@/components/ui'
 import { GewerbeCard } from '@/features/gewerbe'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { Building2 } from 'lucide-react'
 import type { OrganisationMitBranche, Gewerbebranche, Profile } from '@/types/database'
 
@@ -18,8 +19,20 @@ export default function LokaleAngeboteClient({ betriebe, branchen, profile, abon
   const [suche, setSuche] = useState('')
   const [brancheFilter, setBrancheFilter] = useState<string | null>(null)
   const [filterOffen, setFilterOffen] = useState(false)
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+
+  const trapRef = useFocusTrap(filterOffen)
 
   const gemeindeName = profile?.gemeinden?.name ?? ''
+
+  function toggleExpand(id: string) {
+    setExpandedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   const gefiltert = useMemo(() => {
     return betriebe.filter(b => {
@@ -38,18 +51,29 @@ export default function LokaleAngeboteClient({ betriebe, branchen, profile, abon
         title="Lokale Angebote"
         actions={
           branchen.length > 0 ? (
-            <button
-              onClick={() => setFilterOffen(o => !o)}
-              className="relative flex items-center gap-1.5 bg-white/20 text-white text-xs font-bold px-3 py-1.5 rounded-xl"
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              Filtern
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setFilterOffen(o => !o)}
+                className="relative flex items-center gap-1.5 bg-white/20 text-white text-xs font-bold px-3 py-1.5 rounded-xl"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" aria-hidden="true" />
+                Filtern
+                {aktiveFilter > 0 && (
+                  <span className="w-4 h-4 bg-orange-400 rounded-full text-white text-[10px] flex items-center justify-center font-black">
+                    {aktiveFilter}
+                  </span>
+                )}
+              </button>
               {aktiveFilter > 0 && (
-                <span className="w-4 h-4 bg-orange-400 rounded-full text-white text-[10px] flex items-center justify-center font-black">
-                  {aktiveFilter}
-                </span>
+                <button
+                  onClick={() => setBrancheFilter(null)}
+                  aria-label="Filter zurücksetzen"
+                  className="w-7 h-7 rounded-xl bg-white/20 flex items-center justify-center"
+                >
+                  <X className="w-4 h-4 text-white" aria-hidden="true" />
+                </button>
               )}
-            </button>
+            </div>
           ) : undefined
         }
       />
@@ -74,7 +98,7 @@ export default function LokaleAngeboteClient({ betriebe, branchen, profile, abon
           )}
         </div>
 
-        {/* Branche-Chips (≤6 Branchen direkt, sonst Bottom Sheet) */}
+        {/* Branche-Chips als Schnellauswahl (zusätzlich zum Filtermenü) */}
         {branchen.length > 0 && branchen.length <= 6 && (
           <div className="flex gap-2 flex-wrap">
             {branchen.map(b => (
@@ -103,32 +127,43 @@ export default function LokaleAngeboteClient({ betriebe, branchen, profile, abon
         ) : (
           <div className="space-y-3">
             {gefiltert.map(betrieb => (
-              <GewerbeCard key={betrieb.id} betrieb={betrieb} istAbonniert={abonnements.includes(betrieb.id)} />
+              <GewerbeCard
+                key={betrieb.id}
+                betrieb={betrieb}
+                istAbonniert={abonnements.includes(betrieb.id)}
+                expanded={expandedIds.has(betrieb.id)}
+                onToggleExpand={() => toggleExpand(betrieb.id)}
+              />
             ))}
           </div>
         )}
       </div>
 
-      {/* Filter Bottom Sheet (>6 Branchen) */}
-      {filterOffen && branchen.length > 6 && (
+      {/* Filter Bottom Sheet */}
+      {filterOffen && (
         <div
           className="fixed inset-0 bg-black/60 z-[60] flex items-end justify-center"
           onClick={() => setFilterOffen(false)}
         >
           <div
+            ref={trapRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="gewerbefilter-title"
+            onKeyDown={e => { if (e.key === 'Escape') setFilterOffen(false) }}
             className="bg-white w-full max-w-lg rounded-t-2xl max-h-[80vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-white">
-              <h2 className="font-black text-gray-900 uppercase tracking-wide text-sm">Branche filtern</h2>
+              <h2 id="gewerbefilter-title" className="font-black text-gray-900 uppercase tracking-wide text-sm">Branche filtern</h2>
               <div className="flex items-center gap-3">
                 {brancheFilter && (
                   <button onClick={() => setBrancheFilter(null)} className="text-xs text-primary-500 font-bold">
                     Zurücksetzen
                   </button>
                 )}
-                <button onClick={() => setFilterOffen(false)}>
-                  <X className="w-5 h-5 text-gray-400" />
+                <button onClick={() => setFilterOffen(false)} aria-label="Filter schließen">
+                  <X className="w-5 h-5 text-gray-400" aria-hidden="true" />
                 </button>
               </div>
             </div>
