@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { useState } from 'react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
-import { Scale, Users, Send, X, Loader2, MessageCircle, User, CheckCircle, Clock, Mail } from 'lucide-react'
+import { Scale, Users, Send, X, Loader2, MessageCircle, User, CheckCircle, Clock, Mail, ChevronDown } from 'lucide-react'
 import { buildSocialUrl } from '@/lib/social'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 import Link from 'next/link'
@@ -233,6 +233,10 @@ export default function GemeinderatClient({ posts, raete, meineFragen, gemeindeI
                           {rat.fraktion ? `${rat.fraktion} · ` : ''}{gemeindeName}
                         </p>
                       </div>
+                      <ChevronDown
+                        className={clsx('w-4 h-4 text-gray-400 shrink-0 transition-transform', isExpanded && 'rotate-180')}
+                        aria-hidden="true"
+                      />
                     </button>
                     {(rat.social_x || rat.social_facebook || rat.social_instagram || rat.social_tiktok) && (
                       <div className="flex items-center gap-1.5 shrink-0">
