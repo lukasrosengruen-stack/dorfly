@@ -55,10 +55,9 @@ export default function ProfilClient({ profile, email, gemeindeSlug }: { profile
     }
     checkPermission()
   }, [])
-  const nameParts = (profile?.display_name ?? '').trim().split(/\s+/)
   const [form, setForm] = useState({
-    vorname:  nameParts[0] ?? '',
-    nachname: nameParts.slice(1).join(' '),
+    vorname:  profile?.vorname ?? '',
+    nachname: profile?.nachname ?? '',
   })
 
   const displayName = profile?.display_name || 'Kein Name'

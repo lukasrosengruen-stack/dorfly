@@ -38,11 +38,13 @@ export async function updateProfil(input: UpdateProfilInput): Promise<UpdateProf
       return { success: false, error: 'Nicht angemeldet' }
     }
 
-    const displayName = [input.vorname, input.nachname].filter(Boolean).join(' ') || null
+    const vorname = input.vorname.trim() || null
+    const nachname = input.nachname.trim() || null
+    const displayName = [vorname, nachname].filter(Boolean).join(' ') || null
 
     const { error } = await supabase
       .from('profiles')
-      .update({ display_name: displayName })
+      .update({ vorname, nachname, display_name: displayName })
       .eq('id', user.id)
 
     if (error) {

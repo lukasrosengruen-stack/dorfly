@@ -833,6 +833,7 @@ export type Database = {
           gemeinde_id: string | null
           id: string
           kontakt_email: string | null
+          nachname: string | null
           phone: string | null
           phone_verified: boolean | null
           role: Database["public"]["Enums"]["user_role"]
@@ -843,6 +844,7 @@ export type Database = {
           ueber_mich: string | null
           updated_at: string | null
           verein_name: string | null
+          vorname: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -853,6 +855,7 @@ export type Database = {
           gemeinde_id?: string | null
           id: string
           kontakt_email?: string | null
+          nachname?: string | null
           phone?: string | null
           phone_verified?: boolean | null
           role?: Database["public"]["Enums"]["user_role"]
@@ -863,6 +866,7 @@ export type Database = {
           ueber_mich?: string | null
           updated_at?: string | null
           verein_name?: string | null
+          vorname?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -873,6 +877,7 @@ export type Database = {
           gemeinde_id?: string | null
           id?: string
           kontakt_email?: string | null
+          nachname?: string | null
           phone?: string | null
           phone_verified?: boolean | null
           role?: Database["public"]["Enums"]["user_role"]
@@ -883,6 +888,7 @@ export type Database = {
           ueber_mich?: string | null
           updated_at?: string | null
           verein_name?: string | null
+          vorname?: string | null
         }
         Relationships: [
           {

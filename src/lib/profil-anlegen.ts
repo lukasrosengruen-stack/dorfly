@@ -81,6 +81,8 @@ export async function profilAnlegen(userId: string, daten: RegistrierungsDaten =
     email: email ?? null,
     role: rolle as UserRole,
     gemeinde_id: gemeindeId,
+    vorname: vorname ?? null,
+    nachname: nachname ?? null,
     display_name: [vorname, nachname].filter(Boolean).join(' ') || null,
   })
 
@@ -93,6 +95,8 @@ export async function profilAnlegen(userId: string, daten: RegistrierungsDaten =
         email: null,
         role: rolle as UserRole,
         gemeinde_id: gemeindeId,
+        vorname: vorname ?? null,
+        nachname: nachname ?? null,
         display_name: [vorname, nachname].filter(Boolean).join(' ') || null,
       })
       if (retryError) throw retryError
