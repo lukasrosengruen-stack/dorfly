@@ -8,6 +8,8 @@ import { de } from 'date-fns/locale'
 import { Scale, MessageCircle, CheckCircle2, Clock, Send, Loader2, Pencil, Trash2, X } from 'lucide-react'
 import { clsx } from 'clsx'
 import PostErstellenButton from './PostErstellenButton'
+import { compressAvatar } from '@/lib/compressImage'
+import { createClient } from '@/lib/supabase/client'
 
 interface Post {
   id: string
@@ -36,17 +38,20 @@ interface Props {
   fraktion: string | null
   ueber_mich: string | null
   kontakt_email: string | null
+  avatar_url: string | null
   social_x: string | null
   social_facebook: string | null
   social_instagram: string | null
   social_tiktok: string | null
 }
 
-export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profileId, fraktion: initialFraktion, ueber_mich: initialUeberMich, kontakt_email: initialKontaktEmail, social_x: initialSocialX, social_facebook: initialSocialFacebook, social_instagram: initialSocialInstagram, social_tiktok: initialSocialTiktok }: Props) {
+export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profileId, fraktion: initialFraktion, ueber_mich: initialUeberMich, kontakt_email: initialKontaktEmail, avatar_url: initialAvatarUrl, social_x: initialSocialX, social_facebook: initialSocialFacebook, social_instagram: initialSocialInstagram, social_tiktok: initialSocialTiktok }: Props) {
   const [activeTab, setActiveTab] = useState<'beitraege' | 'fragen' | 'profil'>('fragen')
   const [fraktion, setFraktion] = useState(initialFraktion ?? '')
   const [ueber_mich, setUeberMich] = useState(initialUeberMich ?? '')
   const [kontakt_email, setKontaktEmail] = useState(initialKontaktEmail ?? '')
+  const [avatarUrl, setAvatarUrl] = useState(initialAvatarUrl ?? '')
+  const [avatarUploading, setAvatarUploading] = useState(false)
   const [social_x, setSocialX] = useState(initialSocialX ?? '')
   const [social_facebook, setSocialFacebook] = useState(initialSocialFacebook ?? '')
   const [social_instagram, setSocialInstagram] = useState(initialSocialInstagram ?? '')
@@ -70,6 +75,7 @@ export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profil
         fraktion:         fraktion || null,
         ueber_mich:       ueber_mich || null,
         kontakt_email:    kontakt_email || null,
+        avatar_url:       avatarUrl || null,
         social_x:         social_x || null,
         social_facebook:  social_facebook || null,
         social_instagram: social_instagram || null,
@@ -79,6 +85,25 @@ export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profil
     setProfilSaving(false)
     if (res.ok) toast.success('Profil gespeichert')
     else toast.error('Fehler beim Speichern')
+  }
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setAvatarUploading(true)
+    try {
+      const compressed = await compressAvatar(file)
+      const supabase = createClient()
+      const path = `gemeinderat/${profileId}/avatar_${Date.now()}.jpg`
+      const { error } = await supabase.storage.from('dorfly-media').upload(path, compressed, { upsert: true })
+      if (error) throw error
+      const { data: { publicUrl } } = supabase.storage.from('dorfly-media').getPublicUrl(path)
+      setAvatarUrl(publicUrl)
+    } catch {
+      toast.error('Profilbild-Upload fehlgeschlagen')
+    } finally {
+      setAvatarUploading(false)
+    }
   }
 
   function openEdit(post: Post) {
@@ -261,6 +286,24 @@ export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profil
         {activeTab === 'profil' && (
           <div className="bg-white rounded-2xl shadow-sm p-6 space-y-5 max-w-lg">
             <div>
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Profilbild</label>
+              <div className="flex items-center gap-4">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Profilbild" className="w-16 h-16 rounded-full object-cover" />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 text-2xl font-black">
+                    ?
+                  </div>
+                )}
+                <label className="cursor-pointer">
+                  <span className="text-xs font-bold text-primary-500 bg-primary-50 px-3 py-2 rounded-xl">
+                    {avatarUploading ? 'Lädt…' : 'Bild auswählen'}
+                  </span>
+                  <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} disabled={avatarUploading} />
+                </label>
+              </div>
+            </div>
+            <div>
               <label htmlFor="profil-fraktion" className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1.5">Fraktion</label>
               <input
                 id="profil-fraktion"
@@ -325,7 +368,7 @@ export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profil
             </fieldset>
             <button
               onClick={saveProfil}
-              disabled={profilSaving}
+              disabled={profilSaving || avatarUploading}
               className="flex items-center gap-2 bg-primary-500 text-white font-bold px-5 py-2.5 rounded-xl text-sm disabled:opacity-50"
             >
               {profilSaving && <Loader2 className="w-4 h-4 animate-spin" />}

@@ -19,7 +19,7 @@ interface Post {
   bilder_urls: string[] | null
   tag: string | null
   published_at: string
-  profiles: { display_name: string | null; verein_name: string | null } | null
+  profiles: { display_name: string | null; verein_name: string | null; avatar_url: string | null } | null
 }
 
 interface Rat {
@@ -29,6 +29,7 @@ interface Rat {
   fraktion: string | null
   ueber_mich: string | null
   kontakt_email: string | null
+  avatar_url: string | null
   social_x: string | null
   social_facebook: string | null
   social_instagram: string | null
@@ -177,9 +178,13 @@ export default function GemeinderatClient({ posts, raete, meineFragen, gemeindeI
                       )}
                     </button>
                     <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
-                      <div className="w-7 h-7 rounded-full bg-primary-100 flex items-center justify-center text-xs font-black text-primary-700 shrink-0">
-                        {autorName[0]?.toUpperCase()}
-                      </div>
+                      {autor?.avatar_url ? (
+                        <img src={autor.avatar_url} alt="" loading="lazy" className="w-7 h-7 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <div className="w-7 h-7 rounded-full bg-primary-100 flex items-center justify-center text-xs font-black text-primary-700 shrink-0">
+                          {autorName[0]?.toUpperCase()}
+                        </div>
+                      )}
                       <span className="text-xs text-gray-500 font-medium">{autorName}</span>
                     </div>
                   </div>
@@ -215,9 +220,13 @@ export default function GemeinderatClient({ posts, raete, meineFragen, gemeindeI
                       aria-label={`${name} – Profil anzeigen`}
                       className="flex items-center gap-4 text-left flex-1 min-w-0"
                     >
-                      <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center text-lg font-black text-primary-700 shrink-0">
-                        {name[0]?.toUpperCase()}
-                      </div>
+                      {rat.avatar_url ? (
+                        <img src={rat.avatar_url} alt="" loading="lazy" className="w-12 h-12 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center text-lg font-black text-primary-700 shrink-0">
+                          {name[0]?.toUpperCase()}
+                        </div>
+                      )}
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-gray-900 text-sm truncate">{name}</p>
                         <p className="text-xs text-gray-400 mt-0.5">

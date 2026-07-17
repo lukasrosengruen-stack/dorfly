@@ -27,7 +27,7 @@ export default async function GemeinderatPage() {
   const [postsResult, raeteResult, fragenResult] = await Promise.all([
     supabase
       .from('posts')
-      .select('id, titel, inhalt, bild_url, bilder_urls, tag, published_at, profiles:profiles_public!posts_author_id_fkey(display_name, verein_name)')
+      .select('id, titel, inhalt, bild_url, bilder_urls, tag, published_at, profiles:profiles_public!posts_author_id_fkey(display_name, verein_name, avatar_url)')
       .eq('gemeinde_id', gemeindeId)
       .eq('channel', 'gemeinderat')
       .eq('status', 'published')
@@ -35,7 +35,7 @@ export default async function GemeinderatPage() {
       .limit(50),
     supabase
       .from('profiles_public')
-      .select('id, display_name, verein_name, fraktion, ueber_mich, kontakt_email, social_x, social_facebook, social_instagram, social_tiktok')
+      .select('id, display_name, verein_name, fraktion, ueber_mich, kontakt_email, avatar_url, social_x, social_facebook, social_instagram, social_tiktok')
       .eq('gemeinde_id', gemeindeId)
       .eq('role', 'gemeinderat'),
     supabase

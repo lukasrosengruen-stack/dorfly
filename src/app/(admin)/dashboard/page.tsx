@@ -54,6 +54,7 @@ export default async function DashboardPage() {
         fraktion={profile.fraktion ?? null}
         ueber_mich={profile.ueber_mich ?? null}
         kontakt_email={profile.kontakt_email ?? null}
+        avatar_url={profile.avatar_url ?? null}
         social_x={profile.social_x ?? null}
         social_facebook={profile.social_facebook ?? null}
         social_instagram={profile.social_instagram ?? null}
