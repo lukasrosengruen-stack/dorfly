@@ -44,7 +44,7 @@ describe('getBuergermeisterLabel', () => {
   it('gibt Verwaltungs-Labels zurück wenn verwaltung konfiguriert', () => {
     const label = getBuergermeisterLabel({ features: { buergermeisterLabel: 'verwaltung' } })
     expect(label.long).toBe('Frag die Verwaltung')
-    expect(label.short).toBe('Frag VW')
+    expect(label.short).toBe('Verwaltung')
   })
 
   it('gibt Bürgermeister-Labels zurück wenn buergermeister konfiguriert', () => {

@@ -229,9 +229,9 @@ export default function GemeinderatClient({ posts, raete, meineFragen, gemeindeI
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-gray-900 text-sm truncate">{name}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          {rat.fraktion ? `${rat.fraktion} · ` : ''}{gemeindeName}
-                        </p>
+                        {rat.fraktion && (
+                          <p className="text-xs text-gray-400 mt-0.5">{rat.fraktion}</p>
+                        )}
                       </div>
                       <ChevronDown
                         className={clsx('w-4 h-4 text-gray-400 shrink-0 transition-transform', isExpanded && 'rotate-180')}

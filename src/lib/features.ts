@@ -29,7 +29,7 @@ export function getBuergermeisterLabel(
 ): { long: string; short: string } {
   const label = getFeatures(gemeinde).buergermeisterLabel ?? 'buergermeister'
   if (label === 'verwaltung') {
-    return { long: 'Frag die Verwaltung', short: 'Frag VW' }
+    return { long: 'Frag die Verwaltung', short: 'Verwaltung' }
   }
   return { long: 'Frag den Bürgermeister', short: 'Frag BM' }
 }
