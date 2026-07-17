@@ -27,7 +27,7 @@ export default function UmfragenClient({ umfragen: initialUmfragen, profile, gem
       <PageHeader
         gemeindeName={gemeindeName}
         title="Umfragen"
-        subtitle="Ihre Meinung zählt"
+        subtitle="Deine Meinung zählt"
       />
 
       {/* Inhalt */}

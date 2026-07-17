@@ -20,7 +20,7 @@ const BASE_TILES: Tile[] = [
   { href: '/feed',            label: 'Newsfeed',         icon: Newspaper,            color: '#1a5cbf', bg: 'rgba(26,92,191,0.1)',  desc: 'Aktuelles' },
   { href: '/veranstaltungen', label: 'Veranstaltungen',  icon: CalendarDays,          color: '#7c3aed', bg: 'rgba(124,58,237,0.1)', desc: 'Events & Termine' },
   { href: '/maengel',         label: 'Mängel melden',    icon: AlertTriangle,         color: '#c41e1e', bg: 'rgba(196,30,30,0.1)',  desc: 'Schäden melden' },
-  { href: '/umfragen',        label: 'Umfragen',         icon: BarChart2,             color: '#7c3aed', bg: 'rgba(124,58,237,0.1)', desc: 'Ihre Meinung' },
+  { href: '/umfragen',        label: 'Umfragen',         icon: BarChart2,             color: '#7c3aed', bg: 'rgba(124,58,237,0.1)', desc: 'Deine Meinung' },
   { href: '/lokale-angebote', label: 'Lokale Angebote',  icon: Store,                 color: '#ea580c', bg: 'rgba(234,88,12,0.1)',  desc: 'Betriebe vor Ort' },
   { href: '/vereine',         label: 'Vereine & Orgs',   icon: Users,                 color: '#7c3aed', bg: 'rgba(124,58,237,0.1)', desc: 'Vereine & Organisationen' },
   { href: '/buergermeister',  label: 'Frag den BM',      icon: MessageCircleQuestion, color: '#1a5cbf', bg: 'rgba(26,92,191,0.1)',  desc: 'An die Verwaltung' },
@@ -86,7 +86,7 @@ export default async function HomePage() {
           <div>
             <p className="text-[10px] font-bold tracking-[3px] text-gold-500 uppercase">{gemeindeName}</p>
             <h1 className="text-white font-extrabold text-[28px] mt-1.5 leading-snug">
-              Guten Morgen,<br />{vorname}!
+              Hallo,<br />{vorname}!
             </h1>
           </div>
           {gemeinde?.logo_url && (
