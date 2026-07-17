@@ -86,7 +86,7 @@ export default async function HomePage() {
           <div>
             <p className="text-[10px] font-bold tracking-[3px] text-gold-500 uppercase">{gemeindeName}</p>
             <h1 className="text-white font-extrabold text-[28px] mt-1.5 leading-snug">
-              Hallo,<br />{vorname}!
+              Hallo {vorname}.
             </h1>
           </div>
           {gemeinde?.logo_url && (
