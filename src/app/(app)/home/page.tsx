@@ -88,6 +88,7 @@ export default async function HomePage() {
             <h1 className="text-white font-extrabold text-[28px] mt-1.5 leading-snug">
               Hallo {vorname}.
             </h1>
+            <p className="text-white/60 text-[13px] mt-1.5">Was möchtest du heute tun?</p>
           </div>
           {gemeinde?.logo_url && (
             <img
@@ -97,7 +98,6 @@ export default async function HomePage() {
             />
           )}
         </div>
-        <p className="text-white/60 text-[13px] mt-1.5">Was möchtest du heute tun?</p>
       </div>
 
       <div className="px-4 py-4 space-y-3">
