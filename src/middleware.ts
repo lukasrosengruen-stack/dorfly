@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
-const PUBLIC_ROUTES = ['/login', '/start', '/posts/', '/api/', '/auth/']
+const PUBLIC_ROUTES = ['/login', '/start', '/posts/', '/api/', '/auth/', '/datenschutz', '/impressum', '/support']
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'
 
 function extractSlug(hostname: string): string | null {

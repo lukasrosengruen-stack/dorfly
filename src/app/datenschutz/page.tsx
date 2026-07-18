@@ -10,11 +10,10 @@ const C = {
 
 function Logo() {
   return (
-    <a
-      href="/homepage"
+    <span
       style={{
         fontSize: 24, fontWeight: 800, letterSpacing: '-0.04em',
-        textDecoration: 'none', display: 'inline-flex', alignItems: 'center',
+        display: 'inline-flex', alignItems: 'center',
       }}
     >
       <span style={{ color: C.blue }}>Dorf</span>
@@ -24,7 +23,7 @@ function Logo() {
         background: C.green, borderRadius: '50%',
         marginLeft: 2, marginBottom: 10, flexShrink: 0,
       }} />
-    </a>
+    </span>
   )
 }
 
@@ -89,16 +88,16 @@ export default function DatenschutzPage() {
       location: 'USA / SCC (Art. 46 DSGVO)',
     },
     {
-      name: 'Twilio, Inc.',
-      purpose: 'SMS-Verifizierung',
-      data: 'Telefonnummer, OTP-Code',
-      location: 'USA / SCC (Art. 46 DSGVO)',
-    },
-    {
       name: 'Resend, Inc.',
       purpose: 'Transaktions-E-Mails',
       data: 'E-Mail-Adresse, Name',
       location: 'EU / AVV',
+    },
+    {
+      name: 'Vercel Inc.',
+      purpose: 'Hosting und Bereitstellung der Anwendung',
+      data: 'Alle Nutzerdaten, Inhalte und Medien im Rahmen des technischen Hostings',
+      location: 'USA / SCC (Art. 46 DSGVO)',
     },
   ]
 
@@ -129,7 +128,7 @@ export default function DatenschutzPage() {
           Datenschutzerklärung
         </h1>
         <p style={{ color: C.muted, fontSize: 14, marginBottom: 40 }}>
-          Stand: Mai 2025
+          Stand: Juli 2026
         </p>
 
         {/* 1 */}
@@ -171,7 +170,6 @@ export default function DatenschutzPage() {
           <UL items={[
             'E-Mail-Adresse (Pflichtfeld – Authentifizierung und Kommunikation)',
             'Passwort (wird verschlüsselt gespeichert, nie im Klartext)',
-            'Telefonnummer (Pflichtfeld – SMS-Verifizierung)',
             'Vorname und Nachname (freiwillig)',
             'Geburtsdatum (freiwillig)',
             'Adresse (freiwillig)',
@@ -224,12 +222,11 @@ export default function DatenschutzPage() {
           </P>
 
           <h3 style={{ fontSize: 16, fontWeight: 700, color: C.navy, marginBottom: 8, marginTop: 20 }}>
-            3.5 SMS-Verifizierung
+            3.5 E-Mail-Verifizierung
           </h3>
           <P>
-            Zur Verifizierung der Telefonnummer wird ein Einmalcode (OTP) per SMS über Twilio
-            versendet. Telefonnummer und Code werden nur für die Dauer des Verifizierungsprozesses
-            gespeichert und danach automatisch gelöscht.
+            Zur Verifizierung der E-Mail-Adresse wird bei der Registrierung ein Bestätigungslink
+            per E-Mail versendet. Das Konto wird erst nach Bestätigung des Links aktiv.
           </P>
           <P>
             <strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. b DSGVO.
@@ -306,9 +303,9 @@ export default function DatenschutzPage() {
             </table>
           </div>
           <P>
-            Bei Datenübermittlungen in die USA (OneSignal, Twilio) erfolgt die Absicherung durch
-            Standardvertragsklauseln gemäß Art. 46 Abs. 2 lit. c DSGVO. Beide Anbieter sind zudem
-            nach dem EU-US Data Privacy Framework zertifiziert.
+            Bei Datenübermittlungen in die USA erfolgt die Absicherung durch
+            Standardvertragsklauseln gemäß Art. 46 Abs. 2 lit. c DSGVO. Die betroffenen
+            Anbieter sind in der Auftragsverarbeiter-Tabelle aufgeführt.
           </P>
         </Section>
 
@@ -329,7 +326,6 @@ export default function DatenschutzPage() {
           <UL items={[
             'Kontodaten: bis zur Löschung des Nutzerkontos',
             'Nutzergenerierte Inhalte: bis zur Kontolöschung oder auf Anfrage',
-            'SMS-Verifizierungscodes: werden nach Ablauf der Gültigkeitsdauer automatisch gelöscht',
             'Session-Cookies: werden bei der Abmeldung gelöscht',
             'Demo-Anfragen: nach abgeschlossener Bearbeitung, spätestens nach 6 Monaten',
           ]} />
@@ -397,7 +393,7 @@ export default function DatenschutzPage() {
         {/* 12 */}
         <Section title="12. Aktualität und Änderungen">
           <P>
-            Diese Datenschutzerklärung hat den Stand Mai 2025. Bei Änderungen der Plattform oder
+            Diese Datenschutzerklärung hat den Stand Juli 2026. Bei Änderungen der Plattform oder
             der Rechtslage wird sie entsprechend aktualisiert. Die jeweils aktuelle Version ist
             unter{' '}
             <a href="/datenschutz" style={{ color: C.blue }}>dorfly.app/datenschutz</a>{' '}

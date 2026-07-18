@@ -10,11 +10,10 @@ const C = {
 
 function Logo() {
   return (
-    <a
-      href="/homepage"
+    <span
       style={{
         fontSize: 24, fontWeight: 800, letterSpacing: '-0.04em',
-        textDecoration: 'none', display: 'inline-flex', alignItems: 'center',
+        display: 'inline-flex', alignItems: 'center',
       }}
     >
       <span style={{ color: C.blue }}>Dorf</span>
@@ -24,7 +23,7 @@ function Logo() {
         background: C.green, borderRadius: '50%',
         marginLeft: 2, marginBottom: 10, flexShrink: 0,
       }} />
-    </a>
+    </span>
   )
 }
 
