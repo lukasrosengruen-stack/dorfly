@@ -302,6 +302,10 @@ function DemoModal({ onClose }: { onClose: () => void }) {
             <p style={{ fontSize: 12, color: '#94A3B8', textAlign: 'center', marginTop: 12 }}>
               Unverbindlich. Kein IT-Projekt. Kein langer Einführungsprozess.
             </p>
+            <p style={{ fontSize: 11, color: '#94A3B8', textAlign: 'center', marginTop: 8, lineHeight: 1.6 }}>
+              Ihre Angaben werden ausschließlich zur Bearbeitung dieser Anfrage verwendet.{' '}
+              <a href="/datenschutz" style={{ color: '#94A3B8', textDecoration: 'underline' }}>Mehr in der Datenschutzerklärung.</a>
+            </p>
           </form>
         )}
       </div>

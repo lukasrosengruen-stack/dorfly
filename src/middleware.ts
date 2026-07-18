@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
-const PUBLIC_ROUTES = ['/login', '/start', '/posts/', '/api/', '/auth/', '/datenschutz', '/impressum', '/support']
+const PUBLIC_ROUTES = ['/login', '/start', '/homepage', '/posts/', '/api/', '/auth/', '/datenschutz', '/impressum', '/support']
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'
 
 function extractSlug(hostname: string): string | null {
@@ -48,7 +48,10 @@ export default function proxy(request: NextRequest) {
   }
 
   if (slug === null) {
-    return NextResponse.redirect(new URL('/start', request.url))
+    if (pathname === '/') {
+      return NextResponse.rewrite(new URL('/homepage', request.url))
+    }
+    return NextResponse.redirect(new URL('/homepage', request.url))
   }
 
   const hasSession = request.cookies.getAll().some(c => c.name.startsWith('sb-') && c.name.includes('-auth-token'))

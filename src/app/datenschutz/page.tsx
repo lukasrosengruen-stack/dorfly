@@ -77,7 +77,7 @@ export default function DatenschutzPage() {
   const thirdParties = [
     {
       name: 'Supabase, Inc.',
-      purpose: 'Datenbank, Authentifizierung, Dateispeicher',
+      purpose: 'Datenbank, Authentifizierung, Dateispeicher, Demo-Anfragen (nur im Fehlerfall)',
       data: 'Alle Nutzerdaten, Inhalte, Medien',
       location: 'EU (Frankfurt) / AVV',
     },
@@ -89,7 +89,7 @@ export default function DatenschutzPage() {
     },
     {
       name: 'Resend, Inc.',
-      purpose: 'Transaktions-E-Mails',
+      purpose: 'Transaktions-E-Mails, Demo-Anfragen',
       data: 'E-Mail-Adresse, Name',
       location: 'EU / AVV',
     },
@@ -248,12 +248,21 @@ export default function DatenschutzPage() {
           </h3>
           <P>
             Über das Kontaktformular der Marketing-Website können Gemeinden eine Demo anfragen.
-            Dabei erhobene Daten (Name, E-Mail, Gemeinde) werden ausschließlich zur Beantwortung
-            der Anfrage genutzt.
+            Dabei erhobene Daten (Name, E-Mail, Gemeinde, Nachricht (optional)) werden
+            ausschließlich zur Beantwortung der Anfrage genutzt.
+          </P>
+          <P>
+            Die Anfrage wird per E-Mail über den Auftragsverarbeiter Resend an die interne
+            Kontaktadresse übermittelt. Schlägt der Mailversand fehl, wird die Anfrage
+            vorübergehend in der Datenbank gespeichert, um sicherzustellen, dass sie nicht
+            verloren geht. Diese Speicherung wird nach abgeschlossener Bearbeitung, spätestens
+            nach 6 Monaten, gelöscht.
           </P>
           <P>
             <strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. a DSGVO bzw. Art. 6 Abs. 1 lit. b
-            DSGVO (vorvertragliche Maßnahmen).
+            DSGVO (vorvertragliche Maßnahmen) für die Kontaktaufnahme; Art. 6 Abs. 1 lit. f DSGVO
+            (berechtigtes Interesse an der technischen Ausfallsicherung) für die
+            Datenbank-Speicherung im Fehlerfall.
           </P>
         </Section>
 
@@ -327,7 +336,7 @@ export default function DatenschutzPage() {
             'Kontodaten: bis zur Löschung des Nutzerkontos',
             'Nutzergenerierte Inhalte: bis zur Kontolöschung oder auf Anfrage',
             'Session-Cookies: werden bei der Abmeldung gelöscht',
-            'Demo-Anfragen: nach abgeschlossener Bearbeitung, spätestens nach 6 Monaten',
+            'Demo-Anfragen: im Regelfall keine Speicherung (nur E-Mail-Versand); nur bei fehlgeschlagenem Mailversand wird die Anfrage in der Datenbank gespeichert und nach abgeschlossener Bearbeitung, spätestens nach 6 Monaten, gelöscht',
           ]} />
           <P>
             Nutzer können ihr Konto und alle damit verbundenen Daten jederzeit vollständig löschen
