@@ -68,8 +68,8 @@ export default function ImpressumPage() {
           Impressum
         </h1>
 
-        {/* Angaben gemäß §5 TMG */}
-        <Section title="Angaben gemäß § 5 TMG">
+        {/* Angaben gemäß § 5 DDG */}
+        <Section title="Angaben gemäß § 5 DDG">
           <P>
             <strong>Lukas Rosengrün</strong><br />
             Goldregenweg 15<br />
@@ -105,11 +105,11 @@ export default function ImpressumPage() {
           <P>
             Die Inhalte dieser Seiten wurden mit größter Sorgfalt erstellt. Für die Richtigkeit,
             Vollständigkeit und Aktualität der Inhalte können wir jedoch keine Gewähr übernehmen.
-            Als Diensteanbieter sind wir gemäß § 7 Abs. 1 TMG für eigene Inhalte auf diesen Seiten
-            nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8 bis 10 TMG sind wir als
-            Diensteanbieter jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde
-            Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige
-            Tätigkeit hinweisen.
+            Als Diensteanbieter sind wir gemäß § 7 Abs. 1 DDG für eigene Inhalte auf diesen Seiten
+            nach den allgemeinen Gesetzen verantwortlich. Nach Art. 4 bis 6 der Verordnung (EU)
+            2022/2065 (Digital Services Act) sind wir als Diensteanbieter jedoch nicht verpflichtet,
+            übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen
+            zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen.
           </P>
           <h3 style={{ fontSize: 15, fontWeight: 700, color: C.navy, marginBottom: 6, marginTop: 16 }}>
             Haftung für Links
