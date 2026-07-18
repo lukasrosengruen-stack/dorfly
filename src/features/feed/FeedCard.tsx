@@ -134,7 +134,7 @@ export function FeedCard({ post, expanded, onToggleExpand, gemeindeName }: FeedC
             <ReportButton inhaltTyp="post" inhaltId={post.id} />
           </div>
 
-          <h2 className="font-black text-gray-900 text-base leading-snug uppercase tracking-wide">
+          <h2 className="font-bold text-gray-900 text-base leading-snug">
             {post.titel}
           </h2>
 
