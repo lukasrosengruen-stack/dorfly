@@ -64,18 +64,23 @@ function R({ children, delay = 0, className = '' }: {
 }
 
 // ── Phone frame (screenshot container) ────────────────────────────────────────
-// Screenshots sind iPhone-14-Plus-Aufnahmen, 1284×2778px — der Frame folgt exakt diesem Seitenverhältnis.
+// Screenshots bringen den Gerätrahmen bereits selbst mit (transparentes PNG, 1464×2978px).
+// Padding reserviert Raum für den drop-shadow, damit er nicht abgeschnitten wird.
 function PhoneFrame({ src, alt, width = 290 }: { src: string; alt: string; width?: number }) {
+  const pad = Math.round(width * 0.05)
   return (
     <div style={{
-      width, aspectRatio: '1284 / 2778', background: C.navy, borderRadius: 46,
-      position: 'relative', flexShrink: 0,
-      boxShadow: `0 0 0 10px #1A2D43, 0 40px 80px rgba(13,27,42,.3), 0 80px 160px rgba(13,27,42,.12)`,
-      overflow: 'hidden',
+      width, aspectRatio: '1464 / 2978', boxSizing: 'border-box',
+      padding: pad, flexShrink: 0,
     }}>
-      <div style={{ position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', width: 90, height: 26, background: C.navy, borderRadius: 20, zIndex: 10 }} />
-      <div style={{ position: 'absolute', inset: 0, borderRadius: 46, overflow: 'hidden' }}>
-        <Image src={src} alt={alt} fill style={{ objectFit: 'cover' }} sizes={`${width}px`} />
+      <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          style={{ objectFit: 'contain', filter: 'drop-shadow(0 18px 26px rgba(13,27,42,.25))' }}
+          sizes={`${width}px`}
+        />
       </div>
     </div>
   )
@@ -86,7 +91,7 @@ function PhoneMockup() {
   return (
     <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', height: 640 }}>
       <PhoneFrame
-        src="/screenshots/home.png"
+        src="/screenshots/home-portrait.png"
         alt="Startbildschirm der Dorfly-Demo-Gemeinde Musterbach mit Gemeindewappen und aktiver Warnmeldung"
       />
     </div>
@@ -804,10 +809,10 @@ function Features() {
 
 // ── DEMO SHOWCASE ─────────────────────────────────────────────────────────────
 const showcaseScreenshots = [
-  { src: '/screenshots/gemeinderat.png', alt: 'Übersicht der Gemeinderätinnen und Gemeinderäte in Musterbach' },
-  { src: '/screenshots/maengelmelder.png', alt: 'Mängelmelder mit Statusverfolgung und Antworten der Verwaltung' },
-  { src: '/screenshots/abfallkalender.png', alt: 'Abfallkalender mit Abholterminen und Erinnerungen' },
-  { src: '/screenshots/newsfeed.png', alt: 'Newsfeed mit Beiträgen von Verwaltung und Vereinen' },
+  { src: '/screenshots/gemeinderat-portrait.png', alt: 'Übersicht der Gemeinderätinnen und Gemeinderäte in Musterbach' },
+  { src: '/screenshots/maengelmelder-portrait.png', alt: 'Mängelmelder mit Statusverfolgung und Antworten der Verwaltung' },
+  { src: '/screenshots/abfallkalender-portrait.png', alt: 'Abfallkalender mit Abholterminen und Erinnerungen' },
+  { src: '/screenshots/newsfeed-portrait.png', alt: 'Newsfeed mit Beiträgen von Verwaltung und Vereinen' },
 ]
 
 function DemoShowcase() {
