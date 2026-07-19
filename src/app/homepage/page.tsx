@@ -33,11 +33,7 @@ function Logo({ size = 24 }: { size?: number }) {
     >
       <span style={{ color: C.blue }}>Dorf</span>
       <span style={{ color: C.navy }}>ly</span>
-      <span style={{
-        display: 'inline-block', width: 6, height: 6,
-        background: C.green, borderRadius: '50%',
-        marginLeft: 2, marginBottom: 10, flexShrink: 0,
-      }} />
+      <span style={{ color: C.green }}>.</span>
     </a>
   )
 }
