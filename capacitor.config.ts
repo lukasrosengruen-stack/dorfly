@@ -4,7 +4,7 @@ const config: CapacitorConfig = {
   appName: 'Dorfly',
   webDir: 'public',
   server: {
-    url: 'https://dorfly.de',
+    url: 'https://dorfly.de/start',
     cleartext: false,
     allowNavigation: ['*.dorfly.de']
   }
