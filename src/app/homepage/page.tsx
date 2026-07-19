@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
 import {
   Newspaper, MapPin, MessageCircle, BarChart2, Landmark,
   ShoppingBag, Shield, Menu, X, Check, ChevronRight,
@@ -66,108 +67,32 @@ function R({ children, delay = 0, className = '' }: {
   )
 }
 
+// ── Phone frame (screenshot container) ────────────────────────────────────────
+// Screenshots sind iPhone-14-Plus-Aufnahmen, 1284×2778px — der Frame folgt exakt diesem Seitenverhältnis.
+function PhoneFrame({ src, alt, width = 290 }: { src: string; alt: string; width?: number }) {
+  return (
+    <div style={{
+      width, aspectRatio: '1284 / 2778', background: C.navy, borderRadius: 46,
+      position: 'relative', flexShrink: 0,
+      boxShadow: `0 0 0 10px #1A2D43, 0 40px 80px rgba(13,27,42,.3), 0 80px 160px rgba(13,27,42,.12)`,
+      overflow: 'hidden',
+    }}>
+      <div style={{ position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', width: 90, height: 26, background: C.navy, borderRadius: 20, zIndex: 10 }} />
+      <div style={{ position: 'absolute', inset: 0, borderRadius: 46, overflow: 'hidden' }}>
+        <Image src={src} alt={alt} fill style={{ objectFit: 'cover' }} sizes={`${width}px`} />
+      </div>
+    </div>
+  )
+}
+
 // ── Phone mockup ──────────────────────────────────────────────────────────────
 function PhoneMockup() {
   return (
     <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', height: 640 }}>
-      {/* Float card top-right */}
-      <div className="mp-float" style={{
-        position: 'absolute', top: 70, right: -10, zIndex: 10,
-        background: C.white, borderRadius: 14,
-        boxShadow: '0 8px 32px rgba(13,27,42,.12)',
-        padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10,
-        fontSize: 13, fontWeight: 600, color: C.navy, whiteSpace: 'nowrap',
-      }}>
-        <div style={{ width: 34, height: 34, borderRadius: 9, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>📢</div>
-        <div>
-          <div>Neue Mitteilung</div>
-          <div style={{ fontSize: 11, color: C.muted, fontWeight: 400 }}>Gemeinde Ehningen</div>
-        </div>
-      </div>
-
-      {/* Float card bottom-left */}
-      <div className="mp-float-delay" style={{
-        position: 'absolute', bottom: 140, left: -20, zIndex: 10,
-        background: C.white, borderRadius: 14,
-        boxShadow: '0 8px 32px rgba(13,27,42,.12)',
-        padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10,
-        fontSize: 13, fontWeight: 600, color: C.navy, whiteSpace: 'nowrap',
-      }}>
-        <div style={{ width: 34, height: 34, borderRadius: 9, background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>✅</div>
-        <div>
-          <div>Mängel gemeldet</div>
-          <div style={{ fontSize: 11, color: C.muted, fontWeight: 400 }}>In Bearbeitung</div>
-        </div>
-      </div>
-
-      {/* Phone frame */}
-      <div style={{
-        width: 290, height: 600, background: C.navy, borderRadius: 46,
-        position: 'relative', flexShrink: 0,
-        boxShadow: `0 0 0 10px #1A2D43, 0 40px 80px rgba(13,27,42,.3), 0 80px 160px rgba(13,27,42,.12)`,
-        overflow: 'hidden',
-      }}>
-        <div style={{ position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', width: 90, height: 26, background: C.navy, borderRadius: 20, zIndex: 10 }} />
-        <div style={{ position: 'absolute', inset: 0, background: C.bg, borderRadius: 46, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-          {/* Status bar */}
-          <div style={{ height: 52, background: C.white, display: 'flex', alignItems: 'flex-end', padding: '0 22px 10px', justifyContent: 'space-between', flexShrink: 0 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: C.navy }}>9:41</span>
-            <span style={{ fontSize: 10, color: C.muted }}>●●●</span>
-          </div>
-          {/* App header */}
-          <div style={{ background: C.white, padding: '10px 18px 12px', borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
-            <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.04em' }}>
-              <span style={{ color: C.blue }}>Dorf</span>
-              <span style={{ color: C.navy }}>ly</span>
-              <span style={{ display: 'inline-block', width: 4, height: 4, background: C.green, borderRadius: '50%', marginLeft: 1, marginBottom: 6 }} />
-            </div>
-            <div style={{ fontSize: 10, color: C.muted, marginTop: 1 }}>Guten Morgen, Lisa 👋</div>
-          </div>
-          {/* Feed */}
-          <div style={{ flex: 1, overflow: 'hidden', padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ background: C.white, borderRadius: 12, padding: 12, boxShadow: '0 2px 8px rgba(0,0,0,.06)', flexShrink: 0 }}>
-              <div style={{ width: '100%', height: 46, background: `linear-gradient(135deg, ${C.blue}, #003D7A)`, borderRadius: 7, marginBottom: 8 }} />
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: C.blue, marginBottom: 5 }}>Aktuelles</div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: C.navy, lineHeight: 1.4, marginBottom: 3 }}>Gemeinderatssitzung am 15. Mai</div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
-                <span style={{ fontSize: 10, color: C.muted }}>Heute · Ehningen</span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: '#E8F5F0', color: C.green, fontSize: 9, fontWeight: 700, padding: '3px 7px', borderRadius: 100 }}>
-                  <span style={{ width: 4, height: 4, background: C.green, borderRadius: '50%', display: 'inline-block' }} />Neu
-                </span>
-              </div>
-            </div>
-            <div style={{ background: 'linear-gradient(135deg,#EFF6FF,#DBEAFE)', border: '1.5px solid #BFDBFE', borderRadius: 12, padding: 12, flexShrink: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ width: 26, height: 26, background: C.blue, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                </div>
-                <div>
-                  <div style={{ fontSize: 10, fontWeight: 600, color: C.navy }}>Sperrung Hauptstraße</div>
-                  <div style={{ fontSize: 10, color: C.muted }}>15. bis 17. Mai</div>
-                </div>
-              </div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, flexShrink: 0 }}>
-              {[['📋', 'Umfrage', 'Parkplätze'], ['🗺️', 'Mängel', 'Melden']].map(([icon, title, sub]) => (
-                <div key={title} style={{ background: C.white, borderRadius: 12, padding: 10, boxShadow: '0 2px 8px rgba(0,0,0,.06)' }}>
-                  <div style={{ fontSize: 16, marginBottom: 3 }}>{icon}</div>
-                  <div style={{ fontSize: 10, fontWeight: 600, color: C.navy }}>{title}</div>
-                  <div style={{ fontSize: 9, color: C.muted }}>{sub}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-          {/* Tab bar */}
-          <div style={{ background: C.white, borderTop: `1px solid ${C.border}`, height: 54, display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '0 8px', flexShrink: 0 }}>
-            {(['Home', 'News', 'Mängel', 'Mehr'] as const).map((label, i) => (
-              <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                <div style={{ width: 18, height: 18, borderRadius: 5, background: i === 0 ? C.blue : C.border }} />
-                <span style={{ fontSize: 8, color: i === 0 ? C.blue : C.muted, fontWeight: i === 0 ? 700 : 500 }}>{label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <PhoneFrame
+        src="/screenshots/home.png"
+        alt="Startbildschirm der Dorfly-Demo-Gemeinde Musterbach mit Gemeindewappen und aktiver Warnmeldung"
+      />
     </div>
   )
 }
@@ -881,6 +806,35 @@ function Features() {
   )
 }
 
+// ── DEMO SHOWCASE ─────────────────────────────────────────────────────────────
+const showcaseScreenshots = [
+  { src: '/screenshots/gemeinderat.png', alt: 'Übersicht der Gemeinderätinnen und Gemeinderäte in Musterbach' },
+  { src: '/screenshots/maengelmelder.png', alt: 'Mängelmelder mit Statusverfolgung und Antworten der Verwaltung' },
+  { src: '/screenshots/abfallkalender.png', alt: 'Abfallkalender mit Abholterminen und Erinnerungen' },
+  { src: '/screenshots/newsfeed.png', alt: 'Newsfeed mit Beiträgen von Verwaltung und Vereinen' },
+]
+
+function DemoShowcase() {
+  return (
+    <section style={{ background: C.white, padding: 'clamp(64px, 10vw, 120px) 0' }}>
+      <div style={{ maxWidth: 1320, margin: '0 auto', padding: '0 clamp(20px, 5vw, 48px)' }}>
+        <R>
+          <h2 style={{ fontSize: 'clamp(30px, 3.5vw, 52px)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.1, color: C.navy, marginBottom: 64, textAlign: 'center' }}>
+            Einblicke aus der Demo-Gemeinde Musterbach
+          </h2>
+        </R>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 justify-items-center">
+          {showcaseScreenshots.map(({ src, alt }, i) => (
+            <R key={src} delay={i * 0.08}>
+              <PhoneFrame src={src} alt={alt} width={230} />
+            </R>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 // ── SETUP & BEGLEITUNG ────────────────────────────────────────────────────────
 const steps = [
   { num: '01', title: 'Zugang erhalten.',    text: 'Ihre Gemeinde wird eingerichtet. Farben, Logo, Struktur. Alles auf Ihre Kommune zugeschnitten.',                                    accent: true  },
@@ -1123,6 +1077,7 @@ export default function HomepagePage() {
         <Problem />
         <Zielgruppen />
         <Features />
+        <DemoShowcase />
         <Setup />
         <About />
         <CTA onDemo={() => setDemoOpen(true)} onUpdates={() => setUpdatesOpen(true)} />
