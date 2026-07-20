@@ -45,9 +45,9 @@ export default function GalleryLightbox({ bilder, startIndex = 0, onClose }: Pro
       </div>
 
       {/* Hauptbild */}
-      <div className="flex-1 flex items-center justify-center relative px-12 min-h-0" onClick={e => e.stopPropagation()}>
+      <div className="flex-1 flex items-center justify-center relative px-12 min-h-0" onClick={onClose}>
         {current > 0 && (
-          <button onClick={prev} aria-label="Vorheriges Bild"
+          <button onClick={e => { e.stopPropagation(); prev() }} aria-label="Vorheriges Bild"
             className="absolute left-2 p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10">
             <ChevronLeft className="w-6 h-6 text-white" aria-hidden="true" />
           </button>
@@ -55,9 +55,9 @@ export default function GalleryLightbox({ bilder, startIndex = 0, onClose }: Pro
         <span className="sr-only" aria-live="polite" aria-atomic="true">
           Bild {current + 1} von {bilder.length}
         </span>
-        <img src={bilder[current]} className="max-w-full max-h-full object-contain rounded-xl select-none" alt="" />
+        <img src={bilder[current]} className="max-w-full max-h-full object-contain rounded-xl select-none" alt="" onClick={e => e.stopPropagation()} />
         {current < bilder.length - 1 && (
-          <button onClick={next} aria-label="Nächstes Bild"
+          <button onClick={e => { e.stopPropagation(); next() }} aria-label="Nächstes Bild"
             className="absolute right-2 p-2.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10">
             <ChevronRight className="w-6 h-6 text-white" aria-hidden="true" />
           </button>
