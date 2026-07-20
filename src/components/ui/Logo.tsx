@@ -32,19 +32,7 @@ export function Logo({ size = 24, className }: LogoProps) {
     >
       <span style={{ color: COLORS.blue }}>Dorf</span>
       <span style={{ color: COLORS.navy }}>ly</span>
-      <span
-        aria-hidden="true"
-        style={{
-          display: 'inline-block',
-          width: '0.2em',
-          height: '0.2em',
-          borderRadius: '50%',
-          background: COLORS.green,
-          marginLeft: '0.05em',
-          alignSelf: 'flex-end',
-          marginBottom: '0.06em',
-        }}
-      />
+      <span style={{ color: COLORS.green }}>.</span>
     </span>
   )
 }

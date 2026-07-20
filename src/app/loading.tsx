@@ -6,16 +6,12 @@ export default function Loading() {
       <div className="flex flex-col items-center gap-6">
         <Image
           src="/icons/icon-512.png"
-          alt=""
+          alt="Dorfly"
           width={96}
           height={96}
           priority
           className="rounded-2xl shadow-lg"
         />
-
-        <div className="text-center">
-          <h1 className="text-white font-black text-3xl tracking-wider uppercase">Dorfly</h1>
-        </div>
 
         <div className="mt-4">
           <div className="flex gap-1.5">
