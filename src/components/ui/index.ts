@@ -20,3 +20,6 @@ export type { EmptyStateProps } from './EmptyState'
 
 export { Badge } from './Badge'
 export type { BadgeProps } from './Badge'
+
+export { Logo } from './Logo'
+export type { LogoProps } from './Logo'

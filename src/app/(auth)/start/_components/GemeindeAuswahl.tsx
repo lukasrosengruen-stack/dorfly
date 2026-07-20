@@ -2,6 +2,7 @@
 
 import { useState, useId } from 'react'
 import { Search, LogIn, UserPlus } from 'lucide-react'
+import { Logo } from '@/components/ui'
 
 interface Gemeinde {
   id: string
@@ -34,11 +35,7 @@ export default function GemeindeAuswahl({ gemeinden, rootDomain }: Props) {
     <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
       {/* Logo */}
       <div className="text-center mb-8">
-        <div className="text-3xl font-extrabold tracking-tight leading-none">
-          <span style={{ color: '#0057A8' }}>Dorf</span>
-          <span style={{ color: '#0D1B2A' }}>ly</span>
-          <span style={{ color: '#00A878' }}>.</span>
-        </div>
+        <Logo size={30} />
         <p className="text-gray-500 text-sm mt-3 leading-relaxed">
           Wählen Sie Ihre Gemeinde, um fortzufahren.
         </p>

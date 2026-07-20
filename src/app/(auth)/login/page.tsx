@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
-import { MessageSquare, ArrowRight, Loader2, ChevronDown, Mail } from 'lucide-react'
+import { ArrowRight, Loader2, ChevronDown, Mail } from 'lucide-react'
+import { Logo } from '@/components/ui'
 
 type Mode = 'login' | 'register' | 'forgot'
 
@@ -213,10 +215,14 @@ export default function LoginPage() {
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-500 mb-4">
-            <MessageSquare className="text-white w-8 h-8" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">Dorfly</h1>
+          <Image
+            src="/icons/icon-512.png"
+            alt=""
+            width={64}
+            height={64}
+            className="rounded-2xl mx-auto mb-4"
+          />
+          <h1><Logo size={28} /></h1>
           <p className="text-gray-500 text-sm mt-1">Die digitale Heimat deiner Gemeinde</p>
         </div>
 

@@ -1,3 +1,5 @@
+import { Logo } from '@/components/ui'
+
 const C = {
   navy:   '#0D1B2A',
   blue:   '#0057A8',
@@ -10,21 +12,6 @@ const C = {
 
 export const metadata = {
   title: 'Support – Dorfly',
-}
-
-function Logo() {
-  return (
-    <span
-      style={{
-        fontSize: 24, fontWeight: 800, letterSpacing: '-0.04em',
-        display: 'inline-flex', alignItems: 'center',
-      }}
-    >
-      <span style={{ color: C.blue }}>Dorf</span>
-      <span style={{ color: C.navy }}>ly</span>
-      <span style={{ color: C.green }}>.</span>
-    </span>
-  )
 }
 
 function P({ children }: { children: React.ReactNode }) {

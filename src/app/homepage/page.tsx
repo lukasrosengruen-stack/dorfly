@@ -7,6 +7,7 @@ import {
   ShoppingBag, Shield, Menu, X, Check, ChevronRight,
   AlertTriangle, Trash2, Bell,
 } from 'lucide-react'
+import { Logo as Wordmark } from '@/components/ui'
 
 // ── Brand tokens ──────────────────────────────────────────────────────────────
 const C = {
@@ -24,16 +25,8 @@ const C = {
 // ── Logo ──────────────────────────────────────────────────────────────────────
 function Logo({ size = 24 }: { size?: number }) {
   return (
-    <a
-      href="#top"
-      style={{
-        fontSize: size, fontWeight: 800, letterSpacing: '-0.04em',
-        textDecoration: 'none', display: 'inline-flex', alignItems: 'center',
-      }}
-    >
-      <span style={{ color: C.blue }}>Dorf</span>
-      <span style={{ color: C.navy }}>ly</span>
-      <span style={{ color: C.green }}>.</span>
+    <a href="#top" style={{ display: 'inline-flex', textDecoration: 'none' }}>
+      <Wordmark size={size} />
     </a>
   )
 }

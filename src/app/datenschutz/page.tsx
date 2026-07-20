@@ -1,3 +1,5 @@
+import { Logo } from '@/components/ui'
+
 const C = {
   navy:   '#0D1B2A',
   blue:   '#0057A8',
@@ -7,21 +9,6 @@ const C = {
   border: '#DDE6F0',
   white:  '#ffffff',
 } as const
-
-function Logo() {
-  return (
-    <span
-      style={{
-        fontSize: 24, fontWeight: 800, letterSpacing: '-0.04em',
-        display: 'inline-flex', alignItems: 'center',
-      }}
-    >
-      <span style={{ color: C.blue }}>Dorf</span>
-      <span style={{ color: C.navy }}>ly</span>
-      <span style={{ color: C.green }}>.</span>
-    </span>
-  )
-}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (

@@ -1,15 +1,17 @@
+import Image from 'next/image'
+
 export default function Loading() {
   return (
     <div className="fixed inset-0 bg-primary-500 flex flex-col items-center justify-center z-[9999]">
       <div className="flex flex-col items-center gap-6">
-        {/* Gemeinde-Wappen Platzhalter */}
-        <div className="w-24 h-24 bg-white rounded-2xl flex items-center justify-center shadow-lg">
-          <div className="text-center">
-            <div className="w-12 h-12 mx-auto mb-1 border-4 border-primary-500 rounded-full flex items-center justify-center">
-              <span className="text-primary-500 font-black text-lg">D</span>
-            </div>
-          </div>
-        </div>
+        <Image
+          src="/icons/icon-512.png"
+          alt=""
+          width={96}
+          height={96}
+          priority
+          className="rounded-2xl shadow-lg"
+        />
 
         <div className="text-center">
           <h1 className="text-white font-black text-3xl tracking-wider uppercase">Dorfly</h1>
