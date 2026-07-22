@@ -14,6 +14,9 @@ export async function POST() {
     vorname: meta.vorname,
     nachname: meta.nachname,
     token: meta.einladungs_token,
+    termsAcceptedAt: meta.terms_accepted_at,
+    termsVersion: meta.terms_version,
+    ageConfirmedAt: meta.age_confirmed_at,
   })
 
   const { data: profile } = await supabase
