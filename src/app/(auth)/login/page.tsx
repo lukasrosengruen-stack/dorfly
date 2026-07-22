@@ -4,17 +4,11 @@ import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
-import { ArrowRight, Loader2, ChevronDown, Mail } from 'lucide-react'
+import { ArrowRight, Loader2, Mail } from 'lucide-react'
 import { Logo } from '@/components/ui'
+import RegisterForm, { type EinladungsInfo } from './RegisterForm'
 
 type Mode = 'login' | 'register' | 'forgot'
-
-interface EinladungsInfo {
-  email: string
-  rolle: string
-  organisation_name: string | null
-  gemeinde_name: string
-}
 
 const ROLLEN_LABEL: Record<string, string> = {
   buerger: 'Bürger:in',
@@ -29,9 +23,6 @@ export default function LoginPage() {
   const [mode, setMode] = useState<Mode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [vorname, setVorname] = useState('')
-  const [nachname, setNachname] = useState('')
-  const [showOptional, setShowOptional] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [registered, setRegistered] = useState(false)
@@ -156,30 +147,10 @@ export default function LoginPage() {
           }
         }
         return
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            // Redirect zur aktuellen Subdomain statt zur konfigurierten Site URL
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-            // Registrierungsdaten in user_metadata – funktioniert domain-übergreifend
-            data: {
-              vorname: vorname || undefined,
-              nachname: nachname || undefined,
-              einladungs_token: einladungsToken || undefined,
-            },
-          },
-        })
-        if (error) throw error
-
-        setRegistered(true)
-        return
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Fehler'
       if (msg.includes('Invalid login')) setError('E-Mail oder Passwort falsch')
-      else if (msg.includes('already registered')) setError('E-Mail bereits registriert')
       else if (msg.includes('email_not_confirmed') || msg.includes('Email not confirmed')) setError('email_not_confirmed')
       else setError(msg)
     } finally {
@@ -246,7 +217,7 @@ export default function LoginPage() {
           {(['login', 'register'] as const).map(m => (
             <button
               key={m}
-              onClick={() => { setMode(m); setError(''); setShowOptional(false) }}
+              onClick={() => { setMode(m); setError('') }}
               className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
                 mode === m ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
               }`}
@@ -257,144 +228,105 @@ export default function LoginPage() {
         </div>
 
         <div className="space-y-3">
-          <div>
-            <label htmlFor="login-email" className="sr-only">E-Mail-Adresse</label>
-            <input
-              id="login-email"
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="E-Mail-Adresse"
-              autoComplete="email"
-              readOnly={!!einladungsInfo}
-              className={`w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 ${einladungsInfo ? 'bg-gray-50 text-gray-500' : ''}`}
-            />
-          </div>
-          <div>
-            <label htmlFor="login-password" className="sr-only">Passwort</label>
-            <input
-              id="login-password"
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="Passwort"
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              onKeyDown={e => e.key === 'Enter' && submit()}
-            />
-          </div>
+          {mode !== 'register' && (
+            <>
+              <div>
+                <label htmlFor="login-email" className="sr-only">E-Mail-Adresse</label>
+                <input
+                  id="login-email"
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="E-Mail-Adresse"
+                  autoComplete="email"
+                  readOnly={!!einladungsInfo}
+                  className={`w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 ${einladungsInfo ? 'bg-gray-50 text-gray-500' : ''}`}
+                />
+              </div>
+              <div>
+                <label htmlFor="login-password" className="sr-only">Passwort</label>
+                <input
+                  id="login-password"
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="Passwort"
+                  autoComplete="current-password"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  onKeyDown={e => e.key === 'Enter' && submit()}
+                />
+              </div>
+            </>
+          )}
 
-          {/* Optionale Felder nur bei Registrierung */}
-          {mode === 'register' && (
-            <div>
+          {mode === 'register' ? (
+            <RegisterForm
+              einladungsToken={einladungsToken}
+              einladungsInfo={einladungsInfo}
+              onRegistered={() => setRegistered(true)}
+            />
+          ) : (
+            <>
+              {infoMsg === 'email_confirmed' ? (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm">
+                  <p className="text-amber-800 font-medium">Bestätigungslink in anderem Browser geöffnet</p>
+                  <p className="text-amber-700 mt-1">
+                    Melde dich direkt mit deiner E-Mail und deinem Passwort an — oder fordere einen neuen Bestätigungslink an.
+                  </p>
+                  {resendSent ? (
+                    <p className="text-green-700 mt-2 font-medium">Neue E-Mail gesendet!</p>
+                  ) : (
+                    <button
+                      onClick={resendConfirmation}
+                      disabled={!email || loading}
+                      className="mt-2 text-amber-900 underline font-medium disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
+                    >
+                      {loading ? 'Sende...' : 'Neuen Bestätigungslink senden'}
+                    </button>
+                  )}
+                </div>
+              ) : error === 'email_not_confirmed' ? (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm">
+                  <p className="text-amber-800 font-medium">E-Mail noch nicht bestätigt</p>
+                  <p className="text-amber-700 mt-1">
+                    Bitte klicke auf den Link in der Bestätigungs-E-Mail.
+                    {!email && <> <strong>Gib deine E-Mail-Adresse oben ein</strong> um eine neue anzufordern.</>}
+                  </p>
+                  {resendSent ? (
+                    <p className="text-green-700 mt-2 font-medium">E-Mail erneut gesendet!</p>
+                  ) : (
+                    <button
+                      onClick={resendConfirmation}
+                      disabled={!email || loading}
+                      className="mt-2 text-amber-900 underline font-medium disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
+                    >
+                      {loading ? 'Sende...' : 'Bestätigungs-E-Mail erneut senden'}
+                    </button>
+                  )}
+                </div>
+              ) : error ? (
+                <p role="alert" className="text-red-500 text-sm">{error}</p>
+              ) : null}
+
               <button
-                type="button"
-                onClick={() => setShowOptional(v => !v)}
-                className="flex items-center gap-2 text-sm text-primary-500 font-medium py-1"
+                onClick={submit}
+                disabled={loading || !email || !password}
+                className="w-full bg-primary-500 hover:bg-primary-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
               >
-                <ChevronDown className={`w-4 h-4 transition-transform ${showOptional ? 'rotate-180' : ''}`} />
-                Weitere Angaben (optional)
+                {loading ? <Loader2 className="animate-spin w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
+                Anmelden
               </button>
 
-              {showOptional && (
-                <div className="space-y-3 mt-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label htmlFor="register-vorname" className="sr-only">Vorname</label>
-                      <input
-                        id="register-vorname"
-                        type="text"
-                        value={vorname}
-                        onChange={e => setVorname(e.target.value)}
-                        placeholder="Vorname"
-                        autoComplete="given-name"
-                        className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="register-nachname" className="sr-only">Nachname</label>
-                      <input
-                        id="register-nachname"
-                        type="text"
-                        value={nachname}
-                        onChange={e => setNachname(e.target.value)}
-                        placeholder="Nachname"
-                        autoComplete="family-name"
-                        className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {infoMsg === 'email_confirmed' ? (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm">
-              <p className="text-amber-800 font-medium">Bestätigungslink in anderem Browser geöffnet</p>
-              <p className="text-amber-700 mt-1">
-                Melde dich direkt mit deiner E-Mail und deinem Passwort an — oder fordere einen neuen Bestätigungslink an.
-              </p>
-              {resendSent ? (
-                <p className="text-green-700 mt-2 font-medium">Neue E-Mail gesendet!</p>
-              ) : (
+              {mode === 'login' && (
                 <button
-                  onClick={resendConfirmation}
-                  disabled={!email || loading}
-                  className="mt-2 text-amber-900 underline font-medium disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
+                  type="button"
+                  onClick={() => { setMode('forgot'); setError('') }}
+                  className="w-full text-center text-sm text-gray-400 hover:text-primary-500 transition-colors pt-1"
                 >
-                  {loading ? 'Sende...' : 'Neuen Bestätigungslink senden'}
+                  Passwort vergessen?
                 </button>
               )}
-            </div>
-          ) : error === 'email_not_confirmed' ? (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm">
-              <p className="text-amber-800 font-medium">E-Mail noch nicht bestätigt</p>
-              <p className="text-amber-700 mt-1">
-                Bitte klicke auf den Link in der Bestätigungs-E-Mail.
-                {!email && <> <strong>Gib deine E-Mail-Adresse oben ein</strong> um eine neue anzufordern.</>}
-              </p>
-              {resendSent ? (
-                <p className="text-green-700 mt-2 font-medium">E-Mail erneut gesendet!</p>
-              ) : (
-                <button
-                  onClick={resendConfirmation}
-                  disabled={!email || loading}
-                  className="mt-2 text-amber-900 underline font-medium disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Sende...' : 'Bestätigungs-E-Mail erneut senden'}
-                </button>
-              )}
-            </div>
-          ) : error ? (
-            <p role="alert" className="text-red-500 text-sm">{error}</p>
-          ) : null}
-
-          <button
-            onClick={submit}
-            disabled={loading || !email || !password}
-            className="w-full bg-primary-500 hover:bg-primary-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
-          >
-            {loading ? <Loader2 className="animate-spin w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
-            {mode === 'login' ? 'Anmelden' : 'Konto erstellen'}
-          </button>
-
-          {mode === 'login' && (
-            <button
-              type="button"
-              onClick={() => { setMode('forgot'); setError('') }}
-              className="w-full text-center text-sm text-gray-400 hover:text-primary-500 transition-colors pt-1"
-            >
-              Passwort vergessen?
-            </button>
-          )}
-
-          {mode === 'register' && (
-            <p className="text-xs text-gray-400 text-center leading-relaxed pt-1">
-              Mit dem Erstellen eines Kontos stimmst du unserer{' '}
-              <a href="/datenschutz" className="text-primary-500 hover:underline">Datenschutzerklärung</a>
-              {' '}zu.
-            </p>
+            </>
           )}
         </div>
 
