@@ -1,3 +1,6 @@
+-- Consent-Nachweis für Registrierung: Zeitpunkt der Altersbestätigung (>=16) und der
+-- Zustimmung zu Nutzungsbedingungen/Datenschutz, plus akzeptierte Version. NULL bei
+-- Bestandsnutzern ist korrekt (sie haben nie zugestimmt) — kein Backfill.
 alter table public.profiles
   add column if not exists terms_accepted_at timestamptz,
   add column if not exists terms_version      text,
