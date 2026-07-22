@@ -125,6 +125,36 @@ export type Database = {
           },
         ]
       }
+      demo_anfragen: {
+        Row: {
+          created_at: string
+          email: string
+          fehlergrund: string | null
+          gemeinde: string
+          id: string
+          nachricht: string | null
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          fehlergrund?: string | null
+          gemeinde: string
+          id?: string
+          nachricht?: string | null
+          name: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          fehlergrund?: string | null
+          gemeinde?: string
+          id?: string
+          nachricht?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
       einladungen: {
         Row: {
           ablauft_am: string
@@ -825,6 +855,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          age_confirmed_at: string | null
           avatar_url: string | null
           created_at: string | null
           display_name: string | null
@@ -841,12 +872,15 @@ export type Database = {
           social_instagram: string | null
           social_tiktok: string | null
           social_x: string | null
+          terms_accepted_at: string | null
+          terms_version: string | null
           ueber_mich: string | null
           updated_at: string | null
           verein_name: string | null
           vorname: string | null
         }
         Insert: {
+          age_confirmed_at?: string | null
           avatar_url?: string | null
           created_at?: string | null
           display_name?: string | null
@@ -863,12 +897,15 @@ export type Database = {
           social_instagram?: string | null
           social_tiktok?: string | null
           social_x?: string | null
+          terms_accepted_at?: string | null
+          terms_version?: string | null
           ueber_mich?: string | null
           updated_at?: string | null
           verein_name?: string | null
           vorname?: string | null
         }
         Update: {
+          age_confirmed_at?: string | null
           avatar_url?: string | null
           created_at?: string | null
           display_name?: string | null
@@ -885,6 +922,8 @@ export type Database = {
           social_instagram?: string | null
           social_tiktok?: string | null
           social_x?: string | null
+          terms_accepted_at?: string | null
+          terms_version?: string | null
           ueber_mich?: string | null
           updated_at?: string | null
           verein_name?: string | null
