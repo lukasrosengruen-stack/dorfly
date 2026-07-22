@@ -65,6 +65,9 @@ export async function GET(request: NextRequest) {
       vorname: meta.vorname,
       nachname: meta.nachname,
       token: meta.einladungs_token,
+      termsAcceptedAt: meta.terms_accepted_at,
+      termsVersion: meta.terms_version,
+      ageConfirmedAt: meta.age_confirmed_at,
     }
     await profilAnlegen(user.id, { email: user.email ?? undefined, ...regDaten }).catch(async (err) => {
       console.error('[auth/callback] profilAnlegen fehlgeschlagen, versuche Fallback:', err)
@@ -85,7 +88,15 @@ export async function GET(request: NextRequest) {
 
       const { error: upsertError } = await supabase
         .from('profiles')
-        .upsert({ id: user!.id, role: 'buerger', gemeinde_id: gemeindeId, email: null }, { onConflict: 'id' })
+        .upsert({
+          id: user!.id,
+          role: 'buerger',
+          gemeinde_id: gemeindeId,
+          email: null,
+          terms_accepted_at: meta.terms_accepted_at ?? null,
+          terms_version: meta.terms_version ?? null,
+          age_confirmed_at: meta.age_confirmed_at ?? null,
+        }, { onConflict: 'id' })
       if (upsertError) console.error('[auth/callback] Fallback-Profil fehlgeschlagen:', upsertError)
     })
 
