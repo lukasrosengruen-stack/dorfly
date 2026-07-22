@@ -37,6 +37,10 @@ export default function proxy(request: NextRequest) {
   const slug = extractSlug(hostname)
 
   const requestHeaders = new Headers(request.headers)
+  // SICHERHEIT: Einen vom Client mitgeschickten x-gemeinde-slug-Header nie vertrauen.
+  // Er wird ausschließlich serverseitig aus dem Host abgeleitet gesetzt. Ohne dieses
+  // delete könnte er auf der Apex-Domain (slug === null) durchgereicht und gefälscht werden.
+  requestHeaders.delete('x-gemeinde-slug')
   if (slug !== null) {
     requestHeaders.set('x-gemeinde-slug', slug)
   }
