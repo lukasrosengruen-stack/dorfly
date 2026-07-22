@@ -229,34 +229,34 @@ export default function LoginPage() {
 
         <div className="space-y-3">
           {mode !== 'register' && (
-            <>
-              <div>
-                <label htmlFor="login-email" className="sr-only">E-Mail-Adresse</label>
-                <input
-                  id="login-email"
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="E-Mail-Adresse"
-                  autoComplete="email"
-                  readOnly={!!einladungsInfo}
-                  className={`w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 ${einladungsInfo ? 'bg-gray-50 text-gray-500' : ''}`}
-                />
-              </div>
-              <div>
-                <label htmlFor="login-password" className="sr-only">Passwort</label>
-                <input
-                  id="login-password"
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="Passwort"
-                  autoComplete="current-password"
-                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  onKeyDown={e => e.key === 'Enter' && submit()}
-                />
-              </div>
-            </>
+            <div>
+              <label htmlFor="login-email" className="sr-only">E-Mail-Adresse</label>
+              <input
+                id="login-email"
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="E-Mail-Adresse"
+                autoComplete="email"
+                readOnly={!!einladungsInfo}
+                className={`w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 ${einladungsInfo ? 'bg-gray-50 text-gray-500' : ''}`}
+              />
+            </div>
+          )}
+          {mode === 'login' && (
+            <div>
+              <label htmlFor="login-password" className="sr-only">Passwort</label>
+              <input
+                id="login-password"
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Passwort"
+                autoComplete="current-password"
+                className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                onKeyDown={e => e.key === 'Enter' && submit()}
+              />
+            </div>
           )}
 
           {mode === 'register' ? (
@@ -308,14 +308,16 @@ export default function LoginPage() {
                 <p role="alert" className="text-red-500 text-sm">{error}</p>
               ) : null}
 
-              <button
-                onClick={submit}
-                disabled={loading || !email || !password}
-                className="w-full bg-primary-500 hover:bg-primary-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
-              >
-                {loading ? <Loader2 className="animate-spin w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
-                Anmelden
-              </button>
+              {mode === 'login' && (
+                <button
+                  onClick={submit}
+                  disabled={loading || !email || !password}
+                  className="w-full bg-primary-500 hover:bg-primary-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
+                >
+                  {loading ? <Loader2 className="animate-spin w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
+                  Anmelden
+                </button>
+              )}
 
               {mode === 'login' && (
                 <button
