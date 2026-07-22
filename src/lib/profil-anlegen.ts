@@ -42,6 +42,14 @@ export async function profilAnlegen(userId: string, daten: RegistrierungsDaten =
     const { data: einladungData } = await (publicClient as any).rpc('get_einladung_by_token', { p_token: token })
 
     if (einladungData && einladungData.status === 'offen') {
+      // SICHERHEIT: Token an die eingeladene E-Mail binden. Der Token ist ein reines
+      // Bearer-Credential im Einladungslink. Ohne diese Prüfung könnte jeder, der an
+      // den Link gelangt (weitergeleitete Mail, geteiltes Postfach), die – ggf.
+      // privilegierte – Rolle für ein Konto mit beliebiger E-Mail beanspruchen.
+      if (!email || email.toLowerCase() !== String(einladungData.email).toLowerCase()) {
+        throw new Error('Diese Einladung ist für eine andere E-Mail-Adresse ausgestellt.')
+      }
+
       // Gemeinde-ID direkt aus der Einladung – zuverlässiger als Slug-Lookup
       gemeindeId = einladungData.gemeinde_id
       rolle      = einladungData.rolle
