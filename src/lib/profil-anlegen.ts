@@ -7,10 +7,13 @@ export interface RegistrierungsDaten {
   vorname?: string
   nachname?: string
   token?: string
+  termsAcceptedAt?: string
+  termsVersion?: string
+  ageConfirmedAt?: string
 }
 
 export async function profilAnlegen(userId: string, daten: RegistrierungsDaten = {}) {
-  const { email, vorname, nachname, token } = daten
+  const { email, vorname, nachname, token, termsAcceptedAt, termsVersion, ageConfirmedAt } = daten
   const serviceClient = await createServiceClient()
   const publicClient  = await createClient()
 
@@ -84,6 +87,9 @@ export async function profilAnlegen(userId: string, daten: RegistrierungsDaten =
     vorname: vorname ?? null,
     nachname: nachname ?? null,
     display_name: [vorname, nachname].filter(Boolean).join(' ') || null,
+    terms_accepted_at: termsAcceptedAt ?? null,
+    terms_version: termsVersion ?? null,
+    age_confirmed_at: ageConfirmedAt ?? null,
   })
 
   if (error) {
@@ -98,6 +104,9 @@ export async function profilAnlegen(userId: string, daten: RegistrierungsDaten =
         vorname: vorname ?? null,
         nachname: nachname ?? null,
         display_name: [vorname, nachname].filter(Boolean).join(' ') || null,
+        terms_accepted_at: termsAcceptedAt ?? null,
+        terms_version: termsVersion ?? null,
+        age_confirmed_at: ageConfirmedAt ?? null,
       })
       if (retryError) throw retryError
     } else {
