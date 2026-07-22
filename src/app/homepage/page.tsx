@@ -1035,10 +1035,11 @@ function Footer() {
         </div>
         <ul style={{ display: 'flex', gap: 32, listStyle: 'none', margin: 0, padding: 0, flexWrap: 'wrap' }}>
           {[
-            { label: 'Impressum',     href: '/impressum'       },
-            { label: 'Datenschutz',   href: '/datenschutz'     },
-            { label: 'Für Gemeinden', href: '#zielgruppen'     },
-            { label: 'Kontakt',       href: 'mailto:hallo@dorfly.de' },
+            { label: 'Impressum',            href: '/impressum'            },
+            { label: 'Datenschutz',          href: '/datenschutz'          },
+            { label: 'Nutzungsbedingungen',  href: '/nutzungsbedingungen'  },
+            { label: 'Für Gemeinden',        href: '#zielgruppen'          },
+            { label: 'Kontakt',              href: 'mailto:hallo@dorfly.de' },
           ].map(({ label, href }) => (
             <li key={label}>
               <a
