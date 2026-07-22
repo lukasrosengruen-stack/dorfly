@@ -152,7 +152,7 @@ export default function RegisterForm({ einladungsToken, einladungsInfo, onRegist
           <input
             id="register-age-confirmed"
             type="checkbox"
-            className="w-4 h-4 mt-0.5 text-primary-500 rounded focus:ring-primary-500"
+            className="w-4 h-4 shrink-0 mt-0.5 text-primary-500 rounded focus:ring-primary-500"
             aria-invalid={!!form.formState.errors.ageConfirmed}
             aria-describedby={form.formState.errors.ageConfirmed ? 'register-age-confirmed-error' : undefined}
             {...form.register('ageConfirmed')}
@@ -173,7 +173,7 @@ export default function RegisterForm({ einladungsToken, einladungsInfo, onRegist
           <input
             id="register-terms-accepted"
             type="checkbox"
-            className="w-4 h-4 mt-0.5 text-primary-500 rounded focus:ring-primary-500"
+            className="w-4 h-4 shrink-0 mt-0.5 text-primary-500 rounded focus:ring-primary-500"
             aria-invalid={!!form.formState.errors.termsAccepted}
             aria-describedby={form.formState.errors.termsAccepted ? 'register-terms-accepted-error' : undefined}
             {...form.register('termsAccepted')}
