@@ -26,8 +26,8 @@ grant select on public.abfalltermine to anon;
 grant select on public.abfallkalender_einstellungen to anon;
 
 -- ── post_termine ──────────────────────────────────────────────────────────────
--- Policy ist bereits using(true) fuer alle Rollen (053); nur der Grant fehlt.
-grant select on public.post_termine to anon;
+-- Kein Eintrag noetig: 053 vergibt bereits `grant select ... to anon` und hat eine
+-- Policy `using(true)` fuer alle Rollen. Hier nur zur Dokumentation vermerkt.
 
 -- ── profiles_public (View) ────────────────────────────────────────────────────
 -- Laeuft als Owner (security_invoker=off) und filtert per current_gemeinde_id(),
