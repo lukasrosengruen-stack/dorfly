@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import { isGuestRoute } from '@/lib/guestRoutes'
 
 const PUBLIC_ROUTES = ['/login', '/start', '/homepage', '/posts/', '/api/', '/auth/', '/datenschutz', '/impressum', '/nutzungsbedingungen', '/support']
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'
@@ -59,7 +60,9 @@ export default function proxy(request: NextRequest) {
   }
 
   const hasSession = request.cookies.getAll().some(c => c.name.startsWith('sb-') && c.name.includes('-auth-token'))
-  if (!hasSession) {
+  // Gäste (ohne Session) dürfen die nicht-account-basierten Routen sehen (App-Store 5.1.1(v)).
+  // Der x-gemeinde-slug-Header ist oben bereits gesetzt und wird mit durchgereicht.
+  if (!hasSession && !isGuestRoute(pathname)) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
