@@ -5,16 +5,22 @@ import { usePathname } from 'next/navigation'
 import { Newspaper, AlertTriangle, Grid2x2, CalendarDays, MessageCircleQuestion } from 'lucide-react'
 import { clsx } from 'clsx'
 import type { GemeindeFeatures } from '@/lib/features'
+import { useGuestGuard } from '@/hooks/useGuestGuard'
 
 interface Props {
   role?: string
   features?: GemeindeFeatures
   buergermeisterShortLabel?: string
+  isGuest?: boolean
 }
 
-export default function BottomNav({ role, features, buergermeisterShortLabel = 'Frag BM' }: Props) {
+// Ziele, die fuer Gaeste Login erfordern
+const GUARDED_HREFS = new Set(['/maengel', '/buergermeister'])
+
+export default function BottomNav({ role, features, buergermeisterShortLabel = 'Frag BM', isGuest = false }: Props) {
   void role
   const pathname = usePathname()
+  const { requireLogin } = useGuestGuard()
 
   const leftItems = [
     { href: '/feed',    label: 'Newsfeed', icon: Newspaper },
@@ -33,6 +39,12 @@ export default function BottomNav({ role, features, buergermeisterShortLabel = '
           const active = pathname === href || pathname.startsWith(href + '/')
           return (
             <Link key={href} href={href}
+              onClick={(e) => {
+                if (isGuest && GUARDED_HREFS.has(href)) {
+                  e.preventDefault()
+                  requireLogin()
+                }
+              }}
               aria-current={active ? 'page' : undefined}
               className={clsx(
                 'flex-1 flex flex-col items-center gap-0.5 pt-2 text-[9.5px] font-semibold transition-colors',
@@ -64,6 +76,12 @@ export default function BottomNav({ role, features, buergermeisterShortLabel = '
           const active = pathname === href || pathname.startsWith(href + '/')
           return (
             <Link key={href} href={href}
+              onClick={(e) => {
+                if (isGuest && GUARDED_HREFS.has(href)) {
+                  e.preventDefault()
+                  requireLogin()
+                }
+              }}
               aria-current={active ? 'page' : undefined}
               className={clsx(
                 'flex-1 flex flex-col items-center gap-0.5 pt-2 text-[9.5px] font-semibold transition-colors',
