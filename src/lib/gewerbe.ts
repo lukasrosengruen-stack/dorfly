@@ -13,7 +13,7 @@ export interface GewerbeDetail {
 export async function getGewerbeDetail(
   supabase: SupabaseServerClient,
   gewerbeId: string,
-  userId: string,
+  userId: string | null,
 ): Promise<GewerbeDetail | null> {
   const [betriebResult, postsResult, abonnementResult, aboCountResult] = await Promise.all([
     supabase
@@ -30,12 +30,14 @@ export async function getGewerbeDetail(
       .eq('status', 'published')
       .order('published_at', { ascending: false })
       .limit(20),
-    supabase
-      .from('gewerbe_abonnements')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('gewerbe_id', gewerbeId)
-      .maybeSingle(),
+    userId
+      ? supabase
+          .from('gewerbe_abonnements')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('gewerbe_id', gewerbeId)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
     supabase
       .from('gewerbe_abonnements')
       .select('id', { count: 'exact', head: true })
