@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useId } from 'react'
-import { Search, LogIn, UserPlus } from 'lucide-react'
+import { Search, LogIn, UserPlus, Eye } from 'lucide-react'
 import { Logo } from '@/components/ui'
 
 interface Gemeinde {
@@ -113,6 +113,16 @@ export default function GemeindeAuswahl({ gemeinden, rootDomain }: Props) {
         >
           <LogIn className="w-4 h-4" aria-hidden="true" />
           Ich habe schon ein Konto — anmelden
+        </button>
+
+        <button
+          type="button"
+          disabled={!ausgewaehlt}
+          onClick={() => ausgewaehlt && navigate(ausgewaehlt, '/feed')}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm border-2 border-primary-500 text-primary-600 transition-colors hover:bg-primary-50 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <Eye className="w-4 h-4" aria-hidden="true" />
+          Ohne Anmeldung ansehen
         </button>
 
         <button
