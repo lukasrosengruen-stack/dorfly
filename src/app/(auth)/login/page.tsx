@@ -36,6 +36,7 @@ export default function LoginPage() {
   useEffect(() => {
     const urlError = searchParams.get('error')
     const urlInfo  = searchParams.get('info')
+    if (searchParams.get('mode') === 'register') setMode('register')
     if (urlError === 'confirmation_failed') {
       setError('email_not_confirmed')
       setTimeout(() => document.getElementById('login-email')?.focus(), 100)
@@ -96,6 +97,8 @@ export default function LoginPage() {
 
   async function submit() {
     setError('')
+    const nextParam = searchParams.get('next')
+    const nextPath = nextParam ? decodeURIComponent(nextParam) : null
     setLoading(true)
     try {
       if (mode === 'login') {
@@ -140,9 +143,9 @@ export default function LoginPage() {
           const slug = (profile as any)?.gemeinden?.slug as string | undefined
           const currentHost = window.location.hostname
           if (slug && currentHost !== `${slug}.dorfly.de`) {
-            window.location.href = `https://${slug}.dorfly.de/home`
+            window.location.href = `https://${slug}.dorfly.de${nextPath ?? '/home'}`
           } else {
-            router.push('/home')
+            router.push(nextPath ?? '/home')
             router.refresh()
           }
         }
@@ -226,6 +229,15 @@ export default function LoginPage() {
             </button>
           ))}
         </div>
+
+        {/* Gastzugang: freier Zugang zu nicht-account-basierten Inhalten */}
+        <button
+          type="button"
+          onClick={() => router.push('/feed')}
+          className="w-full mb-4 text-center text-sm font-semibold text-primary-600 hover:text-primary-700 underline underline-offset-2"
+        >
+          Ohne Anmeldung ansehen
+        </button>
 
         <div className="space-y-3">
           {mode !== 'register' && (
