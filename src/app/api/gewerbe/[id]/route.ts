@@ -5,10 +5,11 @@ import { getGewerbeDetail } from '@/lib/gewerbe'
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
+  // Gaeste duerfen Gewerbedetails sehen (App-Store 5.1.1(v)).
+  // Abonnement-Status/-Zaehlung werden fuer Gaeste in getGewerbeDetail uebersprungen.
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Nicht angemeldet' }, { status: 401 })
 
-  const detail = await getGewerbeDetail(supabase, id, user.id)
+  const detail = await getGewerbeDetail(supabase, id, user?.id ?? null)
   if (!detail) return NextResponse.json({ error: 'Nicht gefunden' }, { status: 404 })
 
   return NextResponse.json(detail)
