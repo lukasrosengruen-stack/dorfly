@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
+import { getGemeinde } from '@/lib/gemeinde'
 import FeedClient from './FeedClient'
 
 export const metadata: Metadata = { title: 'Neuigkeiten – Dorfly' }
@@ -9,14 +10,20 @@ export const dynamic = 'force-dynamic'
 export default async function FeedPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  const isGuest = !user
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*, gemeinden(name)')
-    .eq('id', user?.id ?? '')
-    .single()
+  const gemeinde = await getGemeinde()
 
-  const gemeindeId = profile?.gemeinde_id
+  const profile = user
+    ? (await supabase
+        .from('profiles')
+        .select('*, gemeinden(name)')
+        .eq('id', user.id)
+        .single()).data
+    : null
+
+  const gemeindeId = profile?.gemeinde_id ?? gemeinde?.id
+  const gemeindeName = profile?.gemeinden?.name ?? gemeinde?.name ?? ''
 
   const [postsResult, vereineResult, umfragenResult, abonnementsResult, vereinAbonnementsResult] = await Promise.all([
     gemeindeId
@@ -39,7 +46,8 @@ export default async function FeedPage() {
           .not('verein_name', 'is', null)
       : Promise.resolve({ data: [] }),
 
-    gemeindeId
+    // Umfragen sind fuer Gaeste ausgeblendet (login-pflichtig)
+    !isGuest && gemeindeId
       ? supabase.from('umfragen')
           .select('*, umfrage_fragen(*, umfrage_optionen(*))')
           .eq('gemeinde_id', gemeindeId)
@@ -109,6 +117,7 @@ export default async function FeedPage() {
       umfragen={umfragenMitDaten}
       gewerbeAbonnements={gewerbeAbonnements}
       vereinAbonnements={vereinAbonnements}
+      gemeindeName={gemeindeName}
     />
   )
 }

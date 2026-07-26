@@ -8,6 +8,7 @@ import { de } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { Button, Card } from '@/components/ui'
 import type { OrganisationMitBranche, Post } from '@/types/database'
+import { useGuestGuard } from '@/hooks/useGuestGuard'
 
 interface Props {
   betrieb: OrganisationMitBranche
@@ -23,8 +24,10 @@ export default function GewerbeProfil({ betrieb, posts, istAbonniert: initialAbo
   const [abonniert, setAbonniert] = useState(initialAbonniert)
   const [anzahl, setAnzahl] = useState(initialAnzahl)
   const [loading, setLoading] = useState(false)
+  const { requireLogin } = useGuestGuard()
 
   async function toggleAbonnement() {
+    if (requireLogin()) return
     setLoading(true)
     try {
       const res = await fetch('/api/gewerbe/abonnieren', {

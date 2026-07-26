@@ -1,20 +1,15 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
+import { getGemeinde } from '@/lib/gemeinde'
 import KalenderClient from './KalenderClient'
 
 export const metadata: Metadata = { title: 'Veranstaltungen – Dorfly' }
 
 export default async function VeranstaltungenPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('gemeinde_id, gemeinden(name)')
-    .eq('id', user?.id ?? '')
-    .single()
-
-  const gemeindeName = (profile?.gemeinden as unknown as { name: string } | null)?.name ?? 'Ehningen'
+  const gemeinde = await getGemeinde()
+  const gemeindeId = gemeinde?.id
+  const gemeindeName = gemeinde?.name ?? 'Ehningen'
 
   // Fetch from start of current month to end of next month
   const now = new Date()
@@ -23,12 +18,12 @@ export default async function VeranstaltungenPage() {
 
   type V = Parameters<typeof KalenderClient>[0]['veranstaltungen'][number]
 
-  const [{ data: haupttermine }, { data: zusatztermine }] = profile?.gemeinde_id
+  const [{ data: haupttermine }, { data: zusatztermine }] = gemeindeId
     ? await Promise.all([
         supabase
           .from('posts')
           .select('id, titel, inhalt, bild_url, veranstaltung_datum, veranstaltung_ort, channel, tag, profiles:profiles_public!posts_author_id_fkey(display_name, verein_name)')
-          .eq('gemeinde_id', profile.gemeinde_id)
+          .eq('gemeinde_id', gemeindeId)
           .eq('status', 'published')
           .eq('tag', 'veranstaltung')
           .not('veranstaltung_datum', 'is', null)
@@ -38,7 +33,7 @@ export default async function VeranstaltungenPage() {
         supabase
           .from('post_termine')
           .select('datum, posts!inner(id, titel, inhalt, bild_url, veranstaltung_ort, channel, tag, status, gemeinde_id, profiles:profiles_public!posts_author_id_fkey(display_name, verein_name))')
-          .eq('posts.gemeinde_id', profile.gemeinde_id)
+          .eq('posts.gemeinde_id', gemeindeId)
           .eq('posts.status', 'published')
           .eq('posts.tag', 'veranstaltung')
           .gte('datum', startOfMonth)

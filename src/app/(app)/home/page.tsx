@@ -33,13 +33,16 @@ const BASE_TILES: Tile[] = [
 export default async function HomePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  const isGuest = !user
 
   const [profileResult, gemeinde] = await Promise.all([
-    supabase
-      .from('profiles')
-      .select('vorname, display_name, role')
-      .eq('id', user?.id ?? '')
-      .single(),
+    user
+      ? supabase
+          .from('profiles')
+          .select('vorname, display_name, role')
+          .eq('id', user.id)
+          .single()
+      : Promise.resolve({ data: null }),
     getGemeinde(),
   ])
 
@@ -56,7 +59,7 @@ export default async function HomePage() {
   const hasDashboard = profile?.role === 'verwaltung' || profile?.role === 'super_admin' || profile?.role === 'verein' || profile?.role === 'organisation' || profile?.role === 'gemeinderat' || profile?.role === 'gewerbe'
   const dashboardHref = profile?.role === 'gewerbe' ? '/gewerbe/dashboard' : '/dashboard'
   const gemeindeName = gemeinde?.name ?? ''
-  const vorname = profile?.vorname || profile?.display_name?.split(' ')[0] || 'Hallo'
+  const vorname = profile?.vorname || profile?.display_name?.split(' ')[0] || 'Willkommen'
 
   const FEATURE_GATE: Record<string, Parameters<typeof isFeatureAktiv>[1]> = {
     '/umfragen':        'umfragen',
@@ -67,7 +70,13 @@ export default async function HomePage() {
     '/marktplatz':      'marktplatz',
   }
 
+  // Fuer Gaeste nur nicht-account-basierte Kacheln zeigen
+  const GUEST_TILE_HREFS = new Set([
+    '/feed', '/veranstaltungen', '/lokale-angebote', '/vereine', '/abfallkalender', '/warnmeldungen',
+  ])
+
   const tiles = BASE_TILES.filter(({ href }) => {
+    if (isGuest && !GUEST_TILE_HREFS.has(href)) return false
     const featureKey = FEATURE_GATE[href]
     return featureKey ? isFeatureAktiv(gemeinde, featureKey) : true
   })
@@ -135,6 +144,27 @@ export default async function HomePage() {
               <p className="text-white/60 text-xs mt-0.5">Aktive Warnung · Details ansehen</p>
             </div>
             <div className="w-[30px] h-[30px] rounded-[9px] bg-white/20 flex items-center justify-center shrink-0">
+              <svg width="15" height="15" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                <path d="M4 11h14M13 5l6 6-6 6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          </Link>
+        )}
+
+        {/* Gast-Hinweis: Anmelden/Registrieren */}
+        {isGuest && (
+          <Link
+            href="/login"
+            className="bg-primary-500 rounded-[20px] p-4 flex items-center gap-4 shadow-[0_4px_14px_rgba(15,45,107,0.33)] transition-[transform,box-shadow] duration-100 ease-out active:scale-[0.96] active:shadow-none"
+          >
+            <div className="w-11 h-11 rounded-[14px] bg-white/14 flex items-center justify-center shrink-0">
+              <UserCircle className="w-[22px] h-[22px] text-white" strokeWidth={1.5} aria-hidden="true" />
+            </div>
+            <div className="flex-1">
+              <p className="text-white font-bold text-[14.5px]">Anmelden oder registrieren</p>
+              <p className="text-white/55 text-xs mt-0.5">Abstimmen, Mängel melden, abonnieren &amp; mehr</p>
+            </div>
+            <div className="w-[30px] h-[30px] rounded-[9px] bg-gold-500 flex items-center justify-center shrink-0">
               <svg width="15" height="15" viewBox="0 0 22 22" fill="none" aria-hidden="true">
                 <path d="M4 11h14M13 5l6 6-6 6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>

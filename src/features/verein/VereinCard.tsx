@@ -9,6 +9,7 @@ import { cn } from '@/lib/cn'
 import { renderRichText } from '@/lib/richText'
 import type { VereinMitKategorie } from '@/types/database'
 import type { VereinPost } from '@/lib/verein'
+import { useGuestGuard } from '@/hooks/useGuestGuard'
 
 interface VereinCardProps {
   verein: VereinMitKategorie
@@ -33,6 +34,7 @@ export function VereinCard({ verein, istAbonniert: initialAbonniert, expanded, o
   const [loading, setLoading]     = useState(false)
   const [detail, setDetail]       = useState<VereinDetailData | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
+  const { requireLogin } = useGuestGuard()
 
   const colors = COLOR[verein.typ as 'verein' | 'organisation'] ?? COLOR.verein
 
@@ -48,6 +50,7 @@ export function VereinCard({ verein, istAbonniert: initialAbonniert, expanded, o
 
   async function toggleAbonnement(e: React.MouseEvent) {
     e.stopPropagation()
+    if (requireLogin()) return
     setLoading(true)
     try {
       const res = await fetch('/api/verein/abonnieren', {

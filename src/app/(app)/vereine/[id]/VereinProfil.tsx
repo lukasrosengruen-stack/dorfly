@@ -10,6 +10,7 @@ import { PageHeader } from '@/components/ui'
 import { renderRichText } from '@/lib/richText'
 import type { VereinMitKategorie } from '@/types/database'
 import type { VereinPost } from '@/lib/verein'
+import { useGuestGuard } from '@/hooks/useGuestGuard'
 
 interface Props {
   verein: VereinMitKategorie
@@ -22,6 +23,7 @@ export default function VereinProfil({ verein, posts, istAbonniert: initialAbonn
   const [abonniert, setAbonniert]   = useState(initialAbonniert)
   const [anzahl, setAnzahl]         = useState(initialAnzahl)
   const [loading, setLoading]       = useState(false)
+  const { requireLogin } = useGuestGuard()
 
   const isOrg    = verein.typ === 'organisation'
   const bgLight  = isOrg ? 'bg-teal-100'   : 'bg-violet-100'
@@ -29,6 +31,7 @@ export default function VereinProfil({ verein, posts, istAbonniert: initialAbonn
   const badgeBg  = isOrg ? 'bg-teal-500'   : 'bg-violet-600'
 
   async function toggleAbonnement() {
+    if (requireLogin()) return
     setLoading(true)
     try {
       const res = await fetch('/api/verein/abonnieren', {

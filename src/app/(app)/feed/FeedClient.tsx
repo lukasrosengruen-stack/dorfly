@@ -22,9 +22,10 @@ interface Props {
   umfragen: UmfrageMitDaten[]
   gewerbeAbonnements?: string[]
   vereinAbonnements?: string[]
+  gemeindeName?: string
 }
 
-export default function FeedClient({ posts: initialPosts, profile, umfragen: initialUmfragen, gewerbeAbonnements = [], vereinAbonnements = [] }: Props) {
+export default function FeedClient({ posts: initialPosts, profile, umfragen: initialUmfragen, gewerbeAbonnements = [], vereinAbonnements = [], gemeindeName: gemeindeNameProp }: Props) {
   const router = useRouter()
   const [umfragen, setUmfragen] = useState(initialUmfragen)
 
@@ -41,7 +42,7 @@ export default function FeedClient({ posts: initialPosts, profile, umfragen: ini
   const [selectedDays, setSelectedDays] = useState<number | null>(null)
   const [nurLokaleAngebote, setNurLokaleAngebote] = useState(false)
 
-  const gemeindeName = profile?.gemeinden?.name ?? ''
+  const gemeindeName = gemeindeNameProp ?? profile?.gemeinden?.name ?? ''
 
   // ── Filter-Logik ──────────────────────────────────────────────────────────
 

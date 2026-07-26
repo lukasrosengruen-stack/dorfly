@@ -22,7 +22,7 @@ export interface VereinDetail {
 export async function getVereinDetail(
   supabase: SupabaseServerClient,
   vereinId: string,
-  userId: string,
+  userId: string | null,
 ): Promise<VereinDetail | null> {
   const [vereinResult, postsResult, abonnementResult, aboCountResult] = await Promise.all([
     supabase
@@ -37,12 +37,14 @@ export async function getVereinDetail(
       .eq('status', 'published')
       .order('published_at', { ascending: false })
       .limit(20),
-    supabase
-      .from('verein_abonnements')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('verein_id', vereinId)
-      .maybeSingle(),
+    userId
+      ? supabase
+          .from('verein_abonnements')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('verein_id', vereinId)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
     supabase
       .from('verein_abonnements')
       .select('id', { count: 'exact', head: true })

@@ -5,6 +5,7 @@ import { Flag, X, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { clsx } from 'clsx'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
+import { useGuestGuard } from '@/hooks/useGuestGuard'
 
 const GRUENDE = [
   { value: 'illegal',     label: 'Rechtswidrige Inhalte' },
@@ -27,6 +28,7 @@ export default function ReportButton({ inhaltTyp, inhaltId }: Props) {
   const [beschreibung, setBeschreibung] = useState('')
   const [loading, setLoading] = useState(false)
   const trapRef = useFocusTrap(open)
+  const { requireLogin } = useGuestGuard()
 
   function handleClose() {
     setOpen(false)
@@ -56,7 +58,7 @@ export default function ReportButton({ inhaltTyp, inhaltId }: Props) {
   return (
     <>
       <button
-        onClick={() => setOpen(true)}
+        onClick={() => { if (requireLogin()) return; setOpen(true) }}
         aria-label="Inhalt melden (DSA)"
         className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
       >

@@ -7,6 +7,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
 import { cn } from '@/lib/cn'
 import type { OrganisationMitBranche, Post } from '@/types/database'
+import { useGuestGuard } from '@/hooks/useGuestGuard'
 
 interface GewerbeCardProps {
   betrieb: OrganisationMitBranche
@@ -26,6 +27,7 @@ export function GewerbeCard({ betrieb, istAbonniert: initialAbonniert, expanded,
   const [loading, setLoading]     = useState(false)
   const [detail, setDetail]       = useState<GewerbeDetailData | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
+  const { requireLogin } = useGuestGuard()
 
   useEffect(() => {
     if (!expanded || detail || detailLoading) return
@@ -39,6 +41,7 @@ export function GewerbeCard({ betrieb, istAbonniert: initialAbonniert, expanded,
 
   async function toggleAbonnement(e: React.MouseEvent) {
     e.stopPropagation()
+    if (requireLogin()) return
     setLoading(true)
     try {
       const res = await fetch('/api/gewerbe/abonnieren', {

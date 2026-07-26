@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { redirect, notFound } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getGewerbeDetail } from '@/lib/gewerbe'
 import GewerbeProfil from './GewerbeProfil'
@@ -15,9 +15,8 @@ export default async function GewerbeProfilPage({ params }: { params: Promise<{ 
   const { id } = await params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
 
-  const detail = await getGewerbeDetail(supabase, id, user.id)
+  const detail = await getGewerbeDetail(supabase, id, user?.id ?? null)
   if (!detail) notFound()
 
   return (

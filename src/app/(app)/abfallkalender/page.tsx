@@ -15,15 +15,8 @@ export default async function AbfallkalenderPage() {
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('gemeinde_id')
-    .eq('id', user.id)
-    .single()
-
-  const gemeindeId = profile?.gemeinde_id
+  const gemeindeId = gemeinde?.id
 
   // Termine und Nutzer-Präferenzen parallel laden
   const now = new Date()
@@ -55,7 +48,7 @@ export default async function AbfallkalenderPage() {
           .lt('sammlung_datum', endExklusiv)
           .order('sammlung_datum', { ascending: true })
       : Promise.resolve({ data: [] }),
-    gemeindeId
+    user && gemeindeId
       ? supabase
           .from('abfallkalender_praeferenzen')
           .select('ausgewaehlte_typen, push_aktiviert, email_aktiviert, benachrichtigung_uhrzeit')
