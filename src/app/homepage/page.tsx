@@ -8,14 +8,17 @@ import {
   AlertTriangle, Trash2, Bell,
 } from 'lucide-react'
 import { Logo as Wordmark } from '@/components/ui'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 
 // ── Brand tokens ──────────────────────────────────────────────────────────────
 const C = {
-  navy:   '#0D1B2A',
-  blue:   '#0057A8',
-  blueM:  '#1A6FC4',
-  blueL:  '#60A5FA',
-  green:  '#00A878',
+  navy:           '#0D1B2A',
+  blue:           '#0057A8',
+  blueM:          '#1A6FC4',
+  blueL:          '#60A5FA',
+  green:          '#00A878',
+  greenText:      '#006A4C', // darker green for white text/badges — #00A878 fails 4.5:1 with white
+  greenTextHover: '#00805A',
   bg:     '#F4F7FB',
   muted:  '#64748B',
   border: '#DDE6F0',
@@ -95,6 +98,8 @@ function PhoneMockup() {
 function DemoModal({ onClose }: { onClose: () => void }) {
   const [form, setForm] = useState({ name: '', gemeinde: '', email: '', nachricht: '' })
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const containerRef = useFocusTrap(true)
+  const headingId = 'demo-modal-heading'
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -136,24 +141,30 @@ function DemoModal({ onClose }: { onClose: () => void }) {
       }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div style={{
-        background: C.white, borderRadius: 24, padding: 'clamp(24px, 5vw, 40px)', maxWidth: 480, width: '100%',
-        boxShadow: '0 32px 80px rgba(13,27,42,.25)', position: 'relative',
-        maxHeight: '90vh', overflowY: 'auto',
-      }}>
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={headingId}
+        style={{
+          background: C.white, borderRadius: 24, padding: 'clamp(24px, 5vw, 40px)', maxWidth: 480, width: '100%',
+          boxShadow: '0 32px 80px rgba(13,27,42,.25)', position: 'relative',
+          maxHeight: '90vh', overflowY: 'auto',
+        }}>
         <button
           onClick={onClose}
+          aria-label="Schließen"
           style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', cursor: 'pointer', color: C.muted, padding: 4, display: 'flex', alignItems: 'center' }}
         >
           <X size={20} />
         </button>
 
         {status === 'success' ? (
-          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+          <div role="status" style={{ textAlign: 'center', padding: '20px 0' }}>
             <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
               <Check size={28} color={C.green} />
             </div>
-            <h3 style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.03em', color: C.navy, marginBottom: 10 }}>Nachricht erhalten.</h3>
+            <h3 id={headingId} style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.03em', color: C.navy, marginBottom: 10 }}>Nachricht erhalten.</h3>
             <p style={{ fontSize: 15, color: C.muted, lineHeight: 1.65 }}>Ich melde mich gerne persönlich bei Ihnen.</p>
             <button
               onClick={onClose}
@@ -164,7 +175,7 @@ function DemoModal({ onClose }: { onClose: () => void }) {
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            <h3 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.04em', color: C.navy, marginBottom: 6 }}>Demo anfragen</h3>
+            <h3 id={headingId} style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.04em', color: C.navy, marginBottom: 6 }}>Demo anfragen</h3>
             <p style={{ fontSize: 14, color: C.muted, marginBottom: 28, lineHeight: 1.6 }}>
               Schreiben Sie mir kurz. Ich melde mich gerne persönlich bei Ihnen.
             </p>
@@ -175,8 +186,9 @@ function DemoModal({ onClose }: { onClose: () => void }) {
               { id: 'email',    label: 'E-Mail',          placeholder: 'buergermeister@gemeinde.de',      type: 'email' },
             ].map(({ id, label, placeholder, type }) => (
               <div key={id} style={{ marginBottom: 14 }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, letterSpacing: '.04em', textTransform: 'uppercase' as const }}>{label}</label>
+                <label htmlFor={id} style={{ display: 'block', fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, letterSpacing: '.04em', textTransform: 'uppercase' as const }}>{label}</label>
                 <input
+                  id={id}
                   type={type}
                   required
                   value={form[id as keyof typeof form]}
@@ -190,8 +202,9 @@ function DemoModal({ onClose }: { onClose: () => void }) {
             ))}
 
             <div style={{ marginBottom: 14 }}>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, letterSpacing: '.04em', textTransform: 'uppercase' as const }}>Nachricht (optional)</label>
+              <label htmlFor="demo-nachricht" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, letterSpacing: '.04em', textTransform: 'uppercase' as const }}>Nachricht (optional)</label>
               <textarea
+                id="demo-nachricht"
                 value={form.nachricht}
                 onChange={e => setForm(f => ({ ...f, nachricht: e.target.value }))}
                 placeholder="Was beschäftigt Sie? Was erhoffen Sie sich von Dorfly?"
@@ -203,7 +216,7 @@ function DemoModal({ onClose }: { onClose: () => void }) {
             </div>
 
             {status === 'error' && (
-              <p style={{ fontSize: 13, color: '#E11D48', marginBottom: 12 }}>Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.</p>
+              <p role="alert" style={{ fontSize: 13, color: '#E11D48', marginBottom: 12 }}>Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.</p>
             )}
 
             <button
@@ -236,6 +249,8 @@ function DemoModal({ onClose }: { onClose: () => void }) {
 function UpdatesModal({ onClose }: { onClose: () => void }) {
   const [form, setForm] = useState({ vorname: '', nachname: '', email: '', gemeinde: '' })
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const containerRef = useFocusTrap(true)
+  const headingId = 'updates-modal-heading'
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -277,24 +292,30 @@ function UpdatesModal({ onClose }: { onClose: () => void }) {
       }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div style={{
-        background: C.white, borderRadius: 24, padding: 'clamp(24px, 5vw, 36px)', maxWidth: 420, width: '100%',
-        boxShadow: '0 32px 80px rgba(13,27,42,.25)', position: 'relative',
-        maxHeight: '90vh', overflowY: 'auto',
-      }}>
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={headingId}
+        style={{
+          background: C.white, borderRadius: 24, padding: 'clamp(24px, 5vw, 36px)', maxWidth: 420, width: '100%',
+          boxShadow: '0 32px 80px rgba(13,27,42,.25)', position: 'relative',
+          maxHeight: '90vh', overflowY: 'auto',
+        }}>
         <button
           onClick={onClose}
+          aria-label="Schließen"
           style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', cursor: 'pointer', color: C.muted, padding: 4, display: 'flex', alignItems: 'center' }}
         >
           <X size={20} />
         </button>
 
         {status === 'success' ? (
-          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+          <div role="status" style={{ textAlign: 'center', padding: '20px 0' }}>
             <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
               <Check size={28} color={C.green} />
             </div>
-            <h3 style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.03em', color: C.navy, marginBottom: 10 }}>Eingetragen.</h3>
+            <h3 id={headingId} style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.03em', color: C.navy, marginBottom: 10 }}>Eingetragen.</h3>
             <p style={{ fontSize: 15, color: C.muted, lineHeight: 1.65 }}>Sie erhalten gleich eine E-Mail zur Bestätigung.</p>
             <button
               onClick={onClose}
@@ -305,7 +326,7 @@ function UpdatesModal({ onClose }: { onClose: () => void }) {
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            <h3 style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.04em', color: C.navy, marginBottom: 6 }}>Auf dem Laufenden bleiben</h3>
+            <h3 id={headingId} style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.04em', color: C.navy, marginBottom: 6 }}>Auf dem Laufenden bleiben</h3>
             <p style={{ fontSize: 14, color: C.muted, marginBottom: 24, lineHeight: 1.6 }}>
               Ich informiere Sie, wenn es Wichtiges zu Dorfly gibt. Höchstens ein paar Mal im Jahr.
             </p>
@@ -316,8 +337,9 @@ function UpdatesModal({ onClose }: { onClose: () => void }) {
                 { id: 'nachname', label: 'Nachname', placeholder: 'Nachname' },
               ].map(({ id, label, placeholder }) => (
                 <div key={id}>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, letterSpacing: '.04em', textTransform: 'uppercase' as const }}>{label}</label>
+                  <label htmlFor={id} style={{ display: 'block', fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, letterSpacing: '.04em', textTransform: 'uppercase' as const }}>{label}</label>
                   <input
+                    id={id}
                     type="text"
                     required
                     value={form[id as keyof typeof form]}
@@ -336,8 +358,9 @@ function UpdatesModal({ onClose }: { onClose: () => void }) {
               { id: 'gemeinde', label: 'Gemeinde (optional)', placeholder: 'z.B. Ehningen', type: 'text',  required: false },
             ].map(({ id, label, placeholder, type, required }) => (
               <div key={id} style={{ marginBottom: 14 }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, letterSpacing: '.04em', textTransform: 'uppercase' as const }}>{label}</label>
+                <label htmlFor={id} style={{ display: 'block', fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, letterSpacing: '.04em', textTransform: 'uppercase' as const }}>{label}</label>
                 <input
+                  id={id}
                   type={type}
                   required={required}
                   value={form[id as keyof typeof form]}
@@ -351,7 +374,7 @@ function UpdatesModal({ onClose }: { onClose: () => void }) {
             ))}
 
             {status === 'error' && (
-              <p style={{ fontSize: 13, color: '#E11D48', marginBottom: 12 }}>Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.</p>
+              <p role="alert" style={{ fontSize: 13, color: '#E11D48', marginBottom: 12 }}>Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.</p>
             )}
 
             <button
@@ -458,6 +481,9 @@ function Nav({ onDemo }: { onDemo: () => void }) {
         <button
           onClick={() => setMenuOpen(!menuOpen)}
           className="flex md:hidden"
+          aria-expanded={menuOpen}
+          aria-controls="mobile-nav-menu"
+          aria-label={menuOpen ? 'Menü schließen' : 'Menü öffnen'}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.navy, padding: 4 }}
         >
           {menuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -466,7 +492,7 @@ function Nav({ onDemo }: { onDemo: () => void }) {
 
       {/* Mobile dropdown */}
       {menuOpen && (
-        <div style={{
+        <div id="mobile-nav-menu" style={{
           position: 'absolute', top: 68, left: 0, right: 0,
           background: C.bg, borderBottom: `1px solid ${C.border}`,
           padding: '20px 24px 24px',
@@ -761,7 +787,7 @@ function Features() {
                 {badge && (
                   <div style={{
                     position: 'absolute', top: 16, right: 16,
-                    background: C.green, color: C.white,
+                    background: C.greenText, color: C.white,
                     fontSize: 10, fontWeight: 700, letterSpacing: '.06em',
                     padding: '4px 10px', borderRadius: 100,
                   }}>
@@ -988,14 +1014,14 @@ function CTA({ onDemo, onUpdates }: { onDemo: () => void; onUpdates: () => void 
               <button
                 onClick={onDemo}
                 style={{
-                  padding: '18px 44px', background: C.green, color: C.white,
+                  padding: '18px 44px', background: C.greenText, color: C.white,
                   border: 'none', borderRadius: 14, fontFamily: 'inherit',
                   fontSize: 16, fontWeight: 700, cursor: 'pointer',
                   boxShadow: '0 8px 24px rgba(0,168,120,.35)',
                   transition: 'background .2s, transform .15s',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = '#00C99A'; e.currentTarget.style.transform = 'translateY(-2px)' }}
-                onMouseLeave={e => { e.currentTarget.style.background = C.green; e.currentTarget.style.transform = 'none' }}
+                onMouseEnter={e => { e.currentTarget.style.background = C.greenTextHover; e.currentTarget.style.transform = 'translateY(-2px)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = C.greenText; e.currentTarget.style.transform = 'none' }}
               >
                 Demo anfragen
               </button>
@@ -1067,7 +1093,7 @@ export default function HomepagePage() {
   return (
     <div className="mp" style={{ scrollBehavior: 'smooth' }}>
       <Nav onDemo={() => setDemoOpen(true)} />
-      <main>
+      <main id="main-content" tabIndex={-1}>
         <Hero    onDemo={() => setDemoOpen(true)} />
         <Problem />
         <Zielgruppen />

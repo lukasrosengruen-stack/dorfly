@@ -59,7 +59,7 @@ export default async function HomePage() {
   const hasDashboard = profile?.role === 'verwaltung' || profile?.role === 'super_admin' || profile?.role === 'verein' || profile?.role === 'organisation' || profile?.role === 'gemeinderat' || profile?.role === 'gewerbe'
   const dashboardHref = profile?.role === 'gewerbe' ? '/gewerbe/dashboard' : '/dashboard'
   const gemeindeName = gemeinde?.name ?? ''
-  const vorname = profile?.vorname || profile?.display_name?.split(' ')[0] || 'Willkommen'
+  const vorname = isGuest ? 'Gast' : profile?.vorname || profile?.display_name?.split(' ')[0] || 'Willkommen'
 
   const FEATURE_GATE: Record<string, Parameters<typeof isFeatureAktiv>[1]> = {
     '/umfragen':        'umfragen',

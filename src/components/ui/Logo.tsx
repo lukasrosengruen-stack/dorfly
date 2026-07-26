@@ -27,12 +27,22 @@ export function Logo({ size = 24, className }: LogoProps) {
         fontWeight: 800,
         letterSpacing: '-0.04em',
         display: 'inline-flex',
-        alignItems: 'center',
+        alignItems: 'baseline',
       }}
     >
       <span style={{ color: COLORS.blue }}>Dorf</span>
       <span style={{ color: COLORS.navy }}>ly</span>
-      <span style={{ color: COLORS.green }}>.</span>
+      <span
+        aria-hidden="true"
+        style={{
+          display: 'inline-block',
+          width: '0.16em',
+          height: '0.16em',
+          borderRadius: '50%',
+          background: COLORS.green,
+          marginLeft: '0.06em',
+        }}
+      />
     </span>
   )
 }
