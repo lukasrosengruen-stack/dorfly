@@ -13,15 +13,16 @@ export default async function VereinePage() {
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*, gemeinden(name)')
-    .eq('id', user.id)
-    .single()
+  const profile = user
+    ? (await supabase
+        .from('profiles')
+        .select('*, gemeinden(name)')
+        .eq('id', user.id)
+        .single()).data
+    : null
 
-  const gemeindeId = profile?.gemeinde_id
+  const gemeindeId = profile?.gemeinde_id ?? gemeinde?.id
   if (!gemeindeId) {
     return <VereinListeClient vereine={[]} kategorien={[]} profile={profile} abonnements={[]} />
   }
@@ -36,10 +37,12 @@ export default async function VereinePage() {
       .from('verein_kategorien')
       .select('id, name, reihenfolge')
       .order('reihenfolge'),
-    supabase
-      .from('verein_abonnements')
-      .select('verein_id')
-      .eq('user_id', user.id),
+    user
+      ? supabase
+          .from('verein_abonnements')
+          .select('verein_id')
+          .eq('user_id', user.id)
+      : Promise.resolve({ data: [] }),
   ])
 
   const vorhandeneKategorieIds = new Set(

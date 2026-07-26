@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
-import { redirect, notFound } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import { getVereinDetail } from '@/lib/verein'
 import VereinProfil from './VereinProfil'
 
@@ -15,9 +15,8 @@ export default async function VereinDetailPage({ params }: { params: Promise<{ i
   const { id } = await params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
 
-  const detail = await getVereinDetail(supabase, id, user.id)
+  const detail = await getVereinDetail(supabase, id, user?.id ?? null)
   if (!detail) notFound()
 
   return (
