@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
-import { ArrowRight, Loader2, Mail } from 'lucide-react'
+import { ArrowRight, Loader2, Mail, Eye } from 'lucide-react'
 import { Logo } from '@/components/ui'
 import RegisterForm, { type EinladungsInfo } from './RegisterForm'
 
@@ -232,12 +232,13 @@ export default function LoginPage() {
           ))}
         </div>
 
-        {/* Gastzugang: freier Zugang zu nicht-account-basierten Inhalten */}
+        {/* Gastzugang: gleichwertige Option zum Anmelden (App-Store 5.1.1(v)) */}
         <button
           type="button"
           onClick={() => router.push('/feed')}
-          className="w-full mb-4 text-center text-sm font-semibold text-primary-600 hover:text-primary-700 underline underline-offset-2"
+          className="w-full mb-4 border-2 border-primary-500 text-primary-600 hover:bg-primary-50 font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
         >
+          <Eye className="w-5 h-5" aria-hidden="true" />
           Ohne Anmeldung ansehen
         </button>
 
