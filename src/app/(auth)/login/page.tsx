@@ -98,7 +98,9 @@ export default function LoginPage() {
   async function submit() {
     setError('')
     const nextParam = searchParams.get('next')
-    const nextPath = nextParam ? decodeURIComponent(nextParam) : null
+    const nextRaw = nextParam ? decodeURIComponent(nextParam) : null
+    // Nur interne Pfade zulassen (Schutz vor Open-Redirect nach Login)
+    const nextPath = nextRaw && /^\/(?!\/)/.test(nextRaw) ? nextRaw : null
     setLoading(true)
     try {
       if (mode === 'login') {
