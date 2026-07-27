@@ -990,19 +990,22 @@ function About() {
               background: 'rgba(255,255,255,.05)', border: '1.5px solid rgba(255,255,255,.1)',
               borderRadius: 24, padding: 40,
             }}>
-              <div style={{
-                width: 72, height: 72, borderRadius: '50%',
-                background: `linear-gradient(135deg, ${C.blue}, #003D7A)`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 22, fontWeight: 800, color: C.white, letterSpacing: '-0.04em',
-                marginBottom: 24,
-              }}>
-                LR
-              </div>
+              <Image
+                src="/lukas-rosengruen.jpg"
+                alt="Lukas Rosengrün, Bürgermeister der Gemeinde Ehningen"
+                width={104}
+                height={104}
+                priority={false}
+                style={{
+                  width: 104, height: 104, borderRadius: '50%',
+                  objectFit: 'cover', objectPosition: 'center top',
+                  marginBottom: 24, display: 'block',
+                }}
+              />
 
               <p style={{ fontSize: 18, fontWeight: 600, letterSpacing: '-0.03em', color: C.white, lineHeight: 1.5, marginBottom: 24, fontStyle: 'italic' }}>
                 <span style={{ color: C.green, fontSize: 32, lineHeight: 0, verticalAlign: '-10px', marginRight: 4 }}>{'„'}</span>
-                Als Bürgermeister ist es meine Aufgabe, die Bedürfnisse aller Akteure in meiner Gemeinde zu verstehen. Daraus ist Dorfly entstanden.
+                Als Bürgermeister weiß ich, was eine Gemeinde für gute Kommunikation braucht. Weil es das passende Werkzeug nicht gab, habe ich Dorfly selbst gebaut.
               </p>
 
               <div style={{ borderTop: '1px solid rgba(255,255,255,.08)', paddingTop: 24, marginBottom: 28 }}>
