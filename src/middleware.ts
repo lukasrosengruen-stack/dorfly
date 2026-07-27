@@ -70,5 +70,5 @@ export default function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon\\.ico|manifest\\.json|icons|screenshots|OneSignalSDKWorker\\.js).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon\\.ico|manifest\\.json|icons|screenshots|OneSignalSDKWorker\\.js|lukas-rosengruen\\.jpg).*)'],
 }
