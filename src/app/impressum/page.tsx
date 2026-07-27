@@ -35,7 +35,7 @@ function P({ children }: { children: React.ReactNode }) {
 
 export default function ImpressumPage() {
   return (
-    <div style={{ background: C.bg, minHeight: '100vh', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div style={{ background: C.bg, minHeight: '100vh' }}>
       <nav style={{
         position: 'sticky', top: 0, zIndex: 50,
         background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)',
