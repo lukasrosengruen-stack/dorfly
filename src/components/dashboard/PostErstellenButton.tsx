@@ -125,25 +125,21 @@ export default function PostErstellenButton({ gemeindeId, profileId, defaultChan
         })
         if (!res.ok) throw new Error('API error')
       } else {
-        const { data: inserted, error } = await supabase.from('posts').insert({
-          gemeinde_id: gemeindeId, author_id: profileId,
-          channel: form.channel, titel: form.titel, inhalt: form.inhalt,
-          tag: form.tag, status: 'published', pinned: form.pinned,
-          bild_url, bilder_urls,
-          publish_at: publishAt,
-          published_at: publishAt ?? new Date().toISOString(),
-          veranstaltung_datum: veranstaltungDatum,
-          veranstaltung_ort: veranstaltungOrt,
-          sammlung_art: form.tag === 'sammlung' ? form.sammlung_art : null,
-          sammlung_datum: sammlungDatum,
-          sammlung_organisator: form.tag === 'sammlung' ? form.sammlung_organisator : null,
-        }).select('id').single()
-        if (error) throw error
-        if (weitereTermine.length > 0) {
-          await supabase.from('post_termine').insert(
-            weitereTermine.map(datum => ({ post_id: inserted.id, datum })),
-          )
-        }
+        const res = await fetch('/api/posts/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            titel: form.titel, inhalt: form.inhalt, tag: form.tag, pinned: form.pinned,
+            bildUrl: bild_url, bilderUrls: bilder_urls,
+            publishAt,
+            veranstaltungDatum, veranstaltungOrt,
+            sammlungArt: form.tag === 'sammlung' ? form.sammlung_art : null,
+            sammlungDatum,
+            sammlungOrganisator: form.tag === 'sammlung' ? form.sammlung_organisator : null,
+            weitereTermine,
+          }),
+        })
+        if (!res.ok) throw new Error('API error')
         if (form.push) {
           await fetch('/api/notifications/send', {
             method: 'POST',

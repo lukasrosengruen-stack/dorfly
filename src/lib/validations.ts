@@ -140,6 +140,22 @@ export const postDeleteSchema = z.object({
   id: uuid,
 })
 
+export const postCreateSchema = z.object({
+  titel: z.string().min(1).max(200),
+  inhalt: z.string().min(1).max(10000),
+  tag: z.enum(['nachricht', 'veranstaltung', 'bekanntmachung', 'sammlung']),
+  pinned: z.boolean().optional(),
+  bildUrl: z.string().nullable(),
+  bilderUrls: z.array(z.string()),
+  publishAt: z.string().nullable(),
+  veranstaltungDatum: z.string().nullable(),
+  veranstaltungOrt: z.string().nullable(),
+  sammlungArt: z.string().nullable().optional(),
+  sammlungDatum: z.string().nullable().optional(),
+  sammlungOrganisator: z.string().nullable().optional(),
+  weitereTermine: z.array(z.string()).max(20).optional(),
+})
+
 export const postUpdateSchema = z.object({
   id: uuid,
   titel: z.string().max(200).optional(),
