@@ -127,7 +127,7 @@ function DemoModal({ onClose }: { onClose: () => void }) {
   const inputStyle = {
     width: '100%', padding: '13px 16px', borderRadius: 10,
     border: `1.5px solid ${C.border}`, fontFamily: 'inherit',
-    fontSize: 14, color: C.navy, outline: 'none',
+    fontSize: 16, color: C.navy, outline: 'none', // 16px avoids iOS Safari's auto-zoom on focus
     background: C.bg, transition: 'border-color .2s', boxSizing: 'border-box' as const,
   }
 
@@ -231,12 +231,12 @@ function DemoModal({ onClose }: { onClose: () => void }) {
             >
               {status === 'loading' ? 'Wird gesendet...' : 'Senden'}
             </button>
-            <p style={{ fontSize: 12, color: '#94A3B8', textAlign: 'center', marginTop: 12 }}>
+            <p style={{ fontSize: 12, color: C.muted, textAlign: 'center', marginTop: 12 }}>
               Unverbindlich. Kein IT-Projekt. Kein langer Einführungsprozess.
             </p>
-            <p style={{ fontSize: 11, color: '#94A3B8', textAlign: 'center', marginTop: 8, lineHeight: 1.6 }}>
+            <p style={{ fontSize: 11, color: C.muted, textAlign: 'center', marginTop: 8, lineHeight: 1.6 }}>
               Ihre Angaben werden ausschließlich zur Bearbeitung dieser Anfrage verwendet.{' '}
-              <a href="/datenschutz" style={{ color: '#94A3B8', textDecoration: 'underline' }}>Mehr in der Datenschutzerklärung.</a>
+              <a href="/datenschutz" style={{ color: C.muted, textDecoration: 'underline' }}>Mehr in der Datenschutzerklärung.</a>
             </p>
           </form>
         )}
@@ -278,7 +278,7 @@ function UpdatesModal({ onClose }: { onClose: () => void }) {
   const inputStyle = {
     width: '100%', padding: '13px 16px', borderRadius: 10,
     border: `1.5px solid ${C.border}`, fontFamily: 'inherit',
-    fontSize: 14, color: C.navy, outline: 'none',
+    fontSize: 16, color: C.navy, outline: 'none', // 16px avoids iOS Safari's auto-zoom on focus
     background: C.bg, transition: 'border-color .2s', boxSizing: 'border-box' as const,
   }
 
@@ -389,7 +389,7 @@ function UpdatesModal({ onClose }: { onClose: () => void }) {
             >
               {status === 'loading' ? 'Wird eingetragen...' : 'Eintragen'}
             </button>
-            <p style={{ fontSize: 11, color: '#94A3B8', textAlign: 'center', marginTop: 12, lineHeight: 1.6 }}>
+            <p style={{ fontSize: 11, color: C.muted, textAlign: 'center', marginTop: 12, lineHeight: 1.6 }}>
               Mit dem Eintragen willigen Sie ein, dass wir Ihre E-Mail-Adresse zum Versand von Updates zu Dorfly verwenden. Sie können sich jederzeit per Link in jeder E-Mail abmelden.{' '}
               <a href="/datenschutz" style={{ color: C.muted, textDecoration: 'underline' }}>Mehr in der Datenschutzerklärung.</a>
             </p>
@@ -411,6 +411,18 @@ function Eyebrow({ children, light = false }: { children: React.ReactNode; light
       <span style={{ display: 'block', width: 16, height: 2, background: C.green, borderRadius: 2, flexShrink: 0 }} />
       {children}
     </div>
+  )
+}
+
+// ── Group label (sub-cluster heading within a card grid) ──────────────────────
+function GroupLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 style={{
+      fontSize: 15, fontWeight: 700, letterSpacing: '-0.01em', color: C.navy,
+      marginBottom: 20, paddingBottom: 10, borderBottom: `1.5px solid ${C.border}`,
+    }}>
+      {children}
+    </h3>
   )
 }
 
@@ -636,33 +648,44 @@ function Problem() {
 }
 
 // ── ZIELGRUPPEN ───────────────────────────────────────────────────────────────
+const zielgruppenGruppen = [
+  { key: 'verwaltung',   label: 'Verwaltung und Politik' },
+  { key: 'buergerschaft', label: 'Bürgerschaft und lokales Leben' },
+] as const
+
 const zielgruppen = [
   {
+    group: 'verwaltung',
     icon: '🏛️', color: '#EFF6FF',
     title: 'Bürgermeisterinnen und Bürgermeister',
     text: 'Endlich ein Kanal, der wirklich ankommt. Ohne Algorithmus. Ohne Streuverlust. Ohne Social Media. Auch im Ernstfall erreichen Sie Ihre Bürgerschaft direkt.',
   },
   {
+    group: 'verwaltung',
     icon: '🏗️', color: '#F0FDF4',
     title: 'Gemeinderat',
     text: 'Eine eigene Bühne für Fraktionen und einzelne Mandatsträger. Entscheidungen werden nachvollziehbar. Demokratie wird im Alltag sichtbar.',
   },
   {
+    group: 'verwaltung',
     icon: '⚙️', color: '#F5F3FF',
     title: 'Verwaltung',
     text: 'DSGVO-konform. In wenigen Tagen einsatzbereit. Kein IT-Projekt.',
   },
   {
+    group: 'buergerschaft',
     icon: '👥', color: '#FFF7ED',
     title: 'Bürgerinnen und Bürger',
     text: 'Alles aus dem Ort in einer App. Vom Festle bis zur Erinnerung an die Mülltonne. Direkter Kontakt zu Mandatsträgern. Vereinsnachrichten und Angebote vom Hofladen direkt aufs Handy. Persönlich anpassbar. Nichts verpassen, was wirklich relevant ist.',
   },
   {
+    group: 'buergerschaft',
     icon: '🤝', color: '#F0FDF4',
     title: 'Vereine und Ehrenamt',
     text: 'Sichtbarkeit für News und Veranstaltungen. Direkt zu Mitgliedern und der ganzen Gemeinde. Eine neue Bühne, auch für die Mitgliedergewinnung.',
   },
   {
+    group: 'buergerschaft',
     icon: '🛒', color: '#EFF6FF',
     title: 'Lokales Gewerbe',
     text: 'Sichtbarkeit im Ort. Hyperlokal. Direkt bei den Menschen, die hier leben, arbeiten und einkaufen.',
@@ -679,75 +702,94 @@ function Zielgruppen() {
             Für alle in Ihrer Gemeinde.
           </h2>
         </R>
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-          {zielgruppen.map(({ icon, title, text, color }, i) => (
-            <R key={title} delay={i * 0.08}>
-              <div
-                style={{
-                  background: C.bg, borderRadius: 22, padding: 32,
-                  border: `1.5px solid ${C.border}`, height: '100%',
-                  transition: 'border-color .25s, box-shadow .25s, transform .25s',
-                }}
-                onMouseEnter={e => { const el = e.currentTarget; el.style.borderColor = C.blue; el.style.boxShadow = '0 16px 48px rgba(0,87,168,.1)'; el.style.transform = 'translateY(-4px)' }}
-                onMouseLeave={e => { const el = e.currentTarget; el.style.borderColor = C.border; el.style.boxShadow = 'none'; el.style.transform = 'none' }}
-              >
-                <div style={{ width: 52, height: 52, borderRadius: 14, background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, marginBottom: 20 }}>{icon}</div>
-                <h3 style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.03em', color: C.navy, marginBottom: 10 }}>{title}</h3>
-                <p style={{ fontSize: 15, lineHeight: 1.65, color: C.muted }}>{text}</p>
-              </div>
-            </R>
-          ))}
-        </div>
+        {zielgruppenGruppen.map((gruppe, gi) => (
+          <div key={gruppe.key} style={{ marginBottom: gi < zielgruppenGruppen.length - 1 ? 48 : 0 }}>
+            <R delay={0.05}><GroupLabel>{gruppe.label}</GroupLabel></R>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+              {zielgruppen.filter(z => z.group === gruppe.key).map(({ icon, title, text, color }, i) => (
+                <R key={title} delay={i * 0.08}>
+                  <div
+                    style={{
+                      background: C.bg, borderRadius: 22, padding: 32,
+                      border: `1.5px solid ${C.border}`, height: '100%',
+                      transition: 'border-color .25s, box-shadow .25s, transform .25s',
+                    }}
+                    onMouseEnter={e => { const el = e.currentTarget; el.style.borderColor = C.blue; el.style.boxShadow = '0 16px 48px rgba(0,87,168,.1)'; el.style.transform = 'translateY(-4px)' }}
+                    onMouseLeave={e => { const el = e.currentTarget; el.style.borderColor = C.border; el.style.boxShadow = 'none'; el.style.transform = 'none' }}
+                  >
+                    <div style={{ width: 52, height: 52, borderRadius: 14, background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, marginBottom: 20 }}>{icon}</div>
+                    <h3 style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.03em', color: C.navy, marginBottom: 10 }}>{title}</h3>
+                    <p style={{ fontSize: 15, lineHeight: 1.65, color: C.muted }}>{text}</p>
+                  </div>
+                </R>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   )
 }
 
 // ── FEATURES ──────────────────────────────────────────────────────────────────
+const featureGruppen = [
+  { key: 'kommunikation', label: 'Kommunikation und Mitsprache' },
+  { key: 'information',   label: 'Information und Sicherheit' },
+  { key: 'alltag',        label: 'Alltag und Service' },
+] as const
+
 const features = [
   {
+    group: 'kommunikation',
     icon: <Landmark     size={22} color="#E11D48"   />, iconBg: '#FFF1F2',
     title: 'Kommunalpolitik',
     text: 'Eine eigene Bühne für Gemeinderatsfraktionen und einzelne Mandatsträger. Entscheidungen werden erklärt. Positionen werden sichtbar. Bürger können gezielt Fragen an einzelne Ratsmitglieder stellen, direkt und nachvollziehbar. Demokratie findet im Alltag statt, nicht nur im Ratssaal.',
     badge: true,
   },
   {
+    group: 'kommunikation',
     icon: <BarChart2    size={22} color="#7C3AED"   />, iconBg: '#F5F3FF',
     title: 'Bürgerbeteiligung',
     text: 'Umfragen und Abstimmungen. Für alle oder nur für verifizierte Einwohnerinnen und Einwohner Ihrer Kommune. Sie entscheiden, wer mitgestaltet.',
     badge: false,
   },
   {
-    icon: <Newspaper    size={22} color={C.blue}    />, iconBg: '#EFF6FF',
-    title: 'Newsfeed',
-    text: 'Amtliche Mitteilungen, Vereinsnews, Veranstaltungen und Angebote aus dem lokalen Gewerbe. Strukturiert. Direkt aufs Smartphone. Ihre Bürgerschaft sieht nur, was sie wirklich interessiert.',
-    badge: false,
-  },
-  {
-    icon: <AlertTriangle size={22} color="#F59E0B"  />, iconBg: '#FFFBEB',
-    title: 'Krisenkommunikation',
-    text: 'Im Ernstfall sofort die richtige Information an die richtigen Menschen. Push-Benachrichtigung an die ganze Gemeinde oder gezielt an Ortsteile. Offizieller Absender. Keine Gerüchte.',
-    badge: false,
-  },
-  {
+    group: 'kommunikation',
     icon: <MessageCircle size={22} color="#0EA5E9"  />, iconBg: '#F0F9FF',
     title: 'Frag den Bürgermeister',
     text: 'Der direkte Draht zwischen Bürgerschaft und Verwaltung. Fragen werden gestellt, beantwortet und für alle sichtbar gemacht.',
     badge: false,
   },
   {
+    group: 'information',
+    icon: <Newspaper    size={22} color={C.blue}    />, iconBg: '#EFF6FF',
+    title: 'Newsfeed',
+    text: 'Amtliche Mitteilungen, Vereinsnews, Veranstaltungen und Angebote aus dem lokalen Gewerbe. Strukturiert. Direkt aufs Smartphone. Ihre Bürgerschaft sieht nur, was sie wirklich interessiert.',
+    badge: false,
+  },
+  {
+    group: 'information',
+    icon: <AlertTriangle size={22} color="#F59E0B"  />, iconBg: '#FFFBEB',
+    title: 'Krisenkommunikation',
+    text: 'Im Ernstfall sofort die richtige Information an die richtigen Menschen. Push-Benachrichtigung an die ganze Gemeinde oder gezielt an Ortsteile. Offizieller Absender. Keine Gerüchte.',
+    badge: false,
+  },
+  {
+    group: 'alltag',
     icon: <MapPin        size={22} color={C.green}  />, iconBg: '#F0FDF4',
     title: 'Mängelmelder',
     text: 'Schäden melden mit GPS und Foto. Direkt an die Verwaltung. Kein Anruf. Kein Formular. Kein Umweg.',
     badge: false,
   },
   {
+    group: 'alltag',
     icon: <Trash2        size={22} color="#64748B"  />, iconBg: '#F8FAFC',
     title: 'Abfallkalender',
     text: 'Termine für Restmüll, Bio, Papier und Gelben Sack. Personalisiert auf das, was bei Ihnen abgeholt wird. Mit Erinnerung am Vorabend. Schluss mit Suchen und Vergessen.',
     badge: false,
   },
   {
+    group: 'alltag',
     icon: <ShoppingBag   size={22} color="#0EA5E9"  />, iconBg: '#F0F9FF',
     title: 'Lokales Gewerbe',
     text: 'Vom Erdbeerbauern bis zum Friseur. Hyperlokale Angebote, die aktiv abonniert werden. Sichtbarkeit für Ihre Wirtschaft. Kein Spam. Kein Algorithmus.',
@@ -771,36 +813,41 @@ function Features() {
           </p>
         </R>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {features.map(({ icon, iconBg, title, text, badge }, i) => (
-            <R key={title} delay={(i % 3) * 0.08}>
-              <div
-                style={{
-                  background: C.bg, borderRadius: 22, padding: 32,
-                  border: `1.5px solid ${C.border}`, height: '100%',
-                  position: 'relative', overflow: 'hidden',
-                  transition: 'border-color .25s, box-shadow .25s, transform .25s',
-                }}
-                onMouseEnter={e => { const el = e.currentTarget; el.style.borderColor = C.blue; el.style.boxShadow = '0 16px 48px rgba(0,87,168,.1)'; el.style.transform = 'translateY(-4px)' }}
-                onMouseLeave={e => { const el = e.currentTarget; el.style.borderColor = C.border; el.style.boxShadow = 'none'; el.style.transform = 'none' }}
-              >
-                {badge && (
-                  <div style={{
-                    position: 'absolute', top: 16, right: 16,
-                    background: C.greenText, color: C.white,
-                    fontSize: 10, fontWeight: 700, letterSpacing: '.06em',
-                    padding: '4px 10px', borderRadius: 100,
-                  }}>
-                    Einzigartig in Dorfly
+        {featureGruppen.map((gruppe, gi) => (
+          <div key={gruppe.key} style={{ marginBottom: gi < featureGruppen.length - 1 ? 48 : 20 }}>
+            <R delay={0.05}><GroupLabel>{gruppe.label}</GroupLabel></R>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {features.filter(f => f.group === gruppe.key).map(({ icon, iconBg, title, text, badge }, i) => (
+                <R key={title} delay={(i % 3) * 0.08}>
+                  <div
+                    style={{
+                      background: C.bg, borderRadius: 22, padding: 32,
+                      border: `1.5px solid ${C.border}`, height: '100%',
+                      position: 'relative', overflow: 'hidden',
+                      transition: 'border-color .25s, box-shadow .25s, transform .25s',
+                    }}
+                    onMouseEnter={e => { const el = e.currentTarget; el.style.borderColor = C.blue; el.style.boxShadow = '0 16px 48px rgba(0,87,168,.1)'; el.style.transform = 'translateY(-4px)' }}
+                    onMouseLeave={e => { const el = e.currentTarget; el.style.borderColor = C.border; el.style.boxShadow = 'none'; el.style.transform = 'none' }}
+                  >
+                    {badge && (
+                      <div style={{
+                        position: 'absolute', top: 16, right: 16,
+                        background: C.greenText, color: C.white,
+                        fontSize: 10, fontWeight: 700, letterSpacing: '.06em',
+                        padding: '4px 10px', borderRadius: 100,
+                      }}>
+                        Einzigartig in Dorfly
+                      </div>
+                    )}
+                    <div style={{ width: 48, height: 48, borderRadius: 14, background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>{icon}</div>
+                    <h3 style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.03em', color: C.navy, marginBottom: 8 }}>{title}</h3>
+                    <p style={{ fontSize: 15, lineHeight: 1.65, color: C.muted }}>{text}</p>
                   </div>
-                )}
-                <div style={{ width: 48, height: 48, borderRadius: 14, background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>{icon}</div>
-                <h3 style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.03em', color: C.navy, marginBottom: 8 }}>{title}</h3>
-                <p style={{ fontSize: 15, lineHeight: 1.65, color: C.muted }}>{text}</p>
-              </div>
-            </R>
-          ))}
-        </div>
+                </R>
+              ))}
+            </div>
+          </div>
+        ))}
 
         {/* Datenschutz – featured full-width card */}
         <R delay={0.1}>
@@ -960,7 +1007,7 @@ function About() {
 
               <div style={{ borderTop: '1px solid rgba(255,255,255,.08)', paddingTop: 24, marginBottom: 28 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: C.blueL }}>Lukas Rosengrün</div>
-                <div style={{ fontSize: 13, color: '#64748B', marginTop: 3 }}>Bürgermeister der Gemeinde Ehningen und Gründer von Dorfly</div>
+                <div style={{ fontSize: 13, color: '#94A3B8', marginTop: 3 }}>Bürgermeister der Gemeinde Ehningen und Gründer von Dorfly</div>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -969,7 +1016,7 @@ function About() {
                   'Eine Verwaltung, die weniger Arbeit hat.',
                   'Eine Demokratie, die im Alltag spürbar ist.',
                 ].map(item => (
-                  <div key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 14, color: '#64748B' }}>
+                  <div key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 14, color: '#94A3B8' }}>
                     <span style={{ color: C.green, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>→</span>
                     {item}
                   </div>
@@ -1006,7 +1053,7 @@ function CTA({ onDemo, onUpdates }: { onDemo: () => void; onUpdates: () => void 
               </h2>
             </R>
             <R delay={0.2}>
-              <p style={{ fontSize: 17, lineHeight: 1.65, color: '#64748B', maxWidth: 560, margin: '0 auto 44px' }}>
+              <p style={{ fontSize: 17, lineHeight: 1.65, color: '#94A3B8', maxWidth: 560, margin: '0 auto 44px' }}>
                 Jede Bürgermeisterin und jeder Bürgermeister möchte nah an den Menschen sein. In die Gemeinde reinhören. Im echten Austausch mit der Bürgerschaft stehen. Dorfly macht daraus mehr als ein Versprechen. Schreiben Sie mir kurz, ich melde mich gerne persönlich bei Ihnen.
               </p>
             </R>
@@ -1030,16 +1077,16 @@ function CTA({ onDemo, onUpdates }: { onDemo: () => void; onUpdates: () => void 
                   onClick={onUpdates}
                   style={{
                     background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                    fontSize: 14, color: '#64748B', textDecoration: 'underline',
+                    fontSize: 14, color: '#94A3B8', textDecoration: 'underline',
                     textUnderlineOffset: 3, transition: 'color .2s',
                   }}
                   onMouseEnter={e => (e.currentTarget.style.color = C.white)}
-                  onMouseLeave={e => (e.currentTarget.style.color = '#64748B')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#94A3B8')}
                 >
                   Erstmal nur informiert bleiben
                 </button>
               </div>
-              <p style={{ fontSize: 13, color: '#475569', marginTop: 16 }}>
+              <p style={{ fontSize: 13, color: '#94A3B8', marginTop: 16 }}>
                 Unverbindlich. Persönlich begleitet. Kein IT-Projekt.
               </p>
             </R>
@@ -1089,23 +1136,45 @@ function Footer() {
 export default function HomepagePage() {
   const [demoOpen, setDemoOpen] = useState(false)
   const [updatesOpen, setUpdatesOpen] = useState(false)
+  // useFocusTrap's own focus-restore branch only fires on an active:true→false
+  // transition, but these modals are unmounted on close rather than hidden, so
+  // that branch never runs. Track and restore the trigger element here instead.
+  const demoTriggerRef = useRef<HTMLElement | null>(null)
+  const updatesTriggerRef = useRef<HTMLElement | null>(null)
+
+  function openDemo() {
+    demoTriggerRef.current = document.activeElement as HTMLElement
+    setDemoOpen(true)
+  }
+  function closeDemo() {
+    setDemoOpen(false)
+    demoTriggerRef.current?.focus()
+  }
+  function openUpdates() {
+    updatesTriggerRef.current = document.activeElement as HTMLElement
+    setUpdatesOpen(true)
+  }
+  function closeUpdates() {
+    setUpdatesOpen(false)
+    updatesTriggerRef.current?.focus()
+  }
 
   return (
     <div className="mp" style={{ scrollBehavior: 'smooth' }}>
-      <Nav onDemo={() => setDemoOpen(true)} />
+      <Nav onDemo={openDemo} />
       <main id="main-content" tabIndex={-1}>
-        <Hero    onDemo={() => setDemoOpen(true)} />
+        <Hero    onDemo={openDemo} />
         <Problem />
         <Zielgruppen />
         <Features />
         <DemoShowcase />
         <Setup />
         <About />
-        <CTA onDemo={() => setDemoOpen(true)} onUpdates={() => setUpdatesOpen(true)} />
+        <CTA onDemo={openDemo} onUpdates={openUpdates} />
       </main>
       <Footer />
-      {demoOpen    && <DemoModal    onClose={() => setDemoOpen(false)}    />}
-      {updatesOpen && <UpdatesModal onClose={() => setUpdatesOpen(false)} />}
+      {demoOpen    && <DemoModal    onClose={closeDemo}    />}
+      {updatesOpen && <UpdatesModal onClose={closeUpdates} />}
     </div>
   )
 }

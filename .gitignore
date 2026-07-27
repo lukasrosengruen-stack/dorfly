@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# impeccable (design skill) — per-machine local overrides, not shared config
+.impeccable/config.local.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
