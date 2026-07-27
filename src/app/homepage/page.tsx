@@ -993,11 +993,11 @@ function About() {
               <Image
                 src="/lukas-rosengruen.jpg"
                 alt="Lukas Rosengrün, Bürgermeister der Gemeinde Ehningen"
-                width={104}
-                height={104}
+                width={120}
+                height={120}
                 priority={false}
                 style={{
-                  width: 104, height: 104, borderRadius: '50%',
+                  width: 120, height: 120, borderRadius: '50%',
                   objectFit: 'cover', objectPosition: 'center top',
                   marginBottom: 24, display: 'block',
                 }}
@@ -1028,6 +1028,60 @@ function About() {
             </div>
           </R>
         </div>
+      </div>
+    </section>
+  )
+}
+
+// ── PREISE ────────────────────────────────────────────────────────────────────
+const preisstaffel = [
+  { bereich: 'bis 5.000 Einwohner',          preis: '299 Euro im Monat' },
+  { bereich: 'bis 7.000 Einwohner',          preis: '399 Euro im Monat' },
+  { bereich: 'bis 10.000 Einwohner',         preis: '499 Euro im Monat' },
+  { bereich: '10.000 bis 15.000 Einwohner',  preis: '599 Euro im Monat' },
+]
+
+function Preise() {
+  return (
+    <section id="preis" style={{ background: C.bg, padding: 'clamp(64px, 10vw, 120px) 0' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 clamp(20px, 5vw, 48px)' }}>
+        <R><Eyebrow>Preis</Eyebrow></R>
+        <R delay={0.1}>
+          <h2 style={{ fontSize: 'clamp(30px, 3.5vw, 52px)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.1, color: C.navy, marginBottom: 20 }}>
+            Ein fester Monatspreis, gestaffelt nach Gemeindegröße.
+          </h2>
+        </R>
+        <R delay={0.15}>
+          <p style={{ fontSize: 18, lineHeight: 1.7, color: C.muted, maxWidth: 640, marginBottom: 48 }}>
+            Sie sehen hier, was Dorfly kostet. Ohne Anfrage, ohne Gespräch, ohne Angebot. Alle Funktionen der Gemeinde-App sind enthalten, keine Einrichtungsgebühr.
+          </p>
+        </R>
+        <R delay={0.2}>
+          <div style={{ background: C.white, borderRadius: 22, border: `1.5px solid ${C.border}`, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <caption className="sr-only">Monatspreise gestaffelt nach Einwohnerzahl</caption>
+              <thead>
+                <tr>
+                  <th scope="col" style={{ textAlign: 'left', fontSize: 12, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: C.muted, padding: '18px 28px', borderBottom: `1.5px solid ${C.border}` }}>Gemeindegröße</th>
+                  <th scope="col" style={{ textAlign: 'right', fontSize: 12, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: C.muted, padding: '18px 28px', borderBottom: `1.5px solid ${C.border}` }}>Preis</th>
+                </tr>
+              </thead>
+              <tbody>
+                {preisstaffel.map(({ bereich, preis }, i) => (
+                  <tr key={bereich} style={{ borderBottom: i < preisstaffel.length - 1 ? `1px solid ${C.border}` : 'none' }}>
+                    <th scope="row" style={{ textAlign: 'left', fontSize: 16, color: C.navy, padding: '18px 28px', fontWeight: 500 }}>{bereich}</th>
+                    <td style={{ fontSize: 17, color: C.navy, padding: '18px 28px', fontWeight: 700, textAlign: 'right', letterSpacing: '-0.02em' }}>{preis}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </R>
+        <R delay={0.25}>
+          <p style={{ fontSize: 13, color: C.muted, marginTop: 20 }}>
+            Alle Preise zzgl. gesetzlicher Umsatzsteuer.
+          </p>
+        </R>
       </div>
     </section>
   )
@@ -1173,6 +1227,7 @@ export default function HomepagePage() {
         <DemoShowcase />
         <Setup />
         <About />
+        <Preise />
         <CTA onDemo={openDemo} onUpdates={openUpdates} />
       </main>
       <Footer />
