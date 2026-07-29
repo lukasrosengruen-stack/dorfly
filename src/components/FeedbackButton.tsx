@@ -57,8 +57,8 @@ export default function FeedbackButton({ gemeindeId, gemeindeName }: Props) {
   return (
     <>
       <button
-        onClick={() => setOpen(true)}
-        className="w-full text-left bg-primary-500 rounded-[20px] p-4 flex items-center gap-4 shadow-[0_4px_14px_rgba(15,45,107,0.33)] transition-[transform,box-shadow] duration-100 ease-out active:scale-[0.96] active:shadow-none"
+        onClick={() => { setSent(false); setError(null); setOpen(true) }}
+        className="w-full text-left bg-[#7c3aed] rounded-[20px] p-4 flex items-center gap-4 shadow-[0_4px_14px_rgba(124,58,237,0.33)] transition-[transform,box-shadow] duration-100 ease-out active:scale-[0.96] active:shadow-none"
       >
         <div className="w-11 h-11 rounded-[14px] bg-white/14 flex items-center justify-center shrink-0">
           <MessageSquare className="w-[22px] h-[22px] text-white" strokeWidth={1.5} aria-hidden="true" />
@@ -97,7 +97,7 @@ export default function FeedbackButton({ gemeindeId, gemeindeName }: Props) {
 
             {sent ? (
               <div className="space-y-4">
-                <p className="text-sm text-gray-700">Danke für dein Feedback! Wir schauen es uns an.</p>
+                <p role="status" className="text-sm text-gray-700">Danke für dein Feedback! Wir schauen es uns an.</p>
                 <button
                   onClick={handleClose}
                   className="w-full py-2.5 rounded-xl bg-primary-500 text-white text-sm font-medium"
