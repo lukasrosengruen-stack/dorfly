@@ -65,6 +65,8 @@ export async function GET(req: NextRequest) {
         if (!insertError) {
           await sendPushNotification(gemeinde.slug, titel)
           created++
+        } else {
+          console.error(`[DWD Cron] Insert-Fehler für Gemeinde ${gemeinde.id}, dwd_id ${alert.id}:`, insertError)
         }
       }
 
