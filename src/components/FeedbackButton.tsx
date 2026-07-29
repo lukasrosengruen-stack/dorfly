@@ -5,12 +5,7 @@ import { MessageSquare, X, Loader2 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 
-interface Props {
-  gemeindeId: string
-  gemeindeName: string
-}
-
-export default function FeedbackButton({ gemeindeId, gemeindeName }: Props) {
+export default function FeedbackButton() {
   const [open, setOpen] = useState(false)
   const [message, setMessage] = useState('')
   const [email, setEmail] = useState('')
@@ -40,12 +35,12 @@ export default function FeedbackButton({ gemeindeId, gemeindeName }: Props) {
         body: JSON.stringify({
           message,
           email: email.trim() || undefined,
-          gemeindeId,
-          gemeindeName,
         }),
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Feedback konnte nicht gesendet werden, bitte versuche es erneut.')
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error ?? 'Feedback konnte nicht gesendet werden, bitte versuche es erneut.')
+      }
       setSent(true)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Feedback konnte nicht gesendet werden, bitte versuche es erneut.')

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
+import { isFeatureAktiv } from '@/lib/features'
 
 function escapeHtml(str: string): string {
   return str
@@ -20,13 +21,36 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 })
   }
 
-  const { message, email, gemeindeId, gemeindeName } = await req.json()
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('gemeinde_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.gemeinde_id) {
+    return NextResponse.json({ error: 'Kein Profil gefunden' }, { status: 400 })
+  }
+
+  const { data: gemeinde } = await supabase
+    .from('gemeinden')
+    .select('name, features')
+    .eq('id', profile.gemeinde_id)
+    .single()
+
+  if (!gemeinde || !isFeatureAktiv(gemeinde, 'feedback')) {
+    return NextResponse.json({ error: 'Feedback ist fuer diese Gemeinde nicht aktiviert' }, { status: 403 })
+  }
+
+  let body: { message?: unknown; email?: unknown }
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Ungueltige Anfrage' }, { status: 400 })
+  }
+  const { message, email } = body
 
   if (!message || typeof message !== 'string' || !message.trim()) {
     return NextResponse.json({ error: 'Feedback-Text fehlt' }, { status: 400 })
-  }
-  if (!gemeindeId || typeof gemeindeId !== 'string') {
-    return NextResponse.json({ error: 'Gemeinde fehlt' }, { status: 400 })
   }
   if (email !== undefined && email !== '' && (typeof email !== 'string' || !EMAIL_REGEX.test(email))) {
     return NextResponse.json({ error: 'Ungültige E-Mail-Adresse' }, { status: 400 })
@@ -38,7 +62,7 @@ export async function POST(req: Request) {
   }
 
   const safeMessage = escapeHtml(message.trim()).replace(/\n/g, '<br>')
-  const safeGemeindeName = escapeHtml(String(gemeindeName ?? gemeindeId))
+  const safeGemeindeName = escapeHtml(gemeinde.name)
   const safeEmail = email ? escapeHtml(String(email)) : null
 
   try {

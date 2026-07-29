@@ -132,7 +132,7 @@ export default async function HomePage() {
 
         {/* Feedback-Banner — nur wenn fuer die Gemeinde aktiviert, nicht fuer Gaeste */}
         {!isGuest && gemeinde?.id && isFeatureAktiv(gemeinde, 'feedback') && (
-          <FeedbackButton gemeindeId={gemeinde.id} gemeindeName={gemeindeName} />
+          <FeedbackButton />
         )}
 
         {/* Warnmeldungs-Banner — nur bei aktiver Warnung */}
