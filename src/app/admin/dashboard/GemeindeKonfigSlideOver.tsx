@@ -12,6 +12,7 @@ const FEATURE_LABELS: { key: keyof Omit<GemeindeFeatures, 'buergermeisterLabel'>
   { key: 'gewerbe',        label: 'Gewerbe & Lokale Angebote' },
   { key: 'vereine',        label: 'Vereine' },
   { key: 'marktplatz',     label: 'Marktplatz' },
+  { key: 'feedback',       label: 'Feedback' },
 ]
 
 interface Props {
