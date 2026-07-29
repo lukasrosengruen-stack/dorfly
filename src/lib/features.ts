@@ -5,6 +5,7 @@ export type GemeindeFeatures = {
   gewerbe?:             boolean
   vereine?:             boolean
   marktplatz?:          boolean
+  feedback?:            boolean
   buergermeisterLabel?: 'buergermeister' | 'verwaltung'
 }
 
