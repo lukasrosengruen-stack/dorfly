@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getGemeinde } from '@/lib/gemeinde'
 import { Newspaper, AlertTriangle, BarChart2, MessageCircleQuestion, LayoutDashboard, CalendarDays, ExternalLink, ScrollText, Scale, UserCircle, Store, Trash2, Users, Phone, Globe, BookOpen, ShieldAlert, LucideIcon } from 'lucide-react'
 import { isFeatureAktiv } from '@/lib/features'
+import FeedbackButton from '@/components/FeedbackButton'
 
 export const metadata: Metadata = { title: 'Startseite – Dorfly' }
 import Link from 'next/link'
@@ -127,6 +128,11 @@ export default async function HomePage() {
               </svg>
             </div>
           </Link>
+        )}
+
+        {/* Feedback-Banner — nur wenn fuer die Gemeinde aktiviert, nicht fuer Gaeste */}
+        {!isGuest && gemeinde?.id && isFeatureAktiv(gemeinde, 'feedback') && (
+          <FeedbackButton gemeindeId={gemeinde.id} gemeindeName={gemeindeName} />
         )}
 
         {/* Warnmeldungs-Banner — nur bei aktiver Warnung */}
