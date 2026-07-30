@@ -82,7 +82,7 @@ export default function GemeindeAuswahl({ gemeinden, rootDomain }: Props) {
                   type="button"
                   aria-pressed={istAusgewaehlt}
                   onClick={() => setAusgewaehlt(g.slug)}
-                  className={`w-full text-left px-4 py-3 text-sm transition-colors ${
+                  className={`w-full text-left px-4 py-3 text-sm transition-colors active:bg-gray-100 ${
                     istAusgewaehlt
                       ? 'bg-primary-500 text-white font-semibold'
                       : 'text-gray-800 hover:bg-gray-50'
@@ -109,7 +109,7 @@ export default function GemeindeAuswahl({ gemeinden, rootDomain }: Props) {
           type="button"
           disabled={!ausgewaehlt}
           onClick={() => ausgewaehlt && navigate(ausgewaehlt, '/login')}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm text-center leading-snug bg-primary-500 text-white transition-colors hover:bg-primary-600 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm text-center leading-snug bg-primary-500 text-white transition-all duration-150 ease-out hover:bg-primary-600 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <LogIn className="w-4 h-4 shrink-0" aria-hidden="true" />
           Ich habe schon ein Konto — anmelden
@@ -119,7 +119,7 @@ export default function GemeindeAuswahl({ gemeinden, rootDomain }: Props) {
           type="button"
           disabled={!ausgewaehlt}
           onClick={() => ausgewaehlt && navigate(ausgewaehlt, '/feed')}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm text-center leading-snug border-2 border-primary-500 text-primary-600 transition-colors hover:bg-primary-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm text-center leading-snug border-2 border-primary-500 text-primary-600 transition-all duration-150 ease-out hover:bg-primary-50 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Eye className="w-4 h-4 shrink-0" aria-hidden="true" />
           Ohne Anmeldung ansehen
@@ -129,7 +129,7 @@ export default function GemeindeAuswahl({ gemeinden, rootDomain }: Props) {
           type="button"
           disabled={!ausgewaehlt}
           onClick={() => ausgewaehlt && navigate(ausgewaehlt, '')}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm text-center leading-snug border border-primary-500 text-primary-500 transition-colors hover:bg-primary-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm text-center leading-snug border border-primary-500 text-primary-500 transition-all duration-150 ease-out hover:bg-primary-50 active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <UserPlus className="w-4 h-4 shrink-0" aria-hidden="true" />
           Neu registrieren

@@ -177,7 +177,7 @@ export default function LoginPage() {
           </p>
           <button
             onClick={() => setRegistered(false)}
-            className="text-primary-500 text-sm font-medium"
+            className="text-primary-500 text-sm font-medium transition-transform duration-150 ease-out active:scale-[0.97]"
           >
             Zurück zur Anmeldung
           </button>
@@ -223,7 +223,7 @@ export default function LoginPage() {
             <button
               key={m}
               onClick={() => { setMode(m); setError('') }}
-              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-150 ease-out active:scale-[0.97] ${
                 mode === m ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
               }`}
             >
@@ -236,7 +236,7 @@ export default function LoginPage() {
         <button
           type="button"
           onClick={() => router.push('/feed')}
-          className="w-full mb-4 border-2 border-primary-500 text-primary-600 hover:bg-primary-50 font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
+          className="w-full mb-4 border-2 border-primary-500 text-primary-600 hover:bg-primary-50 font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-all duration-150 ease-out active:scale-[0.97]"
         >
           <Eye className="w-5 h-5" aria-hidden="true" />
           Ohne Anmeldung ansehen
@@ -294,7 +294,7 @@ export default function LoginPage() {
                     <button
                       onClick={resendConfirmation}
                       disabled={!email || loading}
-                      className="mt-2 text-amber-900 underline font-medium disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
+                      className="mt-2 text-amber-900 underline font-medium disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed transition-transform duration-150 ease-out active:scale-[0.97]"
                     >
                       {loading ? 'Sende...' : 'Neuen Bestätigungslink senden'}
                     </button>
@@ -313,7 +313,7 @@ export default function LoginPage() {
                     <button
                       onClick={resendConfirmation}
                       disabled={!email || loading}
-                      className="mt-2 text-amber-900 underline font-medium disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed"
+                      className="mt-2 text-amber-900 underline font-medium disabled:opacity-40 disabled:no-underline disabled:cursor-not-allowed transition-transform duration-150 ease-out active:scale-[0.97]"
                     >
                       {loading ? 'Sende...' : 'Bestätigungs-E-Mail erneut senden'}
                     </button>
@@ -327,7 +327,7 @@ export default function LoginPage() {
                 <button
                   onClick={submit}
                   disabled={loading || !email || !password}
-                  className="w-full bg-primary-500 hover:bg-primary-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
+                  className="w-full bg-primary-500 hover:bg-primary-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-all duration-150 ease-out active:scale-[0.97]"
                 >
                   {loading ? <Loader2 className="animate-spin w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
                   Anmelden
@@ -338,7 +338,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => { setMode('forgot'); setError('') }}
-                  className="w-full text-center text-sm text-gray-400 hover:text-primary-500 transition-colors pt-1"
+                  className="w-full text-center text-sm text-gray-400 hover:text-primary-500 transition-all duration-150 ease-out active:scale-[0.97] pt-1"
                 >
                   Passwort vergessen?
                 </button>
@@ -355,7 +355,7 @@ export default function LoginPage() {
                 <p className="text-primary-600 font-medium text-sm">E-Mail gesendet!</p>
                 <p className="text-gray-400 text-xs mt-1">Prüfe dein Postfach und klicke den Link.</p>
                 <button onClick={() => { setMode('login'); setResetSent(false) }}
-                  className="mt-3 text-sm text-primary-500 font-medium">
+                  className="mt-3 text-sm text-primary-500 font-medium transition-transform duration-150 ease-out active:scale-[0.97]">
                   Zurück zur Anmeldung
                 </button>
               </div>
@@ -365,13 +365,13 @@ export default function LoginPage() {
                 <button
                   onClick={sendReset}
                   disabled={loading || !email}
-                  className="w-full bg-primary-500 hover:bg-primary-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
+                  className="w-full bg-primary-500 hover:bg-primary-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-all duration-150 ease-out active:scale-[0.97]"
                 >
                   {loading ? <Loader2 className="animate-spin w-5 h-5" /> : <Mail className="w-5 h-5" />}
                   Reset-Link senden
                 </button>
                 <button onClick={() => { setMode('login'); setError('') }}
-                  className="w-full text-center text-sm text-gray-400 hover:text-primary-500 transition-colors">
+                  className="w-full text-center text-sm text-gray-400 hover:text-primary-500 transition-all duration-150 ease-out active:scale-[0.97]">
                   Zurück
                 </button>
               </div>

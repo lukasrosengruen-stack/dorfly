@@ -112,7 +112,7 @@ export default function RegisterForm({ einladungsToken, einladungsInfo, onRegist
         <button
           type="button"
           onClick={() => setShowOptional(v => !v)}
-          className="flex items-center gap-2 text-sm text-primary-500 font-medium py-1"
+          className="flex items-center gap-2 text-sm text-primary-500 font-medium py-1 transition-transform duration-150 ease-out active:scale-[0.97]"
           aria-expanded={showOptional}
         >
           <ChevronDown className={`w-4 h-4 transition-transform ${showOptional ? 'rotate-180' : ''}`} />
@@ -204,7 +204,7 @@ export default function RegisterForm({ einladungsToken, einladungsInfo, onRegist
       <button
         type="submit"
         disabled={form.formState.isSubmitting}
-        className="w-full bg-primary-500 hover:bg-primary-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
+        className="w-full bg-primary-500 hover:bg-primary-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-2 transition-all duration-150 ease-out active:scale-[0.97]"
       >
         {form.formState.isSubmitting ? <Loader2 className="animate-spin w-5 h-5" /> : <ArrowRight className="w-5 h-5" />}
         Konto erstellen
