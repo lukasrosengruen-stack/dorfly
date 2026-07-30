@@ -5,10 +5,12 @@ import Image from 'next/image'
 import {
   Newspaper, MapPin, MessageCircle, BarChart2, Landmark,
   ShoppingBag, Shield, Menu, X, Check, ChevronRight,
-  AlertTriangle, Trash2, Bell,
+  AlertTriangle, Trash2, Bell, Apple,
 } from 'lucide-react'
 import { Logo as Wordmark } from '@/components/ui'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
+
+const APP_STORE_URL = 'https://apps.apple.com/de/app/dorfly/id6791239032'
 
 // ── Brand tokens ──────────────────────────────────────────────────────────────
 const C = {
@@ -617,6 +619,74 @@ function Hero({ onDemo }: { onDemo: () => void }) {
   )
 }
 
+// ── STORE BADGES ──────────────────────────────────────────────────────────────
+function StoreBadge({ href, subtitle, title, disabled }: {
+  href?: string; subtitle: string; title: string; disabled?: boolean
+}) {
+  const content = (
+    <>
+      <Apple size={26} aria-hidden="true" />
+      <div style={{ textAlign: 'left' }}>
+        <div style={{ fontSize: 11, lineHeight: 1.2 }}>{subtitle}</div>
+        <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.3 }}>{title}</div>
+      </div>
+    </>
+  )
+  const style = {
+    display: 'inline-flex', alignItems: 'center', gap: 12,
+    padding: '10px 22px', borderRadius: 14, color: C.white,
+    textDecoration: 'none', fontFamily: 'inherit',
+  } as const
+
+  if (disabled) {
+    return (
+      <div aria-disabled="true" style={{ ...style, background: C.muted, opacity: 0.6, cursor: 'default' }}>
+        {content}
+      </div>
+    )
+  }
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`${title} – öffnet in neuem Tab`}
+      style={{ ...style, background: C.navy, transition: 'transform .15s, background .2s' }}
+      onMouseEnter={e => { e.currentTarget.style.background = '#1C2E42'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+      onMouseLeave={e => { e.currentTarget.style.background = C.navy; e.currentTarget.style.transform = 'none' }}
+    >
+      {content}
+    </a>
+  )
+}
+
+function AppStoreSection() {
+  return (
+    <section style={{ background: C.bg, padding: 'clamp(48px, 8vw, 88px) 0' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 clamp(20px, 5vw, 48px)', textAlign: 'center' }}>
+        <R><Eyebrow>Jetzt verfügbar</Eyebrow></R>
+        <R delay={0.1}>
+          <h2 style={{ fontSize: 'clamp(26px, 3vw, 40px)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.15, color: C.navy, marginBottom: 16 }}>
+            Dorfly gibt es schon zum Download.
+          </h2>
+        </R>
+        <R delay={0.15}>
+          <p style={{ fontSize: 16, lineHeight: 1.7, color: C.muted, maxWidth: 560, margin: '0 auto 36px' }}>
+            Kein Prototyp, keine Vision. Dorfly ist live und im App Store verfügbar.
+          </p>
+        </R>
+        <R delay={0.2}>
+          <div className="flex flex-col sm:flex-row" style={{ gap: 14, justifyContent: 'center', alignItems: 'center' }}>
+            <StoreBadge href={APP_STORE_URL} subtitle="Laden im" title="App Store" />
+            <StoreBadge subtitle="Bald verfügbar" title="Google Play" disabled />
+          </div>
+        </R>
+      </div>
+    </section>
+  )
+}
+
 // ── PROBLEM ───────────────────────────────────────────────────────────────────
 function Problem() {
   return (
@@ -1181,6 +1251,19 @@ function Footer() {
               </a>
             </li>
           ))}
+          <li>
+            <a
+              href={APP_STORE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="App Store – öffnet in neuem Tab"
+              style={{ fontSize: 13, color: C.muted, textDecoration: 'none', transition: 'color .2s' }}
+              onMouseEnter={e => (e.currentTarget.style.color = C.navy)}
+              onMouseLeave={e => (e.currentTarget.style.color = C.muted)}
+            >
+              App Store
+            </a>
+          </li>
         </ul>
         <span style={{ fontSize: 13, color: '#CBD5E1' }}>© 2026 Dorfly</span>
       </div>
@@ -1220,6 +1303,7 @@ export default function HomepagePage() {
       <Nav onDemo={openDemo} />
       <main id="main-content" tabIndex={-1}>
         <Hero    onDemo={openDemo} />
+        <AppStoreSection />
         <Problem />
         <Zielgruppen />
         <Features />
