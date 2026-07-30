@@ -5,7 +5,7 @@ import Image from 'next/image'
 import {
   Newspaper, MapPin, MessageCircle, BarChart2, Landmark,
   ShoppingBag, Shield, Menu, X, Check, ChevronRight,
-  AlertTriangle, Trash2, Bell, Apple,
+  AlertTriangle, Trash2, Bell,
 } from 'lucide-react'
 import { Logo as Wordmark } from '@/components/ui'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
@@ -607,6 +607,27 @@ function Hero({ onDemo }: { onDemo: () => void }) {
                 </a>
               </div>
             </R>
+
+            <R delay={0.35}>
+              <div style={{ marginTop: 32 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: C.muted, marginBottom: 12 }}>
+                  Jetzt verfügbar
+                </div>
+                <div className="flex" style={{ gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <a
+                    href={APP_STORE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Dorfly im App Store – öffnet in neuem Tab"
+                  >
+                    <img src="/badges/app-store-de.svg" alt="Download on the App Store" height={44} style={{ display: 'block' }} />
+                  </a>
+                  <div aria-disabled="true" style={{ position: 'relative', opacity: 0.55, filter: 'grayscale(1)' }}>
+                    <img src="/badges/google-play-de.png" alt="Google Play – bald verfügbar" height={44} style={{ display: 'block' }} />
+                  </div>
+                </div>
+              </div>
+            </R>
           </div>
 
           {/* Right – phone mockup */}
@@ -614,74 +635,6 @@ function Hero({ onDemo }: { onDemo: () => void }) {
             <PhoneMockup />
           </R>
         </div>
-      </div>
-    </section>
-  )
-}
-
-// ── STORE BADGES ──────────────────────────────────────────────────────────────
-function StoreBadge({ href, subtitle, title, disabled }: {
-  href?: string; subtitle: string; title: string; disabled?: boolean
-}) {
-  const content = (
-    <>
-      <Apple size={26} aria-hidden="true" />
-      <div style={{ textAlign: 'left' }}>
-        <div style={{ fontSize: 11, lineHeight: 1.2 }}>{subtitle}</div>
-        <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.3 }}>{title}</div>
-      </div>
-    </>
-  )
-  const style = {
-    display: 'inline-flex', alignItems: 'center', gap: 12,
-    padding: '10px 22px', borderRadius: 14, color: C.white,
-    textDecoration: 'none', fontFamily: 'inherit',
-  } as const
-
-  if (disabled) {
-    return (
-      <div aria-disabled="true" style={{ ...style, background: C.muted, opacity: 0.6, cursor: 'default' }}>
-        {content}
-      </div>
-    )
-  }
-
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={`${title} – öffnet in neuem Tab`}
-      style={{ ...style, background: C.navy, transition: 'transform .15s, background .2s' }}
-      onMouseEnter={e => { e.currentTarget.style.background = '#1C2E42'; e.currentTarget.style.transform = 'translateY(-2px)' }}
-      onMouseLeave={e => { e.currentTarget.style.background = C.navy; e.currentTarget.style.transform = 'none' }}
-    >
-      {content}
-    </a>
-  )
-}
-
-function AppStoreSection() {
-  return (
-    <section style={{ background: C.bg, padding: 'clamp(48px, 8vw, 88px) 0' }}>
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 clamp(20px, 5vw, 48px)', textAlign: 'center' }}>
-        <R><Eyebrow>Jetzt verfügbar</Eyebrow></R>
-        <R delay={0.1}>
-          <h2 style={{ fontSize: 'clamp(26px, 3vw, 40px)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.15, color: C.navy, marginBottom: 16 }}>
-            Dorfly gibt es schon zum Download.
-          </h2>
-        </R>
-        <R delay={0.15}>
-          <p style={{ fontSize: 16, lineHeight: 1.7, color: C.muted, maxWidth: 560, margin: '0 auto 36px' }}>
-            Kein Prototyp, keine Vision. Dorfly ist live und im App Store verfügbar.
-          </p>
-        </R>
-        <R delay={0.2}>
-          <div className="flex flex-col sm:flex-row" style={{ gap: 14, justifyContent: 'center', alignItems: 'center' }}>
-            <StoreBadge href={APP_STORE_URL} subtitle="Laden im" title="App Store" />
-            <StoreBadge subtitle="Bald verfügbar" title="Google Play" disabled />
-          </div>
-        </R>
       </div>
     </section>
   )
@@ -1303,7 +1256,6 @@ export default function HomepagePage() {
       <Nav onDemo={openDemo} />
       <main id="main-content" tabIndex={-1}>
         <Hero    onDemo={openDemo} />
-        <AppStoreSection />
         <Problem />
         <Zielgruppen />
         <Features />
