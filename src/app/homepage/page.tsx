@@ -613,19 +613,15 @@ function Hero({ onDemo }: { onDemo: () => void }) {
                 <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: C.muted, marginBottom: 12 }}>
                   Jetzt verfügbar
                 </div>
-                <div className="flex" style={{ gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-                  <a
-                    href={APP_STORE_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Dorfly im App Store – öffnet in neuem Tab"
-                  >
-                    <img src="/badges/app-store-de.svg" alt="Download on the App Store" height={44} style={{ display: 'block' }} />
-                  </a>
-                  <div aria-disabled="true" style={{ position: 'relative', opacity: 0.55, filter: 'grayscale(1)' }}>
-                    <img src="/badges/google-play-de.png" alt="Google Play – bald verfügbar" height={44} style={{ display: 'block' }} />
-                  </div>
-                </div>
+                <a
+                  href={APP_STORE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Dorfly im App Store – öffnet in neuem Tab"
+                  style={{ display: 'inline-block' }}
+                >
+                  <img src="/badges/app-store-de.svg" alt="Download on the App Store" height={44} style={{ display: 'block' }} />
+                </a>
               </div>
             </R>
           </div>
