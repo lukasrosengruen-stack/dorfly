@@ -640,7 +640,7 @@ function Hero({ onDemo }: { onDemo: () => void }) {
 function Problem() {
   return (
     <section style={{ padding: 'clamp(64px, 10vw, 120px) 0', background: C.bg }}>
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 clamp(20px, 5vw, 48px)' }}>
+      <div style={{ maxWidth: 1320, margin: '0 auto', padding: '0 clamp(20px, 5vw, 48px)' }}>
         <R><Eyebrow>Das Problem</Eyebrow></R>
         <R delay={0.1}>
           <h2 style={{ fontSize: 'clamp(30px, 3.5vw, 52px)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.1, color: C.navy, marginBottom: 40 }}>
@@ -648,7 +648,7 @@ function Problem() {
           </h2>
         </R>
         <R delay={0.2}>
-          <div style={{ fontSize: 18, lineHeight: 1.8, color: C.muted }}>
+          <div style={{ fontSize: 18, lineHeight: 1.8, color: C.muted, maxWidth: 720 }}>
             <p style={{ marginBottom: 20 }}>
               Sie kommunizieren über Homepage, Mitteilungsblatt, Social Media, E-Mail und Telefon. Jeder Kanal hat seinen Platz. Aber niemand weiß, wo etwas zu finden ist. Manches geht unter. Manches erreicht nicht die Richtigen. Auf Social Media entscheidet der Algorithmus, wer Ihre Nachricht sieht.
             </p>
