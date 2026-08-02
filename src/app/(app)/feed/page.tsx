@@ -25,7 +25,15 @@ export default async function FeedPage() {
   const gemeindeId = profile?.gemeinde_id ?? gemeinde?.id
   const gemeindeName = profile?.gemeinden?.name ?? gemeinde?.name ?? ''
 
-  const [postsResult, vereineResult, umfragenResult, abonnementsResult, vereinAbonnementsResult] = await Promise.all([
+  const [
+    postsResult,
+    vereineResult,
+    umfragenResult,
+    abonnementsResult,
+    vereinAbonnementsResult,
+    eigenerVereinResult,
+    eigenesGewerbeResult,
+  ] = await Promise.all([
     gemeindeId
       ? supabase.from('posts')
           .select('id, titel, inhalt, bild_url, bilder_urls, tag, channel, pinned, status, published_at, publish_at, author_id, org_id, veranstaltung_datum, veranstaltung_ort, post_termine(datum), sammlung_datum, sammlung_organisator, sichtbarkeit')
@@ -62,6 +70,16 @@ export default async function FeedPage() {
     user
       ? supabase.from('verein_abonnements').select('verein_id').eq('user_id', user.id)
       : Promise.resolve({ data: [] }),
+
+    // Eigene Organisationen: deren Beiträge sind für den Autor immer sichtbar,
+    // unabhängig davon ob er sich selbst abonniert hat.
+    user
+      ? supabase.from('vereine').select('id').eq('profile_id', user.id)
+      : Promise.resolve({ data: [] }),
+
+    user
+      ? supabase.from('organisationen').select('id').eq('profile_id', user.id)
+      : Promise.resolve({ data: [] }),
   ])
 
   const posts = postsResult.data ?? []
@@ -83,6 +101,11 @@ export default async function FeedPage() {
 
   const gewerbeAbonnements = (abonnementsResult.data ?? []).map((a: { gewerbe_id: string }) => a.gewerbe_id)
   const vereinAbonnements  = (vereinAbonnementsResult.data ?? []).map((a: { verein_id: string }) => a.verein_id)
+
+  const eigeneOrgIds = [
+    ...(eigenerVereinResult.data ?? []).map((o: { id: string }) => o.id),
+    ...(eigenesGewerbeResult.data ?? []).map((o: { id: string }) => o.id),
+  ]
 
   const umfragen = umfragenResult.data ?? []
 
@@ -117,6 +140,8 @@ export default async function FeedPage() {
       umfragen={umfragenMitDaten}
       gewerbeAbonnements={gewerbeAbonnements}
       vereinAbonnements={vereinAbonnements}
+      eigeneOrgIds={eigeneOrgIds}
+      eigeneUserId={user?.id ?? null}
       gemeindeName={gemeindeName}
     />
   )

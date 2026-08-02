@@ -38,6 +38,9 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
+  // Pflicht für env(safe-area-inset-*): ohne 'cover' liefert die WebView
+  // konstant 0 und alle pt-safe-*-Utilities wären wirkungslos.
+  viewportFit: 'cover',
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

@@ -104,12 +104,17 @@ export function VereinPostForm({ vereinId, onCreated }: VereinPostFormProps) {
                 </button>
               </div>
             ) : (
-              <label className="cursor-pointer block">
-                <span className="block text-xs font-bold text-primary-500 bg-primary-50 px-3 py-2 rounded-xl text-center">
-                  {uploading ? 'Lädt…' : 'Bild auswählen'}
-                </span>
-                <input type="file" accept="image/*" className="hidden" onChange={handleBildChange} disabled={uploading} />
-              </label>
+              <>
+                <label className="cursor-pointer block">
+                  <span className="block text-xs font-bold text-primary-500 bg-primary-50 px-3 py-2 rounded-xl text-center">
+                    {uploading ? 'Lädt…' : 'Bild auswählen'}
+                  </span>
+                  <input type="file" accept="image/*" className="hidden" onChange={handleBildChange} disabled={uploading} />
+                </label>
+                <p className="mt-1.5 text-xs text-gray-500 leading-relaxed">
+                  Das Seitenverhältnis bleibt erhalten. Empfohlen: quadratisch oder 4:3.
+                </p>
+              </>
             )}
           </div>
 

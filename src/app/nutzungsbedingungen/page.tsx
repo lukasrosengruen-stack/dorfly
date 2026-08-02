@@ -1,4 +1,4 @@
-import { Logo } from '@/components/ui'
+import LegalNav from '@/components/layout/LegalNav'
 
 export const metadata = {
   title: 'Nutzungsbedingungen — Dorfly',
@@ -40,15 +40,7 @@ function P({ children }: { children: React.ReactNode }) {
 export default function NutzungsbedingungenPage() {
   return (
     <div style={{ background: C.bg, minHeight: '100vh' }}>
-      <nav style={{
-        position: 'sticky', top: 0, zIndex: 50,
-        background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)',
-        borderBottom: `1px solid ${C.border}`, padding: '0 24px',
-      }}>
-        <div style={{ maxWidth: 800, margin: '0 auto', height: 56, display: 'flex', alignItems: 'center' }}>
-          <Logo />
-        </div>
-      </nav>
+      <LegalNav />
 
       <main style={{ maxWidth: 800, margin: '0 auto', padding: '48px 24px 80px' }}>
         <h1 style={{ fontSize: 32, fontWeight: 800, color: C.navy, marginBottom: 8 }}>

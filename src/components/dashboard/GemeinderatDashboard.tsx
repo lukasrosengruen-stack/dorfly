@@ -2,7 +2,7 @@
 
 
 import { toast } from 'sonner'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { de } from 'date-fns/locale'
 import { Scale, MessageCircle, CheckCircle2, Clock, Send, Loader2, Pencil, Trash2, X } from 'lucide-react'
@@ -47,6 +47,14 @@ interface Props {
 
 export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profileId, fraktion: initialFraktion, ueber_mich: initialUeberMich, kontakt_email: initialKontaktEmail, avatar_url: initialAvatarUrl, social_x: initialSocialX, social_facebook: initialSocialFacebook, social_instagram: initialSocialInstagram, social_tiktok: initialSocialTiktok }: Props) {
   const [activeTab, setActiveTab] = useState<'beitraege' | 'fragen' | 'profil'>('fragen')
+
+  // Beim Öffnen des Fragen-Bereichs die eingegangenen Anfragen als gelesen
+  // markieren. Fehler sind unkritisch — das Flag ist reine Komfortinformation.
+  useEffect(() => {
+    if (activeTab !== 'fragen') return
+    fetch('/api/gemeinderat/gelesen', { method: 'POST' }).catch(() => {})
+  }, [activeTab])
+
   const [fraktion, setFraktion] = useState(initialFraktion ?? '')
   const [ueber_mich, setUeberMich] = useState(initialUeberMich ?? '')
   const [kontakt_email, setKontaktEmail] = useState(initialKontaktEmail ?? '')

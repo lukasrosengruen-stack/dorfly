@@ -49,6 +49,80 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ── Safe Areas ──────────────────────────────────────────────────────────────
+   Notch / Dynamic Island oben, Home-Indicator unten.
+   Setzt viewportFit: 'cover' in app/layout.tsx voraus — ohne das liefert
+   env(safe-area-inset-*) in der WebView konstant 0.
+   Einzige Quelle für Header-Abstände; keine hartkodierten pt-Werte mehr. */
+
+/* Reiner Inset – für Leisten, deren Höhe schon anders gesetzt ist (Legal-Nav).
+   Auf Geräten ohne Notch bleibt der Abstand damit exakt wie bisher. */
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Overlay-Leisten mit eigenem Innenabstand (Lightbox-Header).
+   Ersetzt dort py-3 nach oben. Nicht zusammen mit einer weiteren
+   padding-top-Utility verwenden, sonst konkurrieren zwei Regeln. */
+@utility pt-safe-bar {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
+}
+
+/* App-Header (PageHeader, Bürgermeister, Vereinsbereich).
+   max() sorgt dafür, dass Geräte ohne Inset den bisherigen 40px-Abstand
+   behalten und nichts optisch zusammenrutscht. */
+@utility pt-safe-header {
+  padding-top: max(2.5rem, calc(env(safe-area-inset-top, 0px) + 0.75rem));
+}
+
+/* Untere Navigationsleiste – Inset plus der bisherige 12px-Innenabstand. */
+@utility pb-safe-nav {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem);
+}
+
+/* Freiraum unter dem Seiteninhalt, damit die fixierte BottomNav nichts
+   verdeckt. Muss den Inset mitrechnen, weil die Leiste dadurch höher wird. */
+@utility pb-nav {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6rem);
+}
+
+/* Tap-Feedback: iOS blendet sonst ein graues Rechteck über Links ein,
+   das mit unseren eigenen active:-States kollidiert. */
+@utility tap-transparent {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Feed-Bilder ─────────────────────────────────────────────────────────────
+   Vorher erzwang aspect-[4/3] + object-cover ein festes Format; Canva-Exporte
+   (1:1, 4:5, 9:16, 1.91:1) wurden dadurch beschnitten.
+
+   Jetzt gilt das native Seitenverhältnis innerhalb eines Korridors:
+     hochkant  bis  4:5     → max-height = Breite * 1.25
+     quer      bis  1.91:1  → min-height = Breite / 1.91
+   Nur was außerhalb liegt, wird auf den Grenzwert beschnitten (object-fit).
+
+   Die Höhen beziehen sich über Container-Queries (cqw) auf die Rahmenbreite,
+   nicht auf den Viewport — die Karte ist schmaler als das Fenster. */
+
+.feed-bild-rahmen {
+  container-type: inline-size;
+  width: 100%;
+  overflow: hidden;
+  background: #eef2f7;
+}
+
+.feed-bild {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  min-height: calc(100cqw / 1.91);
+  max-height: calc(100cqw * 1.25);
+  /* 'auto 4/3' reserviert vor dem Laden 4:3 Höhe und tritt zurück, sobald das
+     Bild sein natürliches Verhältnis meldet — verhindert den Sprung von 0. */
+  aspect-ratio: auto 4 / 3;
+}
+
 /* Kein Dark Mode */
 @media (prefers-color-scheme: dark) {
   :root {
