@@ -51,12 +51,17 @@ export default function BottomNav({ role, features, buergermeisterShortLabel = '
               }}
               aria-current={active ? 'page' : undefined}
               className={clsx(
-                'flex-1 flex flex-col items-center justify-center gap-0.5 min-h-11 py-2 text-[9.5px] font-semibold',
-                'tap-transparent transition-[transform,color] duration-100 ease-out active:scale-[0.96]',
+                'group tap-transparent flex-1 flex flex-col items-center justify-center min-h-11 py-1 text-[9.5px] font-semibold transition-colors',
                 active ? 'text-primary-500' : 'text-[#64748b]'
               )}>
-              <Icon className="w-[22px] h-[22px]" aria-hidden="true" strokeWidth={active ? 2.5 : 1.5} />
-              <span>{label}</span>
+              {/* Der Druckeffekt sitzt auf dem Inhalt, nicht auf dem Flex-Item:
+                  ein Tab ist so schmal, dass eine Skalierung des ganzen Feldes
+                  optisch nicht ankommt. Die Hintergrundfläche übernimmt die
+                  Rolle, die auf home/page.tsx der wegspringende Schatten hat. */}
+              <span className="flex flex-col items-center gap-0.5 rounded-xl px-3 py-1 transition-[transform,background-color] duration-100 ease-out group-active:scale-[0.88] group-active:bg-primary-100">
+                <Icon className="w-[22px] h-[22px]" aria-hidden="true" strokeWidth={active ? 2.5 : 1.5} />
+                <span>{label}</span>
+              </span>
             </Link>
           )
         })}
@@ -66,11 +71,14 @@ export default function BottomNav({ role, features, buergermeisterShortLabel = '
           href="/home"
           aria-label="Startseite"
           aria-current={pathname === '/home' ? 'page' : undefined}
-          className="tap-transparent flex flex-col items-center justify-center px-3 transition-transform duration-100 ease-out active:scale-[0.96]"
+          className="group tap-transparent flex flex-col items-center justify-center px-3"
         >
+          {/* Gleiches Muster wie die Kacheln auf home/page.tsx: eindrücken und
+              Schatten wegnehmen. */}
           <div className={clsx(
             'w-[52px] h-[52px] rounded-2xl flex items-center justify-center -mt-4',
             'shadow-[0_4px_18px_rgba(15,45,107,0.4)]',
+            'transition-[transform,box-shadow] duration-100 ease-out group-active:scale-[0.92] group-active:shadow-none',
             pathname === '/home' ? 'bg-primary-600' : 'bg-primary-500'
           )}>
             <Grid2x2 className="w-6 h-6 text-white" aria-hidden="true" strokeWidth={1.5} />
@@ -89,12 +97,17 @@ export default function BottomNav({ role, features, buergermeisterShortLabel = '
               }}
               aria-current={active ? 'page' : undefined}
               className={clsx(
-                'flex-1 flex flex-col items-center justify-center gap-0.5 min-h-11 py-2 text-[9.5px] font-semibold',
-                'tap-transparent transition-[transform,color] duration-100 ease-out active:scale-[0.96]',
+                'group tap-transparent flex-1 flex flex-col items-center justify-center min-h-11 py-1 text-[9.5px] font-semibold transition-colors',
                 active ? 'text-primary-500' : 'text-[#64748b]'
               )}>
-              <Icon className="w-[22px] h-[22px]" aria-hidden="true" strokeWidth={active ? 2.5 : 1.5} />
-              <span>{label}</span>
+              {/* Der Druckeffekt sitzt auf dem Inhalt, nicht auf dem Flex-Item:
+                  ein Tab ist so schmal, dass eine Skalierung des ganzen Feldes
+                  optisch nicht ankommt. Die Hintergrundfläche übernimmt die
+                  Rolle, die auf home/page.tsx der wegspringende Schatten hat. */}
+              <span className="flex flex-col items-center gap-0.5 rounded-xl px-3 py-1 transition-[transform,background-color] duration-100 ease-out group-active:scale-[0.88] group-active:bg-primary-100">
+                <Icon className="w-[22px] h-[22px]" aria-hidden="true" strokeWidth={active ? 2.5 : 1.5} />
+                <span>{label}</span>
+              </span>
             </Link>
           )
         })}
