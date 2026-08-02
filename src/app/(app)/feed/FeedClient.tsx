@@ -22,13 +22,10 @@ interface Props {
   umfragen: UmfrageMitDaten[]
   gewerbeAbonnements?: string[]
   vereinAbonnements?: string[]
-  /** Organisationen (Verein/Gewerbe), die dem eingeloggten Nutzer gehören */
-  eigeneOrgIds?: string[]
-  eigeneUserId?: string | null
   gemeindeName?: string
 }
 
-export default function FeedClient({ posts: initialPosts, profile, umfragen: initialUmfragen, gewerbeAbonnements = [], vereinAbonnements = [], eigeneOrgIds = [], eigeneUserId = null, gemeindeName: gemeindeNameProp }: Props) {
+export default function FeedClient({ posts: initialPosts, profile, umfragen: initialUmfragen, gewerbeAbonnements = [], vereinAbonnements = [], gemeindeName: gemeindeNameProp }: Props) {
   const router = useRouter()
   const [umfragen, setUmfragen] = useState(initialUmfragen)
 
@@ -49,30 +46,25 @@ export default function FeedClient({ posts: initialPosts, profile, umfragen: ini
 
   // ── Filter-Logik ──────────────────────────────────────────────────────────
 
-  const hasVerwaltungPosts = initialPosts.some(p => {
-    const r = (p.profiles as { role?: string } | null)?.role
-    return r === 'verwaltung' || r === 'super_admin'
-  })
-
-  const vereinNames = [...new Set(
-    initialPosts
-      .map(p => (p.profiles as { verein_name?: string | null } | null)?.verein_name)
-      .filter((v): v is string => !!v),
-  )]
-
   const activeFilterCount = selectedSenders.size + (selectedDays ? 1 : 0) + (nurLokaleAngebote ? 1 : 0)
 
   const cutoff = selectedDays
     ? new Date(Date.now() - selectedDays * 24 * 60 * 60 * 1000)
     : null
 
-  // Eigene Beiträge — als Autor oder über eine eigene Organisation — sind immer
-  // sichtbar. Ohne diese Ausnahme sieht ein Verein seinen eigenen Beitrag nie,
-  // weil er sich selbst nicht abonniert hat.
-  function istEigenerPost(p: PostMitProfil) {
-    if (eigeneUserId && p.author_id === eigeneUserId) return true
-    return !!p.org_id && eigeneOrgIds.includes(p.org_id)
-  }
+  // Der Feed ist ein reiner Abo-Feed. Was der Nutzer hier nicht sieht, sieht er
+  // gar nicht — Autoren finden ihre eigenen Beiträge im Dashboard, nicht hier.
+  //
+  // Diese Liste ist die Basis für zweierlei: den Feed selbst und die
+  // Absenderauswahl im Filter-Sheet. Beides muss aus derselben Menge stammen,
+  // sonst bietet der Filter Absender an, die im Feed gar nicht vorkommen.
+  const sichtbarePosts = initialPosts.filter(p => {
+    // Gewerbe-Posts nur für Abonnenten
+    if (p.channel === 'gewerbe' && p.org_id && !gewerbeAbonnements.includes(p.org_id)) return false
+    // Verein-Posts: nur für Abonnenten, außer sichtbarkeit === 'alle'
+    if (p.channel === 'verein' && p.org_id && (p as unknown as { sichtbarkeit?: string | null }).sichtbarkeit !== 'alle' && !vereinAbonnements.includes(p.org_id)) return false
+    return true
+  })
 
   // Schlüssel, unter dem der Beitrag im Absender-Filter auftaucht.
   // null = keinem wählbaren Absender zuzuordnen.
@@ -82,14 +74,19 @@ export default function FeedClient({ posts: initialPosts, profile, umfragen: ini
     return autor?.verein_name ?? null
   }
 
-  const filtered = initialPosts.filter(p => {
-    const eigener = istEigenerPost(p)
+  // Bewusst nur aus sichtbarePosts abgeleitet, nicht aus dem fertig gefilterten
+  // Feed: sonst würde die Auswahlliste bei jedem gesetzten Filter schrumpfen und
+  // man käme aus einer Auswahl nicht mehr heraus.
+  const hasVerwaltungPosts = sichtbarePosts.some(p => absenderSchluessel(p) === '__verwaltung__')
 
+  const vereinNames = [...new Set(
+    sichtbarePosts
+      .map(p => absenderSchluessel(p))
+      .filter((v): v is string => !!v && v !== '__verwaltung__'),
+  )]
+
+  const filtered = sichtbarePosts.filter(p => {
     if (cutoff && p.published_at && new Date(p.published_at) < cutoff) return false
-    // Gewerbe-Posts nur für Abonnenten
-    if (!eigener && p.channel === 'gewerbe' && p.org_id && !gewerbeAbonnements.includes(p.org_id)) return false
-    // Verein-Posts: nur für Abonnenten, außer sichtbarkeit === 'alle'
-    if (!eigener && p.channel === 'verein' && p.org_id && (p as unknown as { sichtbarkeit?: string | null }).sichtbarkeit !== 'alle' && !vereinAbonnements.includes(p.org_id)) return false
     if (nurLokaleAngebote) {
       if (p.channel !== 'gewerbe' || !p.org_id || !gewerbeAbonnements.includes(p.org_id)) return false
     }

@@ -36,10 +36,6 @@ export const POST = withAuth(
         org_id: vereinId,
         channel: 'verein',
         status: 'pending',
-        // Default: für alle sichtbar. Die Verwaltung kann bei der Freigabe auf
-        // 'abonnenten' einschränken. Ohne expliziten Wert wäre die Spalte NULL
-        // und der Beitrag würde im Feed wie 'abonnenten' behandelt.
-        sichtbarkeit: 'alle',
         titel,
         inhalt,
         tag: tag ?? 'nachricht',
