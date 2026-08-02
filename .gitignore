@@ -43,4 +43,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# db:types schreibt erst hierhin und verschiebt nur bei Erfolg —
+# bei einem Fehlschlag bleibt die Datei liegen
+src/types/supabase.ts.tmp
+
 .vercel

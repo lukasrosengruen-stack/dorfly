@@ -1466,31 +1466,31 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           display_name?: string | null
-          fraktion?: string | null
+          fraktion?: never
           gemeinde_id?: string | null
           id?: string | null
-          kontakt_email?: string | null
+          kontakt_email?: never
           role?: Database["public"]["Enums"]["user_role"] | null
-          social_facebook?: string | null
-          social_instagram?: string | null
-          social_tiktok?: string | null
-          social_x?: string | null
-          ueber_mich?: string | null
+          social_facebook?: never
+          social_instagram?: never
+          social_tiktok?: never
+          social_x?: never
+          ueber_mich?: never
           verein_name?: string | null
         }
         Update: {
           avatar_url?: string | null
           display_name?: string | null
-          fraktion?: string | null
+          fraktion?: never
           gemeinde_id?: string | null
           id?: string | null
-          kontakt_email?: string | null
+          kontakt_email?: never
           role?: Database["public"]["Enums"]["user_role"] | null
-          social_facebook?: string | null
-          social_instagram?: string | null
-          social_tiktok?: string | null
-          social_x?: string | null
-          ueber_mich?: string | null
+          social_facebook?: never
+          social_instagram?: never
+          social_tiktok?: never
+          social_x?: never
+          ueber_mich?: never
           verein_name?: string | null
         }
         Relationships: [
