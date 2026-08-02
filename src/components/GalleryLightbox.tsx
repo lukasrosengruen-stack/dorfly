@@ -36,10 +36,10 @@ export default function GalleryLightbox({ bilder, startIndex = 0, onClose }: Pro
       className="fixed inset-0 bg-black/95 z-[200] flex flex-col"
       onClick={onClose}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 shrink-0" onClick={e => e.stopPropagation()}>
+      {/* Header – pt-safe hält das Schließen-X unter Notch/Dynamic Island frei */}
+      <div className="pt-safe-bar flex items-center justify-between px-4 pb-3 shrink-0" onClick={e => e.stopPropagation()}>
         <span className="text-white/80 text-sm font-medium">{current + 1} / {bilder.length}</span>
-        <button onClick={onClose} aria-label="Galerie schließen" className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+        <button onClick={onClose} aria-label="Galerie schließen" className="tap-transparent flex min-h-11 min-w-11 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20 active:scale-[0.96]">
           <X className="w-5 h-5 text-white" aria-hidden="true" />
         </button>
       </div>

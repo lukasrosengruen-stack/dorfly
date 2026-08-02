@@ -23,7 +23,10 @@ export async function createClient() {
               cookieStore.set(name, value, COOKIE_DOMAIN ? { ...options, domain: COOKIE_DOMAIN } : options)
             )
           } catch {
-            // Server component – cookies werden per Middleware gesetzt
+            // In Server Components ist cookies().set() wirkungslos und wirft.
+            // Das ist unkritisch, weil die Middleware den Token-Refresh selbst
+            // anstößt (getUser()) und die erneuerten Cookies auf der Response
+            // setzt — siehe src/middleware.ts.
           }
         },
       },

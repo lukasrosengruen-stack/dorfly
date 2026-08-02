@@ -25,7 +25,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <GuestProvider isGuest={isGuest}>
       <div className="min-h-screen bg-[#F4F6F9]">
-        <main id="main-content" tabIndex={-1} className="max-w-lg mx-auto pb-20 outline-none">
+        <main id="main-content" tabIndex={-1} className="max-w-lg mx-auto pb-nav outline-none">
           {children}
         </main>
         {!isGuest && <AppInit />}

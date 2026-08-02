@@ -355,6 +355,8 @@ export type Database = {
           created_at: string
           frage: string
           fragesteller_id: string
+          gelesen_von_buerger_at: string | null
+          gelesen_von_rat_at: string | null
           gemeinde_id: string
           gemeinderat_id: string
           id: string
@@ -365,6 +367,8 @@ export type Database = {
           created_at?: string
           frage: string
           fragesteller_id: string
+          gelesen_von_buerger_at?: string | null
+          gelesen_von_rat_at?: string | null
           gemeinde_id: string
           gemeinderat_id: string
           id?: string
@@ -375,6 +379,8 @@ export type Database = {
           created_at?: string
           frage?: string
           fragesteller_id?: string
+          gelesen_von_buerger_at?: string | null
+          gelesen_von_rat_at?: string | null
           gemeinde_id?: string
           gemeinderat_id?: string
           id?: string

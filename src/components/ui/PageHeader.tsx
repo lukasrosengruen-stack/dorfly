@@ -48,7 +48,7 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        'bg-primary-500 px-4 pt-10 pb-4',
+        'bg-primary-500 px-4 pt-safe-header pb-4',
         sticky && 'sticky top-0 z-10',
         className,
       )}

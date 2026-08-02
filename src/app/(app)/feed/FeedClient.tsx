@@ -22,10 +22,13 @@ interface Props {
   umfragen: UmfrageMitDaten[]
   gewerbeAbonnements?: string[]
   vereinAbonnements?: string[]
+  /** Organisationen (Verein/Gewerbe), die dem eingeloggten Nutzer gehören */
+  eigeneOrgIds?: string[]
+  eigeneUserId?: string | null
   gemeindeName?: string
 }
 
-export default function FeedClient({ posts: initialPosts, profile, umfragen: initialUmfragen, gewerbeAbonnements = [], vereinAbonnements = [], gemeindeName: gemeindeNameProp }: Props) {
+export default function FeedClient({ posts: initialPosts, profile, umfragen: initialUmfragen, gewerbeAbonnements = [], vereinAbonnements = [], eigeneOrgIds = [], eigeneUserId = null, gemeindeName: gemeindeNameProp }: Props) {
   const router = useRouter()
   const [umfragen, setUmfragen] = useState(initialUmfragen)
 
@@ -63,21 +66,38 @@ export default function FeedClient({ posts: initialPosts, profile, umfragen: ini
     ? new Date(Date.now() - selectedDays * 24 * 60 * 60 * 1000)
     : null
 
+  // Eigene Beiträge — als Autor oder über eine eigene Organisation — sind immer
+  // sichtbar. Ohne diese Ausnahme sieht ein Verein seinen eigenen Beitrag nie,
+  // weil er sich selbst nicht abonniert hat.
+  function istEigenerPost(p: PostMitProfil) {
+    if (eigeneUserId && p.author_id === eigeneUserId) return true
+    return !!p.org_id && eigeneOrgIds.includes(p.org_id)
+  }
+
+  // Schlüssel, unter dem der Beitrag im Absender-Filter auftaucht.
+  // null = keinem wählbaren Absender zuzuordnen.
+  function absenderSchluessel(p: PostMitProfil): string | null {
+    const autor = (p.profiles as { verein_name?: string | null; role?: string } | null)
+    if (autor?.role === 'verwaltung' || autor?.role === 'super_admin') return '__verwaltung__'
+    return autor?.verein_name ?? null
+  }
+
   const filtered = initialPosts.filter(p => {
+    const eigener = istEigenerPost(p)
+
     if (cutoff && p.published_at && new Date(p.published_at) < cutoff) return false
     // Gewerbe-Posts nur für Abonnenten
-    if (p.channel === 'gewerbe' && p.org_id && !gewerbeAbonnements.includes(p.org_id)) return false
+    if (!eigener && p.channel === 'gewerbe' && p.org_id && !gewerbeAbonnements.includes(p.org_id)) return false
     // Verein-Posts: nur für Abonnenten, außer sichtbarkeit === 'alle'
-    if (p.channel === 'verein' && p.org_id && (p as unknown as { sichtbarkeit?: string | null }).sichtbarkeit !== 'alle' && !vereinAbonnements.includes(p.org_id)) return false
+    if (!eigener && p.channel === 'verein' && p.org_id && (p as unknown as { sichtbarkeit?: string | null }).sichtbarkeit !== 'alle' && !vereinAbonnements.includes(p.org_id)) return false
     if (nurLokaleAngebote) {
       if (p.channel !== 'gewerbe' || !p.org_id || !gewerbeAbonnements.includes(p.org_id)) return false
     }
     if (selectedSenders.size > 0) {
-      const autor = (p.profiles as { verein_name?: string | null; role?: string } | null)
-      const isVerwaltungPost = autor?.role === 'verwaltung' || autor?.role === 'super_admin'
-      const vereinName = autor?.verein_name
-      if (isVerwaltungPost && !selectedSenders.has('__verwaltung__')) return false
-      if (!isVerwaltungPost && vereinName && !selectedSenders.has(vereinName)) return false
+      // Nicht zuordenbare Beiträge (Gewerbe, Gemeinderat, Bürger) werden bei
+      // aktivem Absenderfilter ausgeblendet, nicht durchgelassen.
+      const schluessel = absenderSchluessel(p)
+      if (!schluessel || !selectedSenders.has(schluessel)) return false
     }
     return true
   })

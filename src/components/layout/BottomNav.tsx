@@ -33,8 +33,12 @@ export default function BottomNav({ role, features, buergermeisterShortLabel = '
   ]
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#e2e8f0] z-50">
-      <div className="flex max-w-lg mx-auto items-end h-[68px] pb-3">
+    <nav className="pb-safe-nav fixed bottom-0 left-0 right-0 bg-white border-t border-[#e2e8f0] z-50">
+      {/* items-stretch statt items-end: die Links füllen die volle Höhe aus und
+          erreichen damit die 44px-Mindesttrefferfläche. Der Home-Indicator-
+          Abstand kommt über pb-safe-nav am <nav>, nicht mehr über pb-3 hier —
+          sonst lägen die unteren Tap-Zonen in der Systemgestenzone. */}
+      <div className="flex max-w-lg mx-auto items-stretch min-h-[56px]">
         {leftItems.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href + '/')
           return (
@@ -47,7 +51,8 @@ export default function BottomNav({ role, features, buergermeisterShortLabel = '
               }}
               aria-current={active ? 'page' : undefined}
               className={clsx(
-                'flex-1 flex flex-col items-center gap-0.5 pt-2 text-[9.5px] font-semibold transition-colors',
+                'flex-1 flex flex-col items-center justify-center gap-0.5 min-h-11 py-2 text-[9.5px] font-semibold',
+                'tap-transparent transition-[transform,color] duration-100 ease-out active:scale-[0.96]',
                 active ? 'text-primary-500' : 'text-[#64748b]'
               )}>
               <Icon className="w-[22px] h-[22px]" aria-hidden="true" strokeWidth={active ? 2.5 : 1.5} />
@@ -61,7 +66,7 @@ export default function BottomNav({ role, features, buergermeisterShortLabel = '
           href="/home"
           aria-label="Startseite"
           aria-current={pathname === '/home' ? 'page' : undefined}
-          className="flex flex-col items-center justify-end pb-0 px-3"
+          className="tap-transparent flex flex-col items-center justify-center px-3 transition-transform duration-100 ease-out active:scale-[0.96]"
         >
           <div className={clsx(
             'w-[52px] h-[52px] rounded-2xl flex items-center justify-center -mt-4',
@@ -84,7 +89,8 @@ export default function BottomNav({ role, features, buergermeisterShortLabel = '
               }}
               aria-current={active ? 'page' : undefined}
               className={clsx(
-                'flex-1 flex flex-col items-center gap-0.5 pt-2 text-[9.5px] font-semibold transition-colors',
+                'flex-1 flex flex-col items-center justify-center gap-0.5 min-h-11 py-2 text-[9.5px] font-semibold',
+                'tap-transparent transition-[transform,color] duration-100 ease-out active:scale-[0.96]',
                 active ? 'text-primary-500' : 'text-[#64748b]'
               )}>
               <Icon className="w-[22px] h-[22px]" aria-hidden="true" strokeWidth={active ? 2.5 : 1.5} />

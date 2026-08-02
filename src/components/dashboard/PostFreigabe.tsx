@@ -35,7 +35,7 @@ export default function PostFreigabe({ pendingPosts }: { pendingPosts: PendingPo
       const post = posts.find(p => p.id === postId)
       const body: Record<string, unknown> = { postId, action }
       if (action === 'publish' && post && isVereinPost(post)) {
-        body.sichtbarkeit = sichtbarkeit[postId] ?? 'abonnenten'
+        body.sichtbarkeit = sichtbarkeit[postId] ?? 'alle'
       }
       if (action === 'reject' && rejectReasons[postId]) {
         body.rejectionReason = rejectReasons[postId]
@@ -125,7 +125,7 @@ export default function PostFreigabe({ pendingPosts }: { pendingPosts: PendingPo
                       <button
                         onClick={() => setSichtbarkeit(prev => ({ ...prev, [post.id]: 'abonnenten' }))}
                         className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border transition-colors ${
-                          (sichtbarkeit[post.id] ?? 'abonnenten') === 'abonnenten'
+                          sichtbarkeit[post.id] === 'abonnenten'
                             ? 'bg-violet-100 text-violet-700 border-violet-300'
                             : 'bg-gray-50 text-gray-500 border-gray-200'
                         }`}
@@ -135,7 +135,7 @@ export default function PostFreigabe({ pendingPosts }: { pendingPosts: PendingPo
                       <button
                         onClick={() => setSichtbarkeit(prev => ({ ...prev, [post.id]: 'alle' }))}
                         className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border transition-colors ${
-                          sichtbarkeit[post.id] === 'alle'
+                          (sichtbarkeit[post.id] ?? 'alle') === 'alle'
                             ? 'bg-green-100 text-green-700 border-green-300'
                             : 'bg-gray-50 text-gray-500 border-gray-200'
                         }`}

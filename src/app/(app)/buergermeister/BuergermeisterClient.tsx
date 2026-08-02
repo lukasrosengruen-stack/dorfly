@@ -89,7 +89,7 @@ export default function BuergermeisterClient({ fragen: initialFragen, profile, t
   return (
     <div>
       {/* Header */}
-      <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-4 sticky top-0 z-10">
+      <div className="bg-white border-b border-gray-100 px-4 pt-safe-header pb-4 sticky top-0 z-10">
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-xl font-bold text-gray-900">{titel}</h1>

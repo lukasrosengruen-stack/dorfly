@@ -1,6 +1,7 @@
 import { Resend } from 'resend'
 
 const FROM = `Dorfly <noreply@${process.env.RESEND_FROM_DOMAIN ?? 'dorfly.de'}>`
+const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'
 
 const ROLLEN_LABEL: Record<string, string> = {
   buerger: 'Bürger:in',
@@ -128,5 +129,69 @@ export async function sendeRollenzuweisungEmail(params: {
     to: [params.to],
     subject: `Dorfly ${params.gemeindeName}: Neue Rolle zugewiesen`,
     html,
+  })
+}
+
+// ── Gemeinderats-Nachrichten ────────────────────────────────────────────────
+// Bewusst ohne Nachrichteninhalt und ohne Namen des Absenders: die Fragen sind
+// privat (nur Fragesteller und Gemeinderat sehen sie), E-Mail ist kein
+// vertraulicher Kanal. Die Mail ist reiner Anstoß, in die App zu wechseln.
+
+function benachrichtigungsHtml(params: {
+  ueberschrift: string
+  text: string
+  linkLabel: string
+  link: string
+}) {
+  return `
+    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+      <h2 style="color:#1a1a1a">${params.ueberschrift}</h2>
+      <p>${params.text}</p>
+      <a href="${params.link}" style="display:inline-block;background:#0f2d6b;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;margin:8px 0">
+        ${params.linkLabel}
+      </a>
+      <p style="color:#999;font-size:13px;margin-top:24px">
+        Aus Datenschutzgründen steht der Inhalt der Nachricht nicht in dieser
+        E-Mail. Sie sehen ihn nur in der App.
+      </p>
+    </div>
+  `
+}
+
+/** An den adressierten Gemeinderat, wenn ein Bürger eine Frage stellt. */
+export async function sendeGemeinderatFrageEmail(params: {
+  to: string
+  gemeindeName: string
+  gemeindeSlug: string
+}) {
+  return resend().emails.send({
+    from: FROM,
+    to: [params.to],
+    subject: `Dorfly ${params.gemeindeName}: Neue Bürgeranfrage`,
+    html: benachrichtigungsHtml({
+      ueberschrift: 'Neue Bürgeranfrage',
+      text: 'Sie haben eine neue Anfrage über Dorfly erhalten.',
+      linkLabel: 'Anfrage ansehen',
+      link: `https://${params.gemeindeSlug}.${ROOT_DOMAIN}/dashboard`,
+    }),
+  })
+}
+
+/** An den Fragesteller, wenn ein Gemeinderat antwortet. */
+export async function sendeGemeinderatAntwortEmail(params: {
+  to: string
+  gemeindeName: string
+  gemeindeSlug: string
+}) {
+  return resend().emails.send({
+    from: FROM,
+    to: [params.to],
+    subject: `Dorfly ${params.gemeindeName}: Antwort auf Ihre Anfrage`,
+    html: benachrichtigungsHtml({
+      ueberschrift: 'Antwort auf Ihre Anfrage',
+      text: 'Auf Ihre Anfrage an den Gemeinderat gibt es eine Antwort.',
+      linkLabel: 'Antwort ansehen',
+      link: `https://${params.gemeindeSlug}.${ROOT_DOMAIN}/gemeinderat`,
+    }),
   })
 }

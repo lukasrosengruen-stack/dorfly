@@ -2,7 +2,7 @@
 
 
 import { toast } from 'sonner'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
 import { Scale, Users, Send, X, Loader2, MessageCircle, User, CheckCircle, Clock, Mail, ChevronDown } from 'lucide-react'
@@ -58,6 +58,18 @@ interface Props {
 
 export default function GemeinderatClient({ posts, raete, meineFragen, gemeindeId, gemeindeName, profileDisplayName }: Props) {
   const [activeTab, setActiveTab] = useState<'beitraege' | 'raete' | 'meine-fragen'>('beitraege')
+
+  // Beim Öffnen des Bereichs die eingegangenen Antworten als gelesen markieren.
+  // Fehler sind unkritisch — das Flag ist reine Komfortinformation.
+  useEffect(() => {
+    if (activeTab !== 'meine-fragen') return
+    fetch('/api/gemeinderat/gelesen', { method: 'POST' }).catch(() => {})
+  }, [activeTab])
+
+  // Im Tab-Titel zählt, was noch aussteht — nicht wie viel man insgesamt
+  // jemals gefragt hat.
+  const offeneFragenAnzahl = meineFragen.filter(f => f.status === 'offen').length
+
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [selectedRat, setSelectedRat] = useState<Rat | null>(null)
   const trapRef = useFocusTrap(!!selectedRat)
@@ -115,7 +127,7 @@ export default function GemeinderatClient({ posts, raete, meineFragen, gemeindeI
           {[
             { id: 'beitraege', label: 'Beiträge' },
             { id: 'raete', label: 'Räte & Fragen' },
-            { id: 'meine-fragen', label: meineFragen.length > 0 ? `Meine Fragen (${meineFragen.length})` : 'Meine Fragen' },
+            { id: 'meine-fragen', label: offeneFragenAnzahl > 0 ? `Meine Fragen (${offeneFragenAnzahl})` : 'Meine Fragen' },
           ].map(tab => (
             <button
               key={tab.id}

@@ -27,6 +27,10 @@ export default function BilderUpload({ previews, onAdd, onRemove, id }: Props) {
         <ImagePlus className="w-4 h-4" />
         {previews.length > 0 ? `${previews.length} Bild${previews.length > 1 ? 'er' : ''} • Weitere hinzufügen` : 'Bilder hinzufügen'}
       </button>
+      <p className="text-xs text-gray-500 leading-relaxed">
+        Das Seitenverhältnis bleibt erhalten. Empfohlen sind quadratische Bilder
+        oder 4:3 — sehr hohe oder sehr breite Bilder werden im Feed beschnitten.
+      </p>
       {previews.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
           {previews.map((src, i) => (

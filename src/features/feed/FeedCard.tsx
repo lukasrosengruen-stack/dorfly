@@ -113,7 +113,9 @@ export function FeedCard({ post, expanded, onToggleExpand, gemeindeName }: FeedC
             onClick={() => setGallery({ bilder, index: 0 })}
             aria-label={`Bildergalerie öffnen (${bilder.length} ${bilder.length === 1 ? 'Bild' : 'Bilder'})`}
           >
-            <img src={bilder[0]} alt={post.titel} className="w-full aspect-[4/3] object-cover" />
+            <span className="feed-bild-rahmen block">
+              <img src={bilder[0]} alt={post.titel} className="feed-bild" />
+            </span>
             {bilder.length > 1 && (
               <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
                 <Images className="w-3 h-3" aria-hidden="true" /> {bilder.length}
