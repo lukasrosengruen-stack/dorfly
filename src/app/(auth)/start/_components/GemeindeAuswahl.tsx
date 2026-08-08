@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useId } from 'react'
+import { useEffect, useState, useId } from 'react'
 import { Search, LogIn, UserPlus, Eye } from 'lucide-react'
 import { Logo } from '@/components/ui'
+import { leseGemeinde, speichereGemeinde } from '@/lib/gemeindeSpeicher'
 
 interface Gemeinde {
   id: string
@@ -27,7 +28,20 @@ export default function GemeindeAuswahl({ gemeinden, rootDomain }: Props) {
 
   const ausgewaehlteName = gemeinden.find(g => g.slug === ausgewaehlt)?.name
 
+  // Zuletzt gewählte Gemeinde vorauswählen. Bewusst nur vorauswählen und nicht
+  // automatisch weiterleiten: Gäste sollen die Auswahl weiterhin sehen und
+  // wechseln können. Für Angemeldete übernimmt page.tsx die Weiterleitung.
+  useEffect(() => {
+    const gemerkt = leseGemeinde()
+    if (gemerkt && gemeinden.some(g => g.slug === gemerkt)) {
+      setAusgewaehlt(gemerkt)
+    }
+  }, [gemeinden])
+
   function navigate(slug: string, pfad: string) {
+    // Muss hier passieren, nicht auf der Zielseite: localStorage ist
+    // origin-gebunden, und nur der Apex wird von /start wieder gelesen.
+    speichereGemeinde(slug)
     window.location.href = `https://${slug}.${rootDomain}${pfad}`
   }
 

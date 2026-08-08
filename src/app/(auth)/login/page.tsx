@@ -10,6 +10,8 @@ import RegisterForm, { type EinladungsInfo } from './RegisterForm'
 
 type Mode = 'login' | 'register' | 'forgot'
 
+const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'
+
 const ROLLEN_LABEL: Record<string, string> = {
   buerger: 'Bürger:in',
   verein: 'Vereinsverantwortliche:r',
@@ -31,7 +33,66 @@ export default function LoginPage() {
   const [infoMsg, setInfoMsg] = useState('')
   const [einladungsToken, setEinladungsToken] = useState<string | null>(null)
   const [einladungsInfo, setEinladungsInfo] = useState<EinladungsInfo | null>(null)
+  // Verhindert, dass das Formular kurz aufblitzt, während die Session geprüft wird.
+  const [pruefeSession, setPruefeSession] = useState(true)
   const supabase = createClient()
+
+  // Wer bereits angemeldet ist, braucht kein Login-Formular. Ohne diese Prüfung
+  // wurde jeder Kaltstart der App nach Zugangsdaten gefragt, obwohl die Session
+  // gültig war — das Formular hat sie schlicht nie abgefragt.
+  useEffect(() => {
+    // Einladungslink und Bestätigungs-Hinweise haben Vorrang: dort muss die
+    // Seite auch mit bestehender Session sichtbar bleiben, sonst kann man eine
+    // Einladung für ein anderes Konto nicht mehr annehmen und die
+    // Fehlermeldungen wären nicht mehr erreichbar.
+    if (searchParams.get('token') || searchParams.get('error') || searchParams.get('info')) {
+      setPruefeSession(false)
+      return
+    }
+
+    let abgebrochen = false
+
+    async function pruefe() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (abgebrochen) return
+      if (!user) { setPruefeSession(false); return }
+
+      const nextParam = searchParams.get('next')
+      const nextRaw = nextParam ? decodeURIComponent(nextParam) : null
+      // Gleicher Open-Redirect-Schutz wie in submit(): nur interne Pfade.
+      const nextPath = nextRaw && /^\/(?!\/)/.test(nextRaw) ? nextRaw : null
+
+      const profile = await supabase
+        .from('profiles')
+        .select('role, gemeinden(slug)')
+        .eq('id', user.id)
+        .single()
+        .then(r => r.data)
+      if (abgebrochen) return
+
+      if ((profile as { role?: string } | null)?.role === 'super_admin') {
+        router.replace('/admin/dashboard')
+        return
+      }
+
+      // Wie in submit(): wer auf der /login einer fremden Gemeinde landet, muss
+      // auf seine eigene Subdomain — sonst bliebe er im falschen Mandanten.
+      const slug = (profile?.gemeinden as { slug?: string } | null)?.slug
+      if (slug && window.location.hostname !== `${slug}.${ROOT_DOMAIN}`) {
+        window.location.href = `https://${slug}.${ROOT_DOMAIN}${nextPath ?? '/home'}`
+        return
+      }
+
+      router.replace(nextPath ?? '/home')
+    }
+
+    pruefe().catch(() => {
+      // Netzwerkfehler: lieber das Formular zeigen als eine leere Seite.
+      if (!abgebrochen) setPruefeSession(false)
+    })
+
+    return () => { abgebrochen = true }
+  }, [searchParams, router, supabase])
 
   useEffect(() => {
     const urlError = searchParams.get('error')
@@ -161,6 +222,17 @@ export default function LoginPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Solange offen ist, ob schon eine Session existiert, kein Formular zeigen —
+  // sonst blitzt bei jedem Start kurz das Login auf, bevor weitergeleitet wird.
+  if (pruefeSession) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-primary-100 flex items-center justify-center p-4">
+        <Loader2 className="w-6 h-6 animate-spin text-primary-500" aria-hidden="true" />
+        <span className="sr-only">Anmeldung wird geprüft…</span>
+      </div>
+    )
   }
 
   if (registered) {
