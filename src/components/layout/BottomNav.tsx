@@ -58,7 +58,7 @@ export default function BottomNav({ role, features, buergermeisterShortLabel = '
                   ein Tab ist so schmal, dass eine Skalierung des ganzen Feldes
                   optisch nicht ankommt. Die Hintergrundfläche übernimmt die
                   Rolle, die auf home/page.tsx der wegspringende Schatten hat. */}
-              <span className="flex flex-col items-center gap-0.5 rounded-xl px-3 py-1 transition-[transform,background-color] duration-100 ease-out group-active:scale-[0.88] group-active:bg-primary-100">
+              <span className="flex flex-col items-center gap-0.5 rounded-xl px-1.5 py-1 transition-[transform,background-color] duration-100 ease-out group-active:scale-[0.88] group-active:bg-primary-100">
                 <Icon className="w-[22px] h-[22px]" aria-hidden="true" strokeWidth={active ? 2.5 : 1.5} />
                 <span>{label}</span>
               </span>
@@ -104,7 +104,7 @@ export default function BottomNav({ role, features, buergermeisterShortLabel = '
                   ein Tab ist so schmal, dass eine Skalierung des ganzen Feldes
                   optisch nicht ankommt. Die Hintergrundfläche übernimmt die
                   Rolle, die auf home/page.tsx der wegspringende Schatten hat. */}
-              <span className="flex flex-col items-center gap-0.5 rounded-xl px-3 py-1 transition-[transform,background-color] duration-100 ease-out group-active:scale-[0.88] group-active:bg-primary-100">
+              <span className="flex flex-col items-center gap-0.5 rounded-xl px-1.5 py-1 transition-[transform,background-color] duration-100 ease-out group-active:scale-[0.88] group-active:bg-primary-100">
                 <Icon className="w-[22px] h-[22px]" aria-hidden="true" strokeWidth={active ? 2.5 : 1.5} />
                 <span>{label}</span>
               </span>

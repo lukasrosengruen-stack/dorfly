@@ -228,7 +228,10 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-8 pt-8 pb-5">
+      {/* pt-safe-header statt pt-8: viewportFit 'cover' legt den Inhalt sonst
+          unter Statusleiste/Dynamic Island. Gleiches Muster wie in
+          VereinPostVerwaltung und PageHeader. */}
+      <div className="bg-white border-b border-gray-200 px-4 sm:px-8 pt-safe-header pb-5">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">
@@ -256,10 +259,11 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="px-8 py-6 space-y-6">
+      <div className="px-4 sm:px-8 py-6 space-y-6">
 
-        {/* KPI-Reihe */}
-        <div className="grid grid-cols-3 xl:grid-cols-6 gap-4">
+        {/* KPI-Reihe — vorher grid-cols-3 bis xl: auf dem Handy drei gequetschte
+            Spalten, auf dem iPad (1024px) immer noch dieselben drei. */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           <KpiCard icon={<Users className="w-5 h-5 text-indigo-500" />} value={nutzerAnzahl} label="Registrierte Nutzer" color="indigo" />
           <KpiCard icon={<Home className="w-5 h-5 text-sky-500" />} value={gemeinde?.haushalte ?? '–'} label="Haushalte gesamt" color="sky" />
           <KpiCard icon={<TrendingUp className="w-5 h-5 text-primary-500" />} value={reichweite !== null ? `${reichweite}%` : '–'} label="Haushalte erreicht" color="emerald" />
