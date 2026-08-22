@@ -8,6 +8,11 @@
  * ueber die id entdoppelt.
  *
  * Die erste Fundstelle einer id gewinnt.
+ *
+ * Die Sortierung vergleicht `created_at` als String (`localeCompare`), das ist
+ * nur korrekt, wenn alle Zeitstempel denselben Zeitzonen-Offset tragen — bei
+ * Supabase-`timestamptz`-Spalten durchgaengig `+00:00`/`Z`. Bei gemischten
+ * Offsets waere ein echter Datumsvergleich noetig.
  */
 export function mergeArbeitsset<T extends { id: string }>(
   gruppen: T[][],

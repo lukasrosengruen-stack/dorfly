@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { mergeArbeitsset } from './dashboardArbeitsset'
 
-type Zeile = { id: string; created_at: string | null }
+type Zeile = { id: string; created_at: string | null; quelle?: string }
 const datum = (z: Zeile) => z.created_at
 
 describe('mergeArbeitsset', () => {
@@ -23,6 +23,14 @@ describe('mergeArbeitsset', () => {
     const alt = { id: 'b', created_at: '2026-01-01T10:00:00Z' }
     const ergebnis = mergeArbeitsset([[neu], [gleicheZeile, alt]], datum)
     expect(ergebnis.map(z => z.id)).toEqual(['a', 'b'])
+  })
+
+  it('behaelt bei Duplikaten die Zeile aus der ersten Gruppe', () => {
+    const ausArbeitsset = { id: 'a', created_at: '2026-08-03T10:00:00Z', quelle: 'arbeitsset' }
+    const ausStatusabfrage = { id: 'a', created_at: '2026-08-03T10:00:00Z', quelle: 'statusabfrage' }
+    const ergebnis = mergeArbeitsset([[ausArbeitsset], [ausStatusabfrage]], datum)
+    expect(ergebnis).toHaveLength(1)
+    expect(ergebnis[0].quelle).toBe('arbeitsset')
   })
 
   it('behaelt den offenen Altfall, der nicht im Arbeitsset steckt', () => {
