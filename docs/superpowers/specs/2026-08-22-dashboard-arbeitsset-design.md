@@ -174,10 +174,14 @@ Neu: `src/app/api/verwaltung/suche/route.ts` (`GET`). Der Ordner
 
 - Parameter: `typ` (`beitraege` | `maengel` | `fragen` | `warnmeldungen`),
   `q` (2–100 Zeichen).
-- Validierung über ein Zod-Schema in `src/lib/dashboardSuche.ts`.
-- `ilike` auf das jeweilige Titelfeld, `order` absteigend nach Datum,
-  `.limit(20)`.
-- Antwort: `{ treffer: [...], mehrVorhanden: boolean }`.
+- Validierung über ein Zod-Schema `dashboardSucheSchema` in
+  `src/lib/validations.ts` — dort liegen per Konvention alle API-Schemas.
+- `ilike` auf das jeweilige Suchfeld (`titel`, bei Fragen `frage`), `order`
+  absteigend nach Datum, `.limit(20)`.
+- Nutzereingaben werden vor dem `ilike` maskiert (`escapeIlike` in
+  `src/lib/dashboardSuche.ts`), sonst wirken `%` und `_` als Platzhalter.
+- Antwort: `{ treffer: [...], mehrVorhanden: boolean }`. Erkannt wird das
+  über eine Abfrage mit `limit + 1`.
 
 ### 6. Sicherheit
 
@@ -186,9 +190,16 @@ Die Route liest **keine** Mandanten- oder Rolleninformation aus dem Request.
 dieselbe Regel, die die Middleware für `x-gemeinde-slug` durchsetzt
 (`src/middleware.ts`).
 
-- Rollenprüfung wie in `src/app/(admin)/layout.tsx`: nur `verwaltung` und
-  `super_admin` dürfen `maengel`, `fragen` und `warnmeldungen` durchsuchen.
-- Jede Abfrage wird zusätzlich auf `gemeinde_id` des Profils eingeschränkt.
+Umgesetzt wird das nicht von Hand, sondern über die bestehende Schicht
+`withAuth` aus `src/lib/api.ts`. Sie prüft Login, lädt das Profil und
+lehnt unpassende Rollen mit `403` ab, bevor der Handler läuft:
+
+```ts
+export const GET = withAuth(handler, { roles: ['verwaltung', 'super_admin'] })
+```
+
+- Nur `verwaltung` und `super_admin` erreichen die Route.
+- Jede Abfrage wird zusätzlich auf `profile.gemeinde_id` eingeschränkt.
 - Ein Vereins- oder Gewerbe-Account darf über diesen Weg keine
   Gemeindedaten finden.
 
@@ -197,11 +208,15 @@ dieselbe Regel, die die Middleware für `x-gemeinde-slug` durchsetzt
 Passend zum bestehenden Muster (reine Logik in `src/lib` mit Vitest, keine
 Komponententests im Projekt):
 
-- `src/lib/dashboardSuche.test.ts` — Zod-Schema: `typ`-Whitelist, `q` unter
-  2 und über 100 Zeichen, Trimmen, unbekannter `typ`.
+- `src/lib/validations.dashboardSuche.test.ts` — Zod-Schema: `typ`-Whitelist,
+  `q` unter 2 und über 100 Zeichen, Trimmen, unbekannter `typ`. Eigene
+  Testdatei je Thema, wie `validations.sammlung.test.ts`.
+- `src/lib/dashboardSuche.test.ts` — `escapeIlike`: `%`, `_` und Backslash,
+  Reihenfolge der Maskierung.
 - `src/lib/dashboardArbeitsset.test.ts` — Zusammenführen von Arbeitsset und
   Statusausnahmen: keine Duplikate bei überlappenden `id`s, Sortierung nach
-  Datum, offener Altfall bleibt enthalten, leere Eingaben.
+  Datum, offener Altfall bleibt enthalten, Zeilen ohne Datum, leere
+  Eingaben.
 
 ## Geklärte Randfragen
 
