@@ -1,5 +1,15 @@
 @AGENTS.md
 
+# Kommunikation
+
+**Immer auf Deutsch antworten.** Das gilt für alles, was im Terminal ausgegeben wird: Erklärungen, Rückfragen, Zusammenfassungen, Auswahlmöglichkeiten und Fortschrittsmeldungen. Auch dann, wenn die Anfrage auf Englisch gestellt wurde oder Fehlermeldungen und Logs englisch sind.
+
+Davon unberührt bleiben:
+
+- **Code**, inklusive Bezeichner und Code-Kommentare — dort gelten die Projektkonventionen weiter (deutsche Fachbegriffe wie `gemeinde_id`, ansonsten die Sprache der umgebenden Datei).
+- **Commit-Messages** — Deutsch, aber ohne Umlaute (`gueltig`, `zuruecknehmen`), passend zur bestehenden Historie.
+- **Zitierte Ausgaben** wie Fehlermeldungen, Logs und Testergebnisse werden im Original wiedergegeben, nicht übersetzt.
+
 # Dorfly — Projektübersicht
 
 Kommunale Bürger-App für deutsche Gemeinden (bis ~15.000 Einwohner). Features: Umfragen, Gemeinderats-Forum, Mängelmelder, Abfallkalender, Gewerbe-/Vereinsverzeichnis, Push-Benachrichtigungen, PWA.
