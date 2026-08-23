@@ -21,6 +21,10 @@ describe('escapeIlike', () => {
   it('maskiert mehrere Sonderzeichen gemeinsam', () => {
     expect(escapeIlike('%_%')).toBe('\\%\\_\\%')
   })
+
+  it('maskiert das Sternchen, das PostgREST als Alias fuer % behandelt', () => {
+    expect(escapeIlike('Achtung*')).toBe('Achtung\\*')
+  })
 })
 
 describe('SUCH_TYPEN', () => {
