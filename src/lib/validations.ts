@@ -7,6 +7,7 @@
 
 import { z } from 'zod'
 import { NextResponse } from 'next/server'
+import { SUCH_TYPEN } from '@/lib/dashboardSuche'
 
 // ── Basis-Primitives ──────────────────────────────────────────────────────────
 
@@ -387,4 +388,15 @@ export const abfallPraeferenzenSchema = z.object({
 
 export const abfallImportSchema = z.object({
   gemeindeId: uuid,
+})
+
+// ── Dashboard-Suche ───────────────────────────────────────────────────────────
+
+export const dashboardSucheSchema = z.object({
+  typ: z.enum(SUCH_TYPEN),
+  q: z.string()
+    .transform(s => s.trim())
+    .pipe(z.string()
+      .min(2, 'Bitte mindestens zwei Zeichen eingeben')
+      .max(100, 'Suchbegriff ist zu lang')),
 })
