@@ -72,7 +72,21 @@ export default function AeltereSuche<T>({ typ, label, children }: Props<T>) {
   return (
     <div className="border-t border-gray-100">
       <button
-        onClick={() => setOffen(o => !o)}
+        onClick={() => {
+          setOffen(o => {
+            const neu = !o
+            // Zuklappen setzt sauber zurueck: ohne das wuerde beim naechsten
+            // Aufklappen sofort die alte Fehlermeldung erscheinen, bevor der
+            // neue Fetch ueberhaupt gestartet ist (setState im Event-Handler
+            // ist hier erlaubt, anders als synchron im Effekt).
+            if (!neu) {
+              setSuchbegriff('')
+              setTreffer(null)
+              setFehler(null)
+            }
+            return neu
+          })
+        }}
         aria-expanded={offen}
         className="w-full flex items-center gap-2 px-5 py-3 text-sm text-gray-500 hover:bg-gray-50 transition-colors"
       >
@@ -94,7 +108,14 @@ export default function AeltereSuche<T>({ typ, label, children }: Props<T>) {
               ref={feldRef}
               type="search"
               value={suchbegriff}
-              onChange={e => setSuchbegriff(e.target.value)}
+              onChange={e => {
+                // Jede Eingabeaenderung verwirft sofort den alten Treffer-
+                // und Fehlerstand. Waehrend der Entprellung ist der
+                // Trefferbereich dann leer statt veraltete Daten zu zeigen.
+                setSuchbegriff(e.target.value)
+                setTreffer(null)
+                setFehler(null)
+              }}
               className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300"
             />
           </div>
@@ -118,7 +139,7 @@ export default function AeltereSuche<T>({ typ, label, children }: Props<T>) {
             )}
           </div>
 
-          {gueltig && treffer && treffer.length > 0 && children(treffer)}
+          {gueltig && !laedt && treffer && treffer.length > 0 && children(treffer)}
         </div>
       )}
     </div>
