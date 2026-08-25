@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
-import { withAuth } from '@/lib/api'
+import { withAuth, apiError } from '@/lib/api'
 import { validate, dashboardSucheSchema } from '@/lib/validations'
 import { escapeIlike } from '@/lib/dashboardSuche'
 
@@ -25,7 +25,7 @@ export const GET = withAuth(
     const { typ, q } = v.data
     const gemeindeId = profile.gemeinde_id
     if (!gemeindeId) {
-      return NextResponse.json({ error: 'Kein Gemeindebezug' }, { status: 400 })
+      return apiError('Kein Gemeindebezug', 400)
     }
 
     const service = await createServiceClient()
@@ -34,9 +34,12 @@ export const GET = withAuth(
     const grenze = LIMIT + 1
 
     let zeilen: unknown[] = []
+    // Wird von jedem Zweig gesetzt und danach einmal gemeinsam geprueft —
+    // so bleibt die Fehlerbehandlung nicht viermal dupliziert.
+    let fehler: string | null = null
 
     if (typ === 'maengel') {
-      const { data } = await service
+      const { data, error } = await service
         .from('maengel')
         .select('id, titel, status, created_at, profiles(display_name)')
         .eq('gemeinde_id', gemeindeId)
@@ -44,8 +47,9 @@ export const GET = withAuth(
         .order('created_at', { ascending: false })
         .limit(grenze)
       zeilen = data ?? []
+      fehler = error?.message ?? null
     } else if (typ === 'fragen') {
-      const { data } = await service
+      const { data, error } = await service
         .from('fragen')
         .select('id, frage, antwort, status, created_at, profiles(display_name)')
         .eq('gemeinde_id', gemeindeId)
@@ -53,8 +57,9 @@ export const GET = withAuth(
         .order('created_at', { ascending: false })
         .limit(grenze)
       zeilen = data ?? []
+      fehler = error?.message ?? null
     } else if (typ === 'warnmeldungen') {
-      const { data } = await service
+      const { data, error } = await service
         .from('posts')
         .select('id, titel, severity, is_active, dwd_id, created_at')
         .eq('gemeinde_id', gemeindeId)
@@ -63,8 +68,9 @@ export const GET = withAuth(
         .order('created_at', { ascending: false })
         .limit(grenze)
       zeilen = data ?? []
-    } else {
-      const { data } = await service
+      fehler = error?.message ?? null
+    } else if (typ === 'beitraege') {
+      const { data, error } = await service
         .from('posts')
         .select('id, titel, channel, tag, published_at, publish_at')
         .eq('gemeinde_id', gemeindeId)
@@ -74,6 +80,17 @@ export const GET = withAuth(
         .order('published_at', { ascending: false })
         .limit(grenze)
       zeilen = data ?? []
+      fehler = error?.message ?? null
+    } else {
+      // Kann durch das Zod-Enum in dashboardSucheSchema aktuell nicht eintreten.
+      // Explizit statt als stiller Default, damit ein kuenftig erweitertes
+      // SUCH_TYPEN sofort auffaellt statt falsche Ergebnisse zu liefern.
+      return apiError('Unbekannter Suchtyp', 400)
+    }
+
+    if (fehler) {
+      console.error('[verwaltung/suche] Datenbankfehler:', { typ, gemeindeId, fehler })
+      return apiError('Suche fehlgeschlagen')
     }
 
     return NextResponse.json({
