@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { Fragment, useState } from 'react'
 import { AlertTriangle, Loader2, MapPin, MessageSquare, Trash2 } from 'lucide-react'
 import Link from 'next/link'
+import AeltereSuche from '@/components/dashboard/AeltereSuche'
 
 type Status = 'offen' | 'in_bearbeitung' | 'erledigt'
 
@@ -34,8 +35,9 @@ interface Mangel {
   profiles?: { display_name: string | null } | null
 }
 
-export default function MaengelSection({ maengel: initialMaengel, offeneMaengel, inBearbeitung, erledigteMaengel }: {
+export default function MaengelSection({ maengel: initialMaengel, gesamt, offeneMaengel, inBearbeitung, erledigteMaengel }: {
   maengel: Mangel[]
+  gesamt: number
   offeneMaengel: number
   inBearbeitung: number
   erledigteMaengel: number
@@ -229,7 +231,7 @@ export default function MaengelSection({ maengel: initialMaengel, offeneMaengel,
     )
   }
 
-  const sichtbare = maengel.slice(0, 10)
+  const sichtbare = maengel
 
   return (
     <section className="bg-white rounded-2xl shadow-sm overflow-hidden">
@@ -237,6 +239,9 @@ export default function MaengelSection({ maengel: initialMaengel, offeneMaengel,
         <h2 className="font-bold text-gray-900 flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 text-red-500" aria-hidden="true" />
           Meldungen
+          <span className="text-xs text-gray-500 font-normal">
+            {sichtbare.length} von {gesamt}
+          </span>
         </h2>
         <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500">
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400 inline-block" />{offeneMaengel} offen</span>
@@ -321,6 +326,21 @@ export default function MaengelSection({ maengel: initialMaengel, offeneMaengel,
           </tbody>
         </table>
       </div>
+
+      <AeltereSuche<Mangel> typ="maengel" label="Ältere Meldungen durchsuchen">
+        {treffer => (
+          <ul className="divide-y divide-gray-50">
+            {treffer.map(m => (
+              <li key={m.id} className="py-2 flex items-center justify-between gap-3">
+                <span className="text-sm text-gray-800 truncate">{m.titel}</span>
+                <span className="text-xs text-gray-500 shrink-0">
+                  {new Date(m.created_at).toLocaleDateString('de-DE')}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </AeltereSuche>
     </section>
   )
 }

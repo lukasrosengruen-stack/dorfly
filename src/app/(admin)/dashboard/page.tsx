@@ -12,6 +12,7 @@ import PostVerwaltungSection from '@/components/dashboard/PostVerwaltungSection'
 import BuergerfrageSection from '@/components/dashboard/BuergerfrageSection'
 import MaengelSection from '@/components/dashboard/MaengelSection'
 import UmfragenSection from '@/components/dashboard/UmfragenSection'
+import { mergeArbeitsset } from '@/lib/dashboardArbeitsset'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -145,8 +146,15 @@ export default async function DashboardPage() {
   const warnmeldungen: WarnRow[] = warnmeldungenResult?.data ?? []
   const aktiveWarnungenAnzahl = warnmeldungen.filter(w => w.is_active).length
 
-  const [maengelResult, fragenResult, postsResult, pendingPostsResult, umfragenResult, nutzerResult, abfallEinstellungenResult] = await Promise.all([
-    supabase.from('maengel').select('id, titel, status, created_at, beschreibung, adresse, foto_url, lat, lng, nachricht_an_buerger, profiles(display_name)').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }),
+  const [maengelArbeitssetResult, maengelOffeneResult, maengelGesamtResult, maengelOffenCountResult, maengelBearbeitungCountResult, maengelErledigtCountResult, fragenResult, postsResult, pendingPostsResult, umfragenResult, nutzerResult, abfallEinstellungenResult] = await Promise.all([
+    // Arbeitsset: die zehn neuesten Meldungen.
+    supabase.from('maengel').select('id, titel, status, created_at, beschreibung, adresse, foto_url, lat, lng, nachricht_an_buerger, profiles(display_name)').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }).limit(10),
+    // Unabhaengig vom Alter: alles, was noch offen ist.
+    supabase.from('maengel').select('id, titel, status, created_at, beschreibung, adresse, foto_url, lat, lng, nachricht_an_buerger, profiles(display_name)').eq('gemeinde_id', gemeindeId!).neq('status', 'erledigt').order('created_at', { ascending: false }).limit(50),
+    supabase.from('maengel').select('id', { count: 'exact', head: true }).eq('gemeinde_id', gemeindeId!),
+    supabase.from('maengel').select('id', { count: 'exact', head: true }).eq('gemeinde_id', gemeindeId!).eq('status', 'offen'),
+    supabase.from('maengel').select('id', { count: 'exact', head: true }).eq('gemeinde_id', gemeindeId!).eq('status', 'in_bearbeitung'),
+    supabase.from('maengel').select('id', { count: 'exact', head: true }).eq('gemeinde_id', gemeindeId!).eq('status', 'erledigt'),
     supabase.from('fragen').select('id, frage, antwort, status, created_at, profiles(display_name)').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }),
     service.from('posts').select('id, titel, inhalt, tag, channel, pinned, bild_url, veranstaltung_datum, veranstaltung_ort, post_termine(datum), published_at, publish_at, profiles(role)').eq('gemeinde_id', gemeindeId!).eq('status', 'published').order('published_at', { ascending: false }).limit(50),
     service.from('posts').select('id, titel, inhalt, channel, tag, created_at, publish_at, bild_url, bilder_urls, profiles(display_name, verein_name, role)').eq('gemeinde_id', gemeindeId!).eq('status', 'pending').order('created_at', { ascending: false }),
@@ -156,16 +164,20 @@ export default async function DashboardPage() {
   ])
 
   const abfallEinstellungen = abfallEinstellungenResult.data ?? null
-  const maengel = maengelResult.data ?? []
+  const maengel = mergeArbeitsset(
+    [maengelArbeitssetResult.data ?? [], maengelOffeneResult.data ?? []],
+    m => m.created_at,
+  )
+  const maengelGesamt = maengelGesamtResult.count ?? 0
+  const offeneMaengel = maengelOffenCountResult.count ?? 0
+  const inBearbeitung = maengelBearbeitungCountResult.count ?? 0
+  const erledigteMaengel = maengelErledigtCountResult.count ?? 0
   const fragen = fragenResult.data ?? []
   const posts = postsResult.data ?? []
   const pendingPosts = pendingPostsResult.data ?? []
   const umfragen = umfragenResult.data ?? []
   const nutzerAnzahl = nutzerResult.count ?? 0
 
-  const offeneMaengel = maengel.filter(m => m.status === 'offen').length
-  const inBearbeitung = maengel.filter(m => m.status === 'in_bearbeitung').length
-  const erledigteMaengel = maengel.filter(m => m.status === 'erledigt').length
   const offeneFragen = fragen.filter(f => f.status === 'offen').length
 
   // Umfragen-Ergebnisse — aggregierte RPC-Funktionen, eine pro Umfrage
@@ -280,6 +292,7 @@ export default async function DashboardPage() {
 
           <MaengelSection
             maengel={maengel as unknown as Parameters<typeof MaengelSection>[0]['maengel']}
+            gesamt={maengelGesamt}
             offeneMaengel={offeneMaengel}
             inBearbeitung={inBearbeitung}
             erledigteMaengel={erledigteMaengel}
