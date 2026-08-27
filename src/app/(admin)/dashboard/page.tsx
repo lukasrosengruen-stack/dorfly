@@ -14,6 +14,65 @@ import MaengelSection from '@/components/dashboard/MaengelSection'
 import UmfragenSection from '@/components/dashboard/UmfragenSection'
 import { mergeArbeitsset } from '@/lib/dashboardArbeitsset'
 
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
+
+/**
+ * Buendelt alle Maengel-Abfragen fuers Dashboard in einem eigenen Promise.all
+ * und gibt ein benanntes Objekt zurueck statt eines Tupels.
+ *
+ * Grund: Drei der sechs Abfragen haben denselben Rueckgabetyp
+ * `{ count: number | null }`. Bei positionaler Destrukturierung im
+ * aeusseren Promise.all kompiliert ein Vertauscher zweier benachbarter
+ * Eintraege anstandslos und liefert falsche KPI-Zahlen, die weder tsc
+ * noch Tests noch die Oberflaeche aufdecken. Der Zugriff ueber
+ * Eigenschaftsnamen macht das strukturell unmoeglich. Die innere
+ * Promise.all feuert sofort, die Parallelitaet zum aeusseren Block bleibt
+ * also erhalten.
+ *
+ * Alternative geprueft: `superadmin_maengel_stats(p_gemeinde_id)` aus
+ * supabase/migrations/010_superadmin_dashboard_functions.sql liefert
+ * dieselben vier Zahlen in einer Abfrage per COUNT(*) FILTER. Bewusst
+ * nicht verwendet: die Funktion ist SECURITY DEFINER und ihr EXECUTE ist
+ * per REVOKE ... FROM PUBLIC / GRANT ... TO service_role (Zeilen 171 und
+ * 177 der Migration) ausschliesslich fuer service_role freigegeben, nicht
+ * fuer authenticated. Sie ist fuer das Super-Admin-Dashboard gedacht, das
+ * gemeindeuebergreifend abfragt (p_gemeinde_id ist optional). Sie hier
+ * einzusetzen wuerde bedeuten, die vier Zaehlungen ueber den
+ * Service-Role-Client statt den RLS-gebundenen Nutzer-Client laufen zu
+ * lassen — RLS als zweite Absicherung der Gemeinde-Grenze ginge verloren,
+ * und man vertraut allein der Anwendung, `p_gemeinde_id` korrekt zu
+ * fuellen. Vier billige head:true-Counts sind hier der sicherere Weg.
+ */
+async function ladeMaengelDaten(supabase: SupabaseServerClient, gemeindeId: string) {
+  const [arbeitsset, offene, gesamt, offen, inBearbeitung, erledigt] = await Promise.all([
+    // Arbeitsset: die zehn neuesten Meldungen.
+    supabase.from('maengel').select('id, titel, status, created_at, beschreibung, adresse, foto_url, lat, lng, nachricht_an_buerger, profiles(display_name)').eq('gemeinde_id', gemeindeId).order('created_at', { ascending: false }).limit(10),
+    // Unabhaengig vom Alter: alles, was noch offen ist. Gedeckelt auf 50 —
+    // offeneVerborgen unten macht sichtbar, wenn diese Deckelung greift.
+    supabase.from('maengel').select('id, titel, status, created_at, beschreibung, adresse, foto_url, lat, lng, nachricht_an_buerger, profiles(display_name)').eq('gemeinde_id', gemeindeId).neq('status', 'erledigt').order('created_at', { ascending: false }).limit(50),
+    supabase.from('maengel').select('id', { count: 'exact', head: true }).eq('gemeinde_id', gemeindeId),
+    supabase.from('maengel').select('id', { count: 'exact', head: true }).eq('gemeinde_id', gemeindeId).eq('status', 'offen'),
+    supabase.from('maengel').select('id', { count: 'exact', head: true }).eq('gemeinde_id', gemeindeId).eq('status', 'in_bearbeitung'),
+    supabase.from('maengel').select('id', { count: 'exact', head: true }).eq('gemeinde_id', gemeindeId).eq('status', 'erledigt'),
+  ])
+
+  const offenAnzahl = offen.count ?? 0
+  const inBearbeitungAnzahl = inBearbeitung.count ?? 0
+  const nichtErledigtGesamt = offenAnzahl + inBearbeitungAnzahl
+  const nichtErledigtGeladen = offene.data?.length ?? 0
+
+  return {
+    maengel: mergeArbeitsset([arbeitsset.data ?? [], offene.data ?? []], m => m.created_at),
+    gesamt: gesamt.count ?? 0,
+    offen: offenAnzahl,
+    inBearbeitung: inBearbeitungAnzahl,
+    erledigt: erledigt.count ?? 0,
+    // >0, wenn die 50er-Deckelung oben tatsaechlich nicht erledigte Faelle
+    // verschluckt hat (z.B. nach einem Unwetter mit vielen offenen Meldungen).
+    offeneVerborgen: Math.max(0, nichtErledigtGesamt - nichtErledigtGeladen),
+  }
+}
+
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -146,15 +205,8 @@ export default async function DashboardPage() {
   const warnmeldungen: WarnRow[] = warnmeldungenResult?.data ?? []
   const aktiveWarnungenAnzahl = warnmeldungen.filter(w => w.is_active).length
 
-  const [maengelArbeitssetResult, maengelOffeneResult, maengelGesamtResult, maengelOffenCountResult, maengelBearbeitungCountResult, maengelErledigtCountResult, fragenResult, postsResult, pendingPostsResult, umfragenResult, nutzerResult, abfallEinstellungenResult] = await Promise.all([
-    // Arbeitsset: die zehn neuesten Meldungen.
-    supabase.from('maengel').select('id, titel, status, created_at, beschreibung, adresse, foto_url, lat, lng, nachricht_an_buerger, profiles(display_name)').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }).limit(10),
-    // Unabhaengig vom Alter: alles, was noch offen ist.
-    supabase.from('maengel').select('id, titel, status, created_at, beschreibung, adresse, foto_url, lat, lng, nachricht_an_buerger, profiles(display_name)').eq('gemeinde_id', gemeindeId!).neq('status', 'erledigt').order('created_at', { ascending: false }).limit(50),
-    supabase.from('maengel').select('id', { count: 'exact', head: true }).eq('gemeinde_id', gemeindeId!),
-    supabase.from('maengel').select('id', { count: 'exact', head: true }).eq('gemeinde_id', gemeindeId!).eq('status', 'offen'),
-    supabase.from('maengel').select('id', { count: 'exact', head: true }).eq('gemeinde_id', gemeindeId!).eq('status', 'in_bearbeitung'),
-    supabase.from('maengel').select('id', { count: 'exact', head: true }).eq('gemeinde_id', gemeindeId!).eq('status', 'erledigt'),
+  const [maengelDaten, fragenResult, postsResult, pendingPostsResult, umfragenResult, nutzerResult, abfallEinstellungenResult] = await Promise.all([
+    ladeMaengelDaten(supabase, gemeindeId!),
     supabase.from('fragen').select('id, frage, antwort, status, created_at, profiles(display_name)').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }),
     service.from('posts').select('id, titel, inhalt, tag, channel, pinned, bild_url, veranstaltung_datum, veranstaltung_ort, post_termine(datum), published_at, publish_at, profiles(role)').eq('gemeinde_id', gemeindeId!).eq('status', 'published').order('published_at', { ascending: false }).limit(50),
     service.from('posts').select('id, titel, inhalt, channel, tag, created_at, publish_at, bild_url, bilder_urls, profiles(display_name, verein_name, role)').eq('gemeinde_id', gemeindeId!).eq('status', 'pending').order('created_at', { ascending: false }),
@@ -164,14 +216,12 @@ export default async function DashboardPage() {
   ])
 
   const abfallEinstellungen = abfallEinstellungenResult.data ?? null
-  const maengel = mergeArbeitsset(
-    [maengelArbeitssetResult.data ?? [], maengelOffeneResult.data ?? []],
-    m => m.created_at,
-  )
-  const maengelGesamt = maengelGesamtResult.count ?? 0
-  const offeneMaengel = maengelOffenCountResult.count ?? 0
-  const inBearbeitung = maengelBearbeitungCountResult.count ?? 0
-  const erledigteMaengel = maengelErledigtCountResult.count ?? 0
+  const maengel = maengelDaten.maengel
+  const maengelGesamt = maengelDaten.gesamt
+  const offeneMaengel = maengelDaten.offen
+  const inBearbeitung = maengelDaten.inBearbeitung
+  const erledigteMaengel = maengelDaten.erledigt
+  const maengelOffeneVerborgen = maengelDaten.offeneVerborgen
   const fragen = fragenResult.data ?? []
   const posts = postsResult.data ?? []
   const pendingPosts = pendingPostsResult.data ?? []
@@ -296,6 +346,7 @@ export default async function DashboardPage() {
             offeneMaengel={offeneMaengel}
             inBearbeitung={inBearbeitung}
             erledigteMaengel={erledigteMaengel}
+            offeneVerborgen={maengelOffeneVerborgen}
           />
 
           <BuergerfrageSection fragen={fragen as unknown as Parameters<typeof BuergerfrageSection>[0]['fragen']} />

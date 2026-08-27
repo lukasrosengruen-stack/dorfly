@@ -35,12 +35,13 @@ interface Mangel {
   profiles?: { display_name: string | null } | null
 }
 
-export default function MaengelSection({ maengel: initialMaengel, gesamt, offeneMaengel, inBearbeitung, erledigteMaengel }: {
+export default function MaengelSection({ maengel: initialMaengel, gesamt, offeneMaengel, inBearbeitung, erledigteMaengel, offeneVerborgen }: {
   maengel: Mangel[]
   gesamt: number
   offeneMaengel: number
   inBearbeitung: number
   erledigteMaengel: number
+  offeneVerborgen: number
 }) {
   const [maengel, setMaengel] = useState(initialMaengel)
   const [updating, setUpdating] = useState<string | null>(null)
@@ -326,6 +327,17 @@ export default function MaengelSection({ maengel: initialMaengel, gesamt, offene
           </tbody>
         </table>
       </div>
+
+      {/* Die "offene"-Abfrage in page.tsx ist auf 50 Zeilen gedeckelt. Bei mehr
+          gleichzeitig offenen/in Bearbeitung befindlichen Faellen (z.B. nach
+          einem Unwetter) faellt sonst kommentarlos ein Teil aus der Liste —
+          dieser Hinweis macht das sichtbar statt es stillschweigend zu
+          verschlucken. */}
+      {offeneVerborgen > 0 && (
+        <p className="px-5 py-2 text-xs text-gray-500 border-b border-gray-100">
+          {offeneVerborgen} weitere offene Meldungen — bitte über die Suche aufrufen
+        </p>
+      )}
 
       <AeltereSuche<Mangel> typ="maengel" label="Ältere Meldungen durchsuchen">
         {treffer => (
