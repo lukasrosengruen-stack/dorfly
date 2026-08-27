@@ -73,6 +73,32 @@ async function ladeMaengelDaten(supabase: SupabaseServerClient, gemeindeId: stri
   }
 }
 
+/**
+ * Buendelt alle Fragen-Abfragen fuers Dashboard analog zu ladeMaengelDaten
+ * (siehe Kommentar dort) in einem eigenen inneren Promise.all mit benanntem
+ * Rueckgabeobjekt statt positionaler Destrukturierung im aeusseren Block.
+ */
+async function ladeFragenDaten(supabase: SupabaseServerClient, gemeindeId: string) {
+  const [arbeitsset, offene, gesamt, offen] = await Promise.all([
+    // Arbeitsset: die zehn neuesten Fragen.
+    supabase.from('fragen').select('id, frage, antwort, status, created_at, profiles(display_name)').eq('gemeinde_id', gemeindeId).order('created_at', { ascending: false }).limit(10),
+    // Unabhaengig vom Alter: alles, was noch offen ist. Gedeckelt auf 50 —
+    // offeneVerborgen unten macht sichtbar, wenn diese Deckelung greift.
+    supabase.from('fragen').select('id, frage, antwort, status, created_at, profiles(display_name)').eq('gemeinde_id', gemeindeId).eq('status', 'offen').order('created_at', { ascending: false }).limit(50),
+    supabase.from('fragen').select('id', { count: 'exact', head: true }).eq('gemeinde_id', gemeindeId),
+    supabase.from('fragen').select('id', { count: 'exact', head: true }).eq('gemeinde_id', gemeindeId).eq('status', 'offen'),
+  ])
+
+  return {
+    fragen: mergeArbeitsset([arbeitsset.data ?? [], offene.data ?? []], f => f.created_at),
+    gesamt: gesamt.count ?? 0,
+    offen: offen.count ?? 0,
+    // >0, wenn die 50er-Deckelung oben tatsaechlich offene Fragen verschluckt
+    // hat (z.B. bei einer Frage-Welle nach einer Gemeinderatssitzung).
+    offeneVerborgen: Math.max(0, (offen.count ?? 0) - (offene.data?.length ?? 0)),
+  }
+}
+
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -205,9 +231,9 @@ export default async function DashboardPage() {
   const warnmeldungen: WarnRow[] = warnmeldungenResult?.data ?? []
   const aktiveWarnungenAnzahl = warnmeldungen.filter(w => w.is_active).length
 
-  const [maengelDaten, fragenResult, postsResult, pendingPostsResult, umfragenResult, nutzerResult, abfallEinstellungenResult] = await Promise.all([
+  const [maengelDaten, fragenDaten, postsResult, pendingPostsResult, umfragenResult, nutzerResult, abfallEinstellungenResult] = await Promise.all([
     ladeMaengelDaten(supabase, gemeindeId!),
-    supabase.from('fragen').select('id, frage, antwort, status, created_at, profiles(display_name)').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }),
+    ladeFragenDaten(supabase, gemeindeId!),
     service.from('posts').select('id, titel, inhalt, tag, channel, pinned, bild_url, veranstaltung_datum, veranstaltung_ort, post_termine(datum), published_at, publish_at, profiles(role)').eq('gemeinde_id', gemeindeId!).eq('status', 'published').order('published_at', { ascending: false }).limit(50),
     service.from('posts').select('id, titel, inhalt, channel, tag, created_at, publish_at, bild_url, bilder_urls, profiles(display_name, verein_name, role)').eq('gemeinde_id', gemeindeId!).eq('status', 'pending').order('created_at', { ascending: false }),
     supabase.from('umfragen').select('*, umfrage_fragen(*, umfrage_optionen(*))').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }),
@@ -222,13 +248,14 @@ export default async function DashboardPage() {
   const inBearbeitung = maengelDaten.inBearbeitung
   const erledigteMaengel = maengelDaten.erledigt
   const maengelOffeneVerborgen = maengelDaten.offeneVerborgen
-  const fragen = fragenResult.data ?? []
+  const fragen = fragenDaten.fragen
+  const fragenGesamt = fragenDaten.gesamt
+  const offeneFragen = fragenDaten.offen
+  const fragenOffeneVerborgen = fragenDaten.offeneVerborgen
   const posts = postsResult.data ?? []
   const pendingPosts = pendingPostsResult.data ?? []
   const umfragen = umfragenResult.data ?? []
   const nutzerAnzahl = nutzerResult.count ?? 0
-
-  const offeneFragen = fragen.filter(f => f.status === 'offen').length
 
   // Umfragen-Ergebnisse — aggregierte RPC-Funktionen, eine pro Umfrage
   type ErgebnisZeile = { frage_id: string; option_id: string | null; antwort_text: string | null; anzahl: number }
@@ -349,7 +376,11 @@ export default async function DashboardPage() {
             offeneVerborgen={maengelOffeneVerborgen}
           />
 
-          <BuergerfrageSection fragen={fragen as unknown as Parameters<typeof BuergerfrageSection>[0]['fragen']} />
+          <BuergerfrageSection
+            fragen={fragen as unknown as Parameters<typeof BuergerfrageSection>[0]['fragen']}
+            gesamt={fragenGesamt}
+            offeneVerborgen={fragenOffeneVerborgen}
+          />
 
           {gemeindeId && user && (
             <PostVerwaltungSection

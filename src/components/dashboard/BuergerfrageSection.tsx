@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { MessageCircleQuestion, ChevronDown, ChevronUp, Loader2, CheckCircle2, Pencil, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { RichTextEditor, renderRichText } from '@/lib/richText'
+import AeltereSuche from '@/components/dashboard/AeltereSuche'
 
 interface Frage {
   id: string
@@ -16,7 +17,11 @@ interface Frage {
   profiles?: { display_name: string | null } | null
 }
 
-export default function BuergerfrageSection({ fragen: initialFragen }: { fragen: Frage[] }) {
+export default function BuergerfrageSection({ fragen: initialFragen, gesamt, offeneVerborgen }: {
+  fragen: Frage[]
+  gesamt: number
+  offeneVerborgen: number
+}) {
   const [fragen, setFragen] = useState(initialFragen)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [antworten, setAntworten] = useState<Record<string, string>>({})
@@ -66,6 +71,9 @@ export default function BuergerfrageSection({ fragen: initialFragen }: { fragen:
         <h2 className="font-bold text-gray-900 flex items-center gap-2">
           <MessageCircleQuestion className="w-4 h-4 text-blue-500" />
           Bürgerfragen
+          <span className="text-xs text-gray-500 font-normal">
+            {fragen.length} von {gesamt}
+          </span>
         </h2>
         <Link href="/buergermeister" className="text-sm text-primary-500 font-medium">Alle →</Link>
       </div>
@@ -80,7 +88,7 @@ export default function BuergerfrageSection({ fragen: initialFragen }: { fragen:
             <CheckCircle2 className="w-3.5 h-3.5 text-primary-400" /> Alle Fragen beantwortet
           </div>
         )}
-        {[...offene, ...beantwortet].slice(0, 10).map(f => {
+        {[...offene, ...beantwortet].map(f => {
           const expanded = expandedId === f.id
           const isEditing = editingId === f.id
           return (
@@ -158,6 +166,34 @@ export default function BuergerfrageSection({ fragen: initialFragen }: { fragen:
           )
         })}
       </div>
+
+      {/* Die "offene"-Abfrage in page.tsx ist auf 50 Zeilen gedeckelt. Bei mehr
+          gleichzeitig offenen Fragen faellt sonst kommentarlos ein Teil aus
+          der Liste — dieser Hinweis macht das sichtbar statt es
+          stillschweigend zu verschlucken. */}
+      {offeneVerborgen > 0 && (
+        <p className="px-5 py-2 text-xs text-gray-500 border-b border-gray-100">
+          {offeneVerborgen} weitere offene Fragen — bitte über die Suche aufrufen
+        </p>
+      )}
+
+      <AeltereSuche<{ id: string; frage: string; created_at: string }>
+        typ="fragen"
+        label="Ältere Fragen durchsuchen"
+      >
+        {treffer => (
+          <ul className="divide-y divide-gray-50">
+            {treffer.map(f => (
+              <li key={f.id} className="py-2 flex items-center justify-between gap-3">
+                <span className="text-sm text-gray-800 truncate">{f.frage}</span>
+                <span className="text-xs text-gray-500 shrink-0">
+                  {new Date(f.created_at).toLocaleDateString('de-DE')}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </AeltereSuche>
     </section>
   )
 }
