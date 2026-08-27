@@ -15,6 +15,7 @@ import UmfragenSection from '@/components/dashboard/UmfragenSection'
 import { mergeArbeitsset } from '@/lib/dashboardArbeitsset'
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
+type SupabaseServiceClient = Awaited<ReturnType<typeof createServiceClient>>
 
 /**
  * Buendelt alle Maengel-Abfragen fuers Dashboard in einem eigenen Promise.all
@@ -96,6 +97,70 @@ async function ladeFragenDaten(supabase: SupabaseServerClient, gemeindeId: strin
     // >0, wenn die 50er-Deckelung oben tatsaechlich offene Fragen verschluckt
     // hat (z.B. bei einer Frage-Welle nach einer Gemeinderatssitzung).
     offeneVerborgen: Math.max(0, (offen.count ?? 0) - (offene.data?.length ?? 0)),
+  }
+}
+
+/**
+ * Buendelt alle Beitrags-Abfragen fuers Dashboard analog zu ladeMaengelDaten
+ * und ladeFragenDaten (siehe Kommentar dort) in einem eigenen inneren
+ * Promise.all mit benanntem Rueckgabeobjekt.
+ *
+ * Anders als dort laeuft hier alles ueber den Service-Client: die
+ * Beitragsabfragen im Dashboard nutzen bereits an anderer Stelle `service`
+ * statt `supabase` (siehe pendingPostsResult unten), das wird hier
+ * fortgesetzt.
+ */
+async function ladePostsDaten(service: SupabaseServiceClient, gemeindeId: string) {
+  const heute = new Date().toISOString().split('T')[0]
+  const postSpalten = 'id, titel, inhalt, tag, channel, pinned, bild_url, veranstaltung_datum, veranstaltung_ort, post_termine(datum), published_at, publish_at, profiles(role)'
+
+  const [arbeitsset, veranstaltungen, zusatztermine, gesamt] = await Promise.all([
+    // Arbeitsset: die 20 neuesten veroeffentlichten Beitraege. Geplante
+    // Beitraege brauchen keine Sonderbehandlung: published_at wird beim
+    // Freigeben auf publish_at gesetzt, sie sortieren sich also von selbst
+    // nach oben ein.
+    service.from('posts').select(postSpalten).eq('gemeinde_id', gemeindeId).eq('status', 'published').order('published_at', { ascending: false }).limit(20),
+    // Kommende Veranstaltungen bleiben unabhaengig vom Alter sichtbar, sonst
+    // faellt eine weit im Voraus angekuendigte Veranstaltung aus der Liste,
+    // sobald 20 neuere Beitraege dazukommen.
+    service.from('posts').select(postSpalten).eq('gemeinde_id', gemeindeId).eq('status', 'published').eq('tag', 'veranstaltung').gte('veranstaltung_datum', heute).order('veranstaltung_datum', { ascending: true }).limit(50),
+    // Mehrtaegige Veranstaltungen: veranstaltung_datum ist nur der erste
+    // Termin. Ist der bereits vergangen, ein Zusatztermin aus post_termine
+    // aber noch nicht, gilt der Beitrag trotzdem als kommend und muss hier
+    // gefunden werden. Direkt an post_termine ansetzen und ueber
+    // posts!inner auf gemeinde_id/status filtern — Vorbild dafuer ist die
+    // Abfrage in src/app/(app)/veranstaltungen/page.tsx (Zeile 33-41), die
+    // exakt dasselbe Problem fuer den Kalender loest. Die Spaltenliste des
+    // Joins ist von Hand ausgeschrieben statt postSpalten wiederzuverwenden:
+    // post_termine(datum) waere hier selbstreferenziell (wir kommen ja
+    // bereits von post_termine), und gemeinde_id/status muessen zusaetzlich
+    // mitselektiert werden, weil PostgREST sie fuer den Filter auf die
+    // eingebettete Tabelle in der Selektion braucht.
+    service.from('post_termine').select('datum, posts!inner(id, titel, inhalt, tag, channel, pinned, bild_url, veranstaltung_datum, veranstaltung_ort, published_at, publish_at, profiles(role), gemeinde_id, status)').eq('posts.gemeinde_id', gemeindeId).eq('posts.status', 'published').gte('datum', heute).limit(50),
+    // Gesamtzahl aller veroeffentlichten Beitraege fuer die "N von M"-Anzeige.
+    service.from('posts').select('id', { count: 'exact', head: true }).eq('gemeinde_id', gemeindeId).eq('status', 'published'),
+  ])
+
+  // post_termine liefert pro Zusatztermin eine Zeile mit dem eingebetteten
+  // Beitrag. Hier interessiert nur der Beitrag selbst — Entdopplung (mehrere
+  // Zusatztermine desselben Beitrags, oder Ueberschneidung mit den anderen
+  // beiden Abfragen oben) uebernimmt mergeArbeitsset ueber die id.
+  //
+  // post_termine fehlt in diesem Join bewusst (siehe Spaltenliste oben) und
+  // wird hier auf ein leeres Array ergaenzt, damit die Form zu
+  // arbeitsset/veranstaltungen passt. Das ist nur relevant, wenn ein Beitrag
+  // ausschliesslich ueber diese Abfrage gefunden wird (Haupttermin
+  // vergangen, nicht unter den 20 neuesten) — in dem Fall gewinnt hier
+  // ohnehin kein anderer Eintrag mit den echten Zusatzterminen,
+  // mergeArbeitsset dedupliziert ueber die id.
+  const zusatzBeitraege = (zusatztermine.data ?? []).map(zeile => ({ ...zeile.posts, post_termine: [] as { datum: string }[] }))
+
+  return {
+    posts: mergeArbeitsset(
+      [arbeitsset.data ?? [], veranstaltungen.data ?? [], zusatzBeitraege],
+      p => p.published_at,
+    ),
+    gesamt: gesamt.count ?? 0,
   }
 }
 
@@ -231,10 +296,10 @@ export default async function DashboardPage() {
   const warnmeldungen: WarnRow[] = warnmeldungenResult?.data ?? []
   const aktiveWarnungenAnzahl = warnmeldungen.filter(w => w.is_active).length
 
-  const [maengelDaten, fragenDaten, postsResult, pendingPostsResult, umfragenResult, nutzerResult, abfallEinstellungenResult] = await Promise.all([
+  const [maengelDaten, fragenDaten, postsDaten, pendingPostsResult, umfragenResult, nutzerResult, abfallEinstellungenResult] = await Promise.all([
     ladeMaengelDaten(supabase, gemeindeId!),
     ladeFragenDaten(supabase, gemeindeId!),
-    service.from('posts').select('id, titel, inhalt, tag, channel, pinned, bild_url, veranstaltung_datum, veranstaltung_ort, post_termine(datum), published_at, publish_at, profiles(role)').eq('gemeinde_id', gemeindeId!).eq('status', 'published').order('published_at', { ascending: false }).limit(50),
+    ladePostsDaten(service, gemeindeId!),
     service.from('posts').select('id, titel, inhalt, channel, tag, created_at, publish_at, bild_url, bilder_urls, profiles(display_name, verein_name, role)').eq('gemeinde_id', gemeindeId!).eq('status', 'pending').order('created_at', { ascending: false }),
     supabase.from('umfragen').select('*, umfrage_fragen(*, umfrage_optionen(*))').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }),
     service.from('profiles').select('id, role', { count: 'exact' }).eq('gemeinde_id', gemeindeId!),
@@ -252,7 +317,8 @@ export default async function DashboardPage() {
   const fragenGesamt = fragenDaten.gesamt
   const offeneFragen = fragenDaten.offen
   const fragenOffeneVerborgen = fragenDaten.offeneVerborgen
-  const posts = postsResult.data ?? []
+  const posts = postsDaten.posts
+  const postsGesamt = postsDaten.gesamt
   const pendingPosts = pendingPostsResult.data ?? []
   const umfragen = umfragenResult.data ?? []
   const nutzerAnzahl = nutzerResult.count ?? 0
@@ -385,6 +451,7 @@ export default async function DashboardPage() {
           {gemeindeId && user && (
             <PostVerwaltungSection
               posts={posts as unknown as Parameters<typeof PostVerwaltungSection>[0]['posts']}
+              gesamt={postsGesamt}
               gemeindeId={gemeindeId}
               profileId={user.id}
               canPin={['verwaltung', 'super_admin'].includes(profile.role)}

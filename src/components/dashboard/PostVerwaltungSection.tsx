@@ -8,6 +8,7 @@ import { RichTextEditor } from '@/lib/richText'
 import { createClient } from '@/lib/supabase/client'
 import { clsx } from 'clsx'
 import PostErstellenButton from './PostErstellenButton'
+import AeltereSuche from './AeltereSuche'
 
 const TAGS = ['nachricht', 'veranstaltung', 'bekanntmachung'] as const
 const TAG_LABELS = { nachricht: 'Nachricht', veranstaltung: 'Veranstaltung', bekanntmachung: 'Bekanntmachung' }
@@ -30,6 +31,7 @@ interface Post {
 
 interface Props {
   posts: Post[]
+  gesamt: number
   gemeindeId: string
   profileId: string
   canPin?: boolean
@@ -68,7 +70,7 @@ function getChannelKey(post: Post): string {
   return post.channel
 }
 
-export default function PostVerwaltungSection({ posts: initialPosts, gemeindeId, profileId, canPin = false, canPush = false }: Props) {
+export default function PostVerwaltungSection({ posts: initialPosts, gesamt, gemeindeId, profileId, canPin = false, canPush = false }: Props) {
   const [posts, setPosts] = useState(initialPosts)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -185,7 +187,7 @@ export default function PostVerwaltungSection({ posts: initialPosts, gemeindeId,
         <h2 className="font-bold text-gray-900 flex items-center gap-2">
           <Newspaper className="w-4 h-4 text-primary-500" />
           Beiträge verwalten
-          <span className="text-xs text-gray-400 font-normal">({posts.length})</span>
+          <span className="text-xs text-gray-500 font-normal">({posts.length} von {gesamt})</span>
         </h2>
         <PostErstellenButton gemeindeId={gemeindeId} profileId={profileId} defaultChannel="gemeinde" canPin={canPin} canPush={canPush} />
       </div>
@@ -332,6 +334,24 @@ export default function PostVerwaltungSection({ posts: initialPosts, gemeindeId,
           </div>
         ))}
       </div>
+
+      <AeltereSuche<{ id: string; titel: string; published_at: string | null }>
+        typ="beitraege"
+        label="Ältere Beiträge durchsuchen"
+      >
+        {treffer => (
+          <ul className="divide-y divide-gray-50">
+            {treffer.map(p => (
+              <li key={p.id} className="py-2 flex items-center justify-between gap-3">
+                <span className="text-sm text-gray-800 truncate">{p.titel}</span>
+                <span className="text-xs text-gray-500 shrink-0">
+                  {p.published_at ? new Date(p.published_at).toLocaleDateString('de-DE') : '–'}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </AeltereSuche>
     </section>
   )
 }
