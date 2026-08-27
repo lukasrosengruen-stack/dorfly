@@ -203,6 +203,33 @@ async function ladePostsDaten(service: SupabaseServiceClient, gemeindeId: string
   }
 }
 
+/**
+ * Buendelt alle Warnmeldungs-Abfragen fuers Dashboard analog zu
+ * ladeMaengelDaten, ladeFragenDaten und ladePostsDaten (siehe Kommentare
+ * dort) in einem eigenen inneren Promise.all mit benanntem
+ * Rueckgabeobjekt. Laeuft ueber den Service-Client, da Warnmeldungen
+ * bereits an anderer Stelle im Dashboard ueber `service` geladen werden.
+ */
+async function ladeWarnmeldungenDaten(service: SupabaseServiceClient, gemeindeId: string) {
+  const warnSpalten = 'id, titel, severity, is_active, dwd_id, created_at'
+
+  const [arbeitsset, aktive, gesamt] = await Promise.all([
+    // Arbeitsset: die zehn neuesten Warnmeldungen.
+    service.from('posts').select(warnSpalten).eq('gemeinde_id', gemeindeId).eq('channel', 'warnung').order('created_at', { ascending: false }).limit(10),
+    // Unabhaengig vom Alter: alles, was noch aktiv ist. Eine aktive Warnung
+    // von vor Monaten bleibt weiterhin relevant und darf nicht aus der
+    // Liste fallen.
+    service.from('posts').select(warnSpalten).eq('gemeinde_id', gemeindeId).eq('channel', 'warnung').eq('is_active', true).order('created_at', { ascending: false }).limit(50),
+    service.from('posts').select('id', { count: 'exact', head: true }).eq('gemeinde_id', gemeindeId).eq('channel', 'warnung'),
+  ])
+
+  return {
+    warnmeldungen: mergeArbeitsset([arbeitsset.data ?? [], aktive.data ?? []], w => w.created_at),
+    gesamt: gesamt.count ?? 0,
+    aktiveAnzahl: aktive.data?.length ?? 0,
+  }
+}
+
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -324,16 +351,11 @@ export default async function DashboardPage() {
 
   const wasteFeatureAktiv = isFeatureAktiv(gemeinde, 'abfallkalender')
 
-  type WarnRow = { id: string; titel: string; severity: number | null; is_active: boolean; dwd_id: string | null; created_at: string }
-  const warnmeldungenResult = profile.role === 'verwaltung'
-    ? await (service.from('posts') as any)
-        .select('id, titel, severity, is_active, dwd_id, created_at')
-        .eq('gemeinde_id', gemeindeId!)
-        .eq('channel', 'warnung')
-        .order('created_at', { ascending: false }) as { data: WarnRow[] | null }
+  const warnmeldungenDaten = profile.role === 'verwaltung'
+    ? await ladeWarnmeldungenDaten(service, gemeindeId!)
     : null
-  const warnmeldungen: WarnRow[] = warnmeldungenResult?.data ?? []
-  const aktiveWarnungenAnzahl = warnmeldungen.filter(w => w.is_active).length
+  const warnmeldungen = warnmeldungenDaten?.warnmeldungen ?? []
+  const warnmeldungenGesamt = warnmeldungenDaten?.gesamt ?? 0
 
   const [maengelDaten, fragenDaten, postsDaten, pendingPostsResult, umfragenResult, nutzerResult, abfallEinstellungenResult] = await Promise.all([
     ladeMaengelDaten(supabase, gemeindeId!),
@@ -511,7 +533,10 @@ export default async function DashboardPage() {
           )}
 
           {profile.role === 'verwaltung' && (
-            <WarnmeldungenSection warnmeldungen={warnmeldungen} />
+            <WarnmeldungenSection
+              warnmeldungen={warnmeldungen as unknown as Parameters<typeof WarnmeldungenSection>[0]['warnmeldungen']}
+              gesamt={warnmeldungenGesamt}
+            />
           )}
 
         </div>

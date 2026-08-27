@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ShieldAlert, Plus, X, Loader2 } from 'lucide-react'
 import { SEVERITY_LABEL, SEVERITY_COLOR, type WarnSeverity } from '@/features/warnmeldungen/types'
+import AeltereSuche from '@/components/dashboard/AeltereSuche'
 
 interface WarnRow {
   id: string
@@ -16,9 +17,10 @@ interface WarnRow {
 
 interface Props {
   warnmeldungen: WarnRow[]
+  gesamt: number
 }
 
-export default function WarnmeldungenSection({ warnmeldungen: initial }: Props) {
+export default function WarnmeldungenSection({ warnmeldungen: initial, gesamt }: Props) {
   const router = useRouter()
   const [warnmeldungen, setWarnmeldungen] = useState(initial)
   const [showForm, setShowForm] = useState(false)
@@ -83,6 +85,9 @@ export default function WarnmeldungenSection({ warnmeldungen: initial }: Props) 
         <h2 className="font-bold text-gray-900 flex items-center gap-2">
           <ShieldAlert className="w-4 h-4 text-red-500" aria-hidden="true" />
           Warnmeldungen
+          <span className="text-xs text-gray-500 font-normal">
+            {warnmeldungen.length} von {gesamt}
+          </span>
           {aktive.length > 0 && (
             <span className="text-xs bg-red-100 text-red-600 font-semibold px-2 py-0.5 rounded-full">
               {aktive.length} aktiv
@@ -221,6 +226,24 @@ export default function WarnmeldungenSection({ warnmeldungen: initial }: Props) 
           })}
         </ul>
       )}
+
+      <AeltereSuche<{ id: string; titel: string; created_at: string }>
+        typ="warnmeldungen"
+        label="Ältere Warnmeldungen durchsuchen"
+      >
+        {treffer => (
+          <ul className="divide-y divide-gray-50">
+            {treffer.map(w => (
+              <li key={w.id} className="py-2 flex items-center justify-between gap-3">
+                <span className="text-sm text-gray-800 truncate">{w.titel}</span>
+                <span className="text-xs text-gray-500 shrink-0">
+                  {new Date(w.created_at).toLocaleDateString('de-DE')}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </AeltereSuche>
     </section>
   )
 }
