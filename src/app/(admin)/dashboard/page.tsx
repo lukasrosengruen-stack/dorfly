@@ -120,46 +120,85 @@ async function ladePostsDaten(service: SupabaseServiceClient, gemeindeId: string
     // Freigeben auf publish_at gesetzt, sie sortieren sich also von selbst
     // nach oben ein.
     service.from('posts').select(postSpalten).eq('gemeinde_id', gemeindeId).eq('status', 'published').order('published_at', { ascending: false }).limit(20),
-    // Kommende Veranstaltungen bleiben unabhaengig vom Alter sichtbar, sonst
-    // faellt eine weit im Voraus angekuendigte Veranstaltung aus der Liste,
-    // sobald 20 neuere Beitraege dazukommen.
+    // Kommende Veranstaltungen (Haupttermin) bleiben unabhaengig vom Alter
+    // sichtbar, sonst faellt eine weit im Voraus angekuendigte Veranstaltung
+    // aus der Liste, sobald 20 neuere Beitraege dazukommen.
     service.from('posts').select(postSpalten).eq('gemeinde_id', gemeindeId).eq('status', 'published').eq('tag', 'veranstaltung').gte('veranstaltung_datum', heute).order('veranstaltung_datum', { ascending: true }).limit(50),
     // Mehrtaegige Veranstaltungen: veranstaltung_datum ist nur der erste
     // Termin. Ist der bereits vergangen, ein Zusatztermin aus post_termine
-    // aber noch nicht, gilt der Beitrag trotzdem als kommend und muss hier
-    // gefunden werden. Direkt an post_termine ansetzen und ueber
-    // posts!inner auf gemeinde_id/status filtern — Vorbild dafuer ist die
-    // Abfrage in src/app/(app)/veranstaltungen/page.tsx (Zeile 33-41), die
-    // exakt dasselbe Problem fuer den Kalender loest. Die Spaltenliste des
-    // Joins ist von Hand ausgeschrieben statt postSpalten wiederzuverwenden:
-    // post_termine(datum) waere hier selbstreferenziell (wir kommen ja
-    // bereits von post_termine), und gemeinde_id/status muessen zusaetzlich
-    // mitselektiert werden, weil PostgREST sie fuer den Filter auf die
-    // eingebettete Tabelle in der Selektion braucht.
-    service.from('post_termine').select('datum, posts!inner(id, titel, inhalt, tag, channel, pinned, bild_url, veranstaltung_datum, veranstaltung_ort, published_at, publish_at, profiles(role), gemeinde_id, status)').eq('posts.gemeinde_id', gemeindeId).eq('posts.status', 'published').gte('datum', heute).limit(50),
+    // aber noch nicht, gilt der Beitrag trotzdem als kommend. Hier bewusst
+    // nur post_id und datum holen (post_id ist eine native Spalte auf
+    // post_termine, kein Embed noetig) — die vollen Beitragsdaten holt
+    // Abfrage 4 unten gezielt fuer genau diese ids nach (siehe Begruendung
+    // dort). Filter auf die eingebettete posts-Tabelle nach Vorbild aus
+    // src/app/(app)/veranstaltungen/page.tsx (Zeile 33-41), inklusive
+    // posts.tag: post_termine wird zwar aktuell nur fuer Veranstaltungen
+    // angelegt, aber nur clientseitig (PostErstellenButton) abgesichert —
+    // der Filter hier ist die serverseitige Absicherung dagegen.
+    service.from('post_termine').select('post_id, datum, posts!inner(gemeinde_id, status, tag)').eq('posts.gemeinde_id', gemeindeId).eq('posts.status', 'published').eq('posts.tag', 'veranstaltung').gte('datum', heute).limit(50),
     // Gesamtzahl aller veroeffentlichten Beitraege fuer die "N von M"-Anzeige.
     service.from('posts').select('id', { count: 'exact', head: true }).eq('gemeinde_id', gemeindeId).eq('status', 'published'),
   ])
 
-  // post_termine liefert pro Zusatztermin eine Zeile mit dem eingebetteten
-  // Beitrag. Hier interessiert nur der Beitrag selbst — Entdopplung (mehrere
-  // Zusatztermine desselben Beitrags, oder Ueberschneidung mit den anderen
-  // beiden Abfragen oben) uebernimmt mergeArbeitsset ueber die id.
-  //
-  // post_termine fehlt in diesem Join bewusst (siehe Spaltenliste oben) und
-  // wird hier auf ein leeres Array ergaenzt, damit die Form zu
-  // arbeitsset/veranstaltungen passt. Das ist nur relevant, wenn ein Beitrag
-  // ausschliesslich ueber diese Abfrage gefunden wird (Haupttermin
-  // vergangen, nicht unter den 20 neuesten) — in dem Fall gewinnt hier
-  // ohnehin kein anderer Eintrag mit den echten Zusatzterminen,
-  // mergeArbeitsset dedupliziert ueber die id.
-  const zusatzBeitraege = (zusatztermine.data ?? []).map(zeile => ({ ...zeile.posts, post_termine: [] as { datum: string }[] }))
+  // Fruehester bekannter kuenftiger Termin je Beitrag — Grundlage fuer die
+  // Sortierung der Veranstaltungsgruppe weiter unten. Nur echte
+  // Zukunftstermine fliessen ein: veranstaltung_datum aus der zweiten
+  // Abfrage ist durch deren gte-Filter bereits >= heute, ebenso datum aus
+  // der dritten.
+  const naechsterTermin = new Map<string, string>()
+  for (const row of veranstaltungen.data ?? []) {
+    if (row.veranstaltung_datum) naechsterTermin.set(row.id, row.veranstaltung_datum)
+  }
+  for (const row of zusatztermine.data ?? []) {
+    const bisher = naechsterTermin.get(row.post_id)
+    if (!bisher || row.datum.localeCompare(bisher) < 0) naechsterTermin.set(row.post_id, row.datum)
+  }
+
+  // Volle Beitragsdaten fuer Beitraege, die NUR ueber einen Zusatztermin
+  // gefunden wurden (Haupttermin vergangen, nicht unter den 20 neuesten).
+  // Bewusst eine zweite Abfrage statt eines Stub-Objekts mit leerem
+  // post_termine: ein leeres Array ist nicht dasselbe wie "keine Aenderung".
+  // Oeffnet die Sachbearbeiterin so einen Beitrag zum Bearbeiten, fuellt
+  // PostVerwaltungSection.openEdit() weitereTermine daraus, und beim
+  // Speichern prueft src/app/api/posts/update/route.ts (Zeile 44)
+  // `weitereTermine !== undefined` — ein leeres Array erfuellt das, Zeile 45
+  // loescht daraufhin unbedingt alle bestehenden post_termine-Zeilen, Zeile
+  // 46 legt mangels length>0 keine neuen an. Der echte, noch bevorstehende
+  // Zusatztermin waere damit unwiderruflich weg. Deshalb: volle Daten
+  // laden. Haengt von den post_ids aus der post_termine-Abfrage oben ab,
+  // laeuft deshalb bewusst NACH dem Promise.all und nur, wenn es
+  // ueberhaupt solche ids gibt (kein Leerlauf-Roundtrip im Regelfall).
+  const zusatzPostIds = Array.from(new Set((zusatztermine.data ?? []).map(z => z.post_id)))
+  const zusatzPosts = zusatzPostIds.length > 0
+    ? (await service.from('posts').select(postSpalten).in('id', zusatzPostIds).eq('gemeinde_id', gemeindeId).eq('status', 'published')).data ?? []
+    : []
+
+  // Kommende Veranstaltungen zusammenfuehren (Haupttermin-Treffer + die
+  // per Zusatztermin nachgeladenen Beitraege), ueber die id entdoppelt.
+  // mergeArbeitsset uebernimmt hier nur das Entdoppeln — ihre eingebaute
+  // Sortierung (juengstes Datum zuerst, siehe Kommentar dort) passt nicht:
+  // die Veranstaltungsgruppe soll nach dem naechsten Termin AUFsteigend
+  // sortiert sein, nicht nach veranstaltung_datum absteigend. Deshalb im
+  // Anschluss mit dem oben gebauten naechsterTermin-Datum neu sortiert.
+  const veranstaltungenGruppe = mergeArbeitsset(
+    [veranstaltungen.data ?? [], zusatzPosts],
+    p => p.veranstaltung_datum,
+  ).sort((a, b) => (naechsterTermin.get(a.id) ?? '').localeCompare(naechsterTermin.get(b.id) ?? ''))
+
+  // Uebrige Beitraege: das Arbeitsset abzueglich allem, was schon in der
+  // Veranstaltungsgruppe steht — ein Beitrag erscheint so nur einmal, und
+  // zwar in der Veranstaltungsgruppe, wenn er in beiden vorkommt. Die
+  // Reihenfolge (neueste zuerst) bringt die Abfrage selbst schon mit.
+  const veranstaltungIds = new Set(veranstaltungenGruppe.map(p => p.id))
+  const uebrigeBeitraege = (arbeitsset.data ?? []).filter(p => !veranstaltungIds.has(p.id))
 
   return {
-    posts: mergeArbeitsset(
-      [arbeitsset.data ?? [], veranstaltungen.data ?? [], zusatzBeitraege],
-      p => p.published_at,
-    ),
+    // Veranstaltungsgruppe zuerst: eine vor Monaten veroeffentlichte, aber
+    // erst morgen stattfindende Veranstaltung wuerde sonst unter den 20
+    // aktuellen Beitraegen untergehen — sie ist zwar in der Liste, aber
+    // praktisch nicht auffindbar. Das widerspraeche dem Zweck, sie bewusst
+    // zu behalten.
+    posts: [...veranstaltungenGruppe, ...uebrigeBeitraege],
     gesamt: gesamt.count ?? 0,
   }
 }
