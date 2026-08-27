@@ -18,9 +18,10 @@ interface WarnRow {
 interface Props {
   warnmeldungen: WarnRow[]
   gesamt: number
+  aktiveVerborgen: number
 }
 
-export default function WarnmeldungenSection({ warnmeldungen: initial, gesamt }: Props) {
+export default function WarnmeldungenSection({ warnmeldungen: initial, gesamt, aktiveVerborgen }: Props) {
   const router = useRouter()
   const [warnmeldungen, setWarnmeldungen] = useState(initial)
   const [showForm, setShowForm] = useState(false)
@@ -81,7 +82,7 @@ export default function WarnmeldungenSection({ warnmeldungen: initial, gesamt }:
 
   return (
     <section className="bg-white rounded-2xl shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <div className="flex items-center justify-between flex-wrap gap-x-3 gap-y-2 px-5 py-4 border-b border-gray-100">
         <h2 className="font-bold text-gray-900 flex items-center gap-2">
           <ShieldAlert className="w-4 h-4 text-red-500" aria-hidden="true" />
           Warnmeldungen
@@ -225,6 +226,16 @@ export default function WarnmeldungenSection({ warnmeldungen: initial, gesamt }:
             )
           })}
         </ul>
+      )}
+
+      {/* Die "aktive"-Abfrage in page.tsx ist auf 50 Zeilen gedeckelt. Anders
+          als bei Maengeln/Fragen faellt eine verschluckte aktive Warnung
+          sonst lautlos aus Liste UND "X aktiv"-Badge — bei Gefahreninformation
+          wiegt das schwerer, deshalb hier derselbe Hinweis wie dort. */}
+      {aktiveVerborgen > 0 && (
+        <p className="px-5 py-2 text-xs text-gray-500 border-b border-gray-100">
+          {aktiveVerborgen} weitere aktive Warnmeldungen — bitte über die Suche aufrufen
+        </p>
       )}
 
       <AeltereSuche<{ id: string; titel: string; created_at: string }>

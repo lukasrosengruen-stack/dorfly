@@ -213,7 +213,7 @@ async function ladePostsDaten(service: SupabaseServiceClient, gemeindeId: string
 async function ladeWarnmeldungenDaten(service: SupabaseServiceClient, gemeindeId: string) {
   const warnSpalten = 'id, titel, severity, is_active, dwd_id, created_at'
 
-  const [arbeitsset, aktive, gesamt] = await Promise.all([
+  const [arbeitsset, aktive, gesamt, aktivCount] = await Promise.all([
     // Arbeitsset: die zehn neuesten Warnmeldungen.
     service.from('posts').select(warnSpalten).eq('gemeinde_id', gemeindeId).eq('channel', 'warnung').order('created_at', { ascending: false }).limit(10),
     // Unabhaengig vom Alter: alles, was noch aktiv ist. Eine aktive Warnung
@@ -221,12 +221,21 @@ async function ladeWarnmeldungenDaten(service: SupabaseServiceClient, gemeindeId
     // Liste fallen.
     service.from('posts').select(warnSpalten).eq('gemeinde_id', gemeindeId).eq('channel', 'warnung').eq('is_active', true).order('created_at', { ascending: false }).limit(50),
     service.from('posts').select('id', { count: 'exact', head: true }).eq('gemeinde_id', gemeindeId).eq('channel', 'warnung'),
+    // Echte Gesamtzahl aktiver Warnungen, unabhaengig von der 50er-Deckelung
+    // oben. Bei Warnmeldungen wiegt eine stillschweigend verschluckte aktive
+    // Warnung schwerer als anderswo — es geht um Gefahreninformation, siehe
+    // aktiveVerborgen unten.
+    service.from('posts').select('id', { count: 'exact', head: true }).eq('gemeinde_id', gemeindeId).eq('channel', 'warnung').eq('is_active', true),
   ])
 
   return {
     warnmeldungen: mergeArbeitsset([arbeitsset.data ?? [], aktive.data ?? []], w => w.created_at),
     gesamt: gesamt.count ?? 0,
-    aktiveAnzahl: aktive.data?.length ?? 0,
+    // >0, wenn die 50er-Deckelung oben tatsaechlich aktive Warnungen
+    // verschluckt hat. Anders als bei Maengeln/Fragen faellt eine
+    // verschluckte Warnung sonst lautlos aus Liste UND "X aktiv"-Badge —
+    // die Verwaltung saehe eine aktive Gefahreninformation schlicht nicht.
+    aktiveVerborgen: Math.max(0, (aktivCount.count ?? 0) - (aktive.data?.length ?? 0)),
   }
 }
 
@@ -356,6 +365,7 @@ export default async function DashboardPage() {
     : null
   const warnmeldungen = warnmeldungenDaten?.warnmeldungen ?? []
   const warnmeldungenGesamt = warnmeldungenDaten?.gesamt ?? 0
+  const warnmeldungenAktiveVerborgen = warnmeldungenDaten?.aktiveVerborgen ?? 0
 
   const [maengelDaten, fragenDaten, postsDaten, pendingPostsResult, umfragenResult, nutzerResult, abfallEinstellungenResult] = await Promise.all([
     ladeMaengelDaten(supabase, gemeindeId!),
@@ -536,6 +546,7 @@ export default async function DashboardPage() {
             <WarnmeldungenSection
               warnmeldungen={warnmeldungen as unknown as Parameters<typeof WarnmeldungenSection>[0]['warnmeldungen']}
               gesamt={warnmeldungenGesamt}
+              aktiveVerborgen={warnmeldungenAktiveVerborgen}
             />
           )}
 
