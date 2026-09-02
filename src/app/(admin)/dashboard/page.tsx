@@ -114,7 +114,7 @@ async function ladePostsDaten(service: SupabaseServiceClient, gemeindeId: string
   const heute = new Date().toISOString().split('T')[0]
   const postSpalten = 'id, titel, inhalt, tag, channel, pinned, bild_url, veranstaltung_datum, veranstaltung_ort, post_termine(datum), published_at, publish_at, profiles(role)'
 
-  const [arbeitsset, veranstaltungen, zusatztermine, gesamt] = await Promise.all([
+  const [arbeitsset, veranstaltungen, zusatztermine, gesamt, veranstaltungenCount] = await Promise.all([
     // Arbeitsset: die 20 neuesten veroeffentlichten Beitraege. Geplante
     // Beitraege brauchen keine Sonderbehandlung: published_at wird beim
     // Freigeben auf publish_at gesetzt, sie sortieren sich also von selbst
@@ -122,7 +122,9 @@ async function ladePostsDaten(service: SupabaseServiceClient, gemeindeId: string
     service.from('posts').select(postSpalten).eq('gemeinde_id', gemeindeId).eq('status', 'published').order('published_at', { ascending: false }).limit(20),
     // Kommende Veranstaltungen (Haupttermin) bleiben unabhaengig vom Alter
     // sichtbar, sonst faellt eine weit im Voraus angekuendigte Veranstaltung
-    // aus der Liste, sobald 20 neuere Beitraege dazukommen.
+    // aus der Liste, sobald 20 neuere Beitraege dazukommen. Gedeckelt auf 50 —
+    // veranstaltungenVerborgen unten macht sichtbar, wenn diese Deckelung
+    // greift.
     service.from('posts').select(postSpalten).eq('gemeinde_id', gemeindeId).eq('status', 'published').eq('tag', 'veranstaltung').gte('veranstaltung_datum', heute).order('veranstaltung_datum', { ascending: true }).limit(50),
     // Mehrtaegige Veranstaltungen: veranstaltung_datum ist nur der erste
     // Termin. Ist der bereits vergangen, ein Zusatztermin aus post_termine
@@ -138,6 +140,9 @@ async function ladePostsDaten(service: SupabaseServiceClient, gemeindeId: string
     service.from('post_termine').select('post_id, datum, posts!inner(gemeinde_id, status, tag)').eq('posts.gemeinde_id', gemeindeId).eq('posts.status', 'published').eq('posts.tag', 'veranstaltung').gte('datum', heute).limit(50),
     // Gesamtzahl aller veroeffentlichten Beitraege fuer die "N von M"-Anzeige.
     service.from('posts').select('id', { count: 'exact', head: true }).eq('gemeinde_id', gemeindeId).eq('status', 'published'),
+    // Echte Gesamtzahl kommender Veranstaltungen (Haupttermin), unabhaengig
+    // von der 50er-Deckelung oben. Grundlage fuer veranstaltungenVerborgen.
+    service.from('posts').select('id', { count: 'exact', head: true }).eq('gemeinde_id', gemeindeId).eq('status', 'published').eq('tag', 'veranstaltung').gte('veranstaltung_datum', heute),
   ])
 
   // Fruehester bekannter kuenftiger Termin je Beitrag — Grundlage fuer die
@@ -200,6 +205,13 @@ async function ladePostsDaten(service: SupabaseServiceClient, gemeindeId: string
     // zu behalten.
     posts: [...veranstaltungenGruppe, ...uebrigeBeitraege],
     gesamt: gesamt.count ?? 0,
+    // >0, wenn die 50er-Deckelung der Veranstaltungen-Abfrage oben
+    // tatsaechlich kommende Veranstaltungen verschluckt hat (z.B. bei vielen
+    // gleichzeitig angekuendigten Terminen). Bezieht sich bewusst nur auf
+    // die Haupttermin-Abfrage — Beitraege, die ausschliesslich ueber einen
+    // Zusatztermin gefunden wuerden, sind ein Rand-des-Rand-Falls und bei
+    // einer Gemeinde dieser Groessenordnung vernachlaessigbar.
+    veranstaltungenVerborgen: Math.max(0, (veranstaltungenCount.count ?? 0) - (veranstaltungen.data?.length ?? 0)),
   }
 }
 
@@ -231,6 +243,11 @@ async function ladeWarnmeldungenDaten(service: SupabaseServiceClient, gemeindeId
   return {
     warnmeldungen: mergeArbeitsset([arbeitsset.data ?? [], aktive.data ?? []], w => w.created_at),
     gesamt: gesamt.count ?? 0,
+    // Echte Gesamtzahl aktiver Warnungen fuers "X aktiv"-Badge. Nicht ueber
+    // warnmeldungen.filter(w => w.is_active).length in der Komponente
+    // ermitteln — dieses Array ist auf das Arbeitsset gedeckelt und wuerde
+    // die Zahl bei mehr als 50 aktiven Warnungen still zu niedrig anzeigen.
+    aktivAnzahl: aktivCount.count ?? 0,
     // >0, wenn die 50er-Deckelung oben tatsaechlich aktive Warnungen
     // verschluckt hat. Anders als bei Maengeln/Fragen faellt eine
     // verschluckte Warnung sonst lautlos aus Liste UND "X aktiv"-Badge —
@@ -365,6 +382,7 @@ export default async function DashboardPage() {
     : null
   const warnmeldungen = warnmeldungenDaten?.warnmeldungen ?? []
   const warnmeldungenGesamt = warnmeldungenDaten?.gesamt ?? 0
+  const warnmeldungenAktivAnzahl = warnmeldungenDaten?.aktivAnzahl ?? 0
   const warnmeldungenAktiveVerborgen = warnmeldungenDaten?.aktiveVerborgen ?? 0
 
   const [maengelDaten, fragenDaten, postsDaten, pendingPostsResult, umfragenResult, nutzerResult, abfallEinstellungenResult] = await Promise.all([
@@ -390,6 +408,7 @@ export default async function DashboardPage() {
   const fragenOffeneVerborgen = fragenDaten.offeneVerborgen
   const posts = postsDaten.posts
   const postsGesamt = postsDaten.gesamt
+  const veranstaltungenVerborgen = postsDaten.veranstaltungenVerborgen
   const pendingPosts = pendingPostsResult.data ?? []
   const umfragen = umfragenResult.data ?? []
   const nutzerAnzahl = nutzerResult.count ?? 0
@@ -523,6 +542,7 @@ export default async function DashboardPage() {
             <PostVerwaltungSection
               posts={posts as unknown as Parameters<typeof PostVerwaltungSection>[0]['posts']}
               gesamt={postsGesamt}
+              veranstaltungenVerborgen={veranstaltungenVerborgen}
               gemeindeId={gemeindeId}
               profileId={user.id}
               canPin={['verwaltung', 'super_admin'].includes(profile.role)}
@@ -546,6 +566,7 @@ export default async function DashboardPage() {
             <WarnmeldungenSection
               warnmeldungen={warnmeldungen as unknown as Parameters<typeof WarnmeldungenSection>[0]['warnmeldungen']}
               gesamt={warnmeldungenGesamt}
+              aktivAnzahl={warnmeldungenAktivAnzahl}
               aktiveVerborgen={warnmeldungenAktiveVerborgen}
             />
           )}

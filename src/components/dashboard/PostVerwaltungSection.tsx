@@ -32,6 +32,7 @@ interface Post {
 interface Props {
   posts: Post[]
   gesamt: number
+  veranstaltungenVerborgen: number
   gemeindeId: string
   profileId: string
   canPin?: boolean
@@ -70,7 +71,7 @@ function getChannelKey(post: Post): string {
   return post.channel
 }
 
-export default function PostVerwaltungSection({ posts: initialPosts, gesamt, gemeindeId, profileId, canPin = false, canPush = false }: Props) {
+export default function PostVerwaltungSection({ posts: initialPosts, gesamt, veranstaltungenVerborgen, gemeindeId, profileId, canPin = false, canPush = false }: Props) {
   const [posts, setPosts] = useState(initialPosts)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -187,7 +188,7 @@ export default function PostVerwaltungSection({ posts: initialPosts, gesamt, gem
         <h2 className="font-bold text-gray-900 flex items-center gap-2">
           <Newspaper className="w-4 h-4 text-primary-500" />
           Beiträge verwalten
-          <span className="text-xs text-gray-500 font-normal">({posts.length} von {gesamt})</span>
+          <span className="text-xs text-gray-500 font-normal">{posts.length} von {gesamt}</span>
         </h2>
         <PostErstellenButton gemeindeId={gemeindeId} profileId={profileId} defaultChannel="gemeinde" canPin={canPin} canPush={canPush} />
       </div>
@@ -334,6 +335,16 @@ export default function PostVerwaltungSection({ posts: initialPosts, gesamt, gem
           </div>
         ))}
       </div>
+
+      {/* Die Veranstaltungen-Abfrage in page.tsx ist auf 50 Zeilen gedeckelt.
+          Bei mehr gleichzeitig kommenden Veranstaltungen faellt sonst
+          kommentarlos ein Teil aus der Liste — dieser Hinweis macht das
+          sichtbar statt es stillschweigend zu verschlucken. */}
+      {veranstaltungenVerborgen > 0 && (
+        <p className="px-5 py-2 text-xs text-gray-500 border-b border-gray-100">
+          {veranstaltungenVerborgen} weitere kommende Veranstaltungen — bitte über die Suche aufrufen
+        </p>
+      )}
 
       <AeltereSuche<{ id: string; titel: string; published_at: string | null }>
         typ="beitraege"

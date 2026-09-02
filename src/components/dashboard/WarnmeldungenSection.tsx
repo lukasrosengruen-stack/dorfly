@@ -18,10 +18,11 @@ interface WarnRow {
 interface Props {
   warnmeldungen: WarnRow[]
   gesamt: number
+  aktivAnzahl: number
   aktiveVerborgen: number
 }
 
-export default function WarnmeldungenSection({ warnmeldungen: initial, gesamt, aktiveVerborgen }: Props) {
+export default function WarnmeldungenSection({ warnmeldungen: initial, gesamt, aktivAnzahl, aktiveVerborgen }: Props) {
   const router = useRouter()
   const [warnmeldungen, setWarnmeldungen] = useState(initial)
   const [showForm, setShowForm] = useState(false)
@@ -89,9 +90,9 @@ export default function WarnmeldungenSection({ warnmeldungen: initial, gesamt, a
           <span className="text-xs text-gray-500 font-normal">
             {warnmeldungen.length} von {gesamt}
           </span>
-          {aktive.length > 0 && (
+          {aktivAnzahl > 0 && (
             <span className="text-xs bg-red-100 text-red-600 font-semibold px-2 py-0.5 rounded-full">
-              {aktive.length} aktiv
+              {aktivAnzahl} aktiv
             </span>
           )}
         </h2>
