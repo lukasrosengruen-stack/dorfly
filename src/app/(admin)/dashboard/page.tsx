@@ -2,7 +2,6 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { isFeatureAktiv } from '@/lib/features'
 import { Users, Home, TrendingUp, AlertTriangle, Clock, MessageCircleQuestion } from 'lucide-react'
-import { FrageErgebnis } from '@/types/umfrage'
 import AbfallkalenderSection from '@/components/dashboard/AbfallkalenderSection'
 import WarnmeldungenSection from '@/components/dashboard/WarnmeldungenSection'
 import EinladungenSection from '@/components/dashboard/EinladungenSection'
@@ -256,6 +255,71 @@ async function ladeWarnmeldungenDaten(service: SupabaseServiceClient, gemeindeId
   }
 }
 
+// Siehe Kommentar bei ladeMaengelDaten zum Aufbau.
+//
+// Besonderheit hier: Frueher lief pro Umfrage ein eigener RPC-Aufruf fuer die
+// Teilnehmerzahl und einer fuer die Ergebnisse — bei 200 Umfragen also 400
+// Roundtrips je Seitenaufruf. Die Teilnehmerzahlen kommen jetzt gesammelt aus
+// einer Funktion, die Ergebnisse erst beim Aufklappen ueber
+// /api/verwaltung/umfrage-ergebnisse. Damit entfaellt auch das Nachladen aller
+// Fragen und Antwortoptionen, das die Liste gar nicht anzeigt.
+async function ladeUmfragenDaten(supabase: SupabaseServerClient, gemeindeId: string) {
+  const jetzt = new Date().toISOString()
+  // Bewusst nicht auf id/titel/enddatum eingedampft: Der Bearbeiten-Dialog
+  // (UmfrageBearbeiten) befuellt sein Formular aus genau diesen Feldern und
+  // sendet bilder_urls beim Speichern wieder mit. Fehlt das Feld hier, startet
+  // der Dialog mit einer leeren Bilderliste und ein Speichern loescht die
+  // Bilder der Umfrage — derselbe Fehlertyp wie frueher bei den Zusatzterminen.
+  //
+  // Weggefallen ist dafuer umfrage_optionen(*) samt der uebrigen Frage-Spalten:
+  // Das war der Hauptteil der Datenmenge und wird nur fuer die Ergebnisse
+  // gebraucht, die jetzt erst beim Aufklappen ueber die Route kommen.
+  // Vollstaendige Spalten von umfragen und umfrage_fragen, damit der Typ ohne
+  // Cast zu Umfrage passt — ein Cast haette hier genau den bilder_urls-Fehler
+  // oben verdeckt. Weggefallen ist trotzdem das Entscheidende: umfrage_optionen(*),
+  // also eine Zeile je Antwortoption jeder Frage jeder Umfrage.
+  const umfrageSpalten = 'id, titel, beschreibung, enddatum, created_at, bilder_urls, author_id, gemeinde_id, umfrage_fragen(*)'
+
+  const [arbeitsset, laufende, gesamt, laufendCount, teilnehmer] = await Promise.all([
+    supabase.from('umfragen').select(umfrageSpalten).eq('gemeinde_id', gemeindeId)
+      .order('created_at', { ascending: false }).limit(3),
+    // Laufende bleiben unabhaengig vom Alter sichtbar — sie brauchen Aufmerksamkeit.
+    supabase.from('umfragen').select(umfrageSpalten).eq('gemeinde_id', gemeindeId)
+      .gte('enddatum', jetzt).order('created_at', { ascending: false }).limit(50),
+    supabase.from('umfragen').select('id', { count: 'exact', head: true }).eq('gemeinde_id', gemeindeId),
+    supabase.from('umfragen').select('id', { count: 'exact', head: true })
+      .eq('gemeinde_id', gemeindeId).gte('enddatum', jetzt),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase.rpc as any)('umfrage_teilnehmer_anzahlen'),
+  ])
+
+  // Sicherheitsnetz: Ist die Migration 062 noch nicht eingespielt, schlaegt nur
+  // dieser eine Aufruf fehl. Dann fehlen die Teilnehmerzahlen, statt dass die
+  // gesamte Dashboard-Seite scheitert.
+  if (teilnehmer.error) {
+    console.error('[dashboard] umfrage_teilnehmer_anzahlen nicht verfuegbar:', teilnehmer.error.message)
+  }
+
+  const teilnehmerJeUmfrage = new Map<string, number>(
+    ((teilnehmer.data ?? []) as { umfrage_id: string; anzahl: number }[])
+      .map(zeile => [zeile.umfrage_id, Number(zeile.anzahl)]),
+  )
+
+  const liste = mergeArbeitsset(
+    [arbeitsset.data ?? [], laufende.data ?? []],
+    u => u.created_at,
+  )
+
+  return {
+    umfragen: liste.map(umfrage => ({
+      umfrage,
+      teilnehmer: teilnehmerJeUmfrage.get(umfrage.id) ?? 0,
+    })),
+    gesamt: gesamt.count ?? 0,
+    laufendeVerborgen: Math.max(0, (laufendCount.count ?? 0) - (laufende.data?.length ?? 0)),
+  }
+}
+
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -385,12 +449,12 @@ export default async function DashboardPage() {
   const warnmeldungenAktivAnzahl = warnmeldungenDaten?.aktivAnzahl ?? 0
   const warnmeldungenAktiveVerborgen = warnmeldungenDaten?.aktiveVerborgen ?? 0
 
-  const [maengelDaten, fragenDaten, postsDaten, pendingPostsResult, umfragenResult, nutzerResult, abfallEinstellungenResult] = await Promise.all([
+  const [maengelDaten, fragenDaten, postsDaten, pendingPostsResult, umfragenDaten, nutzerResult, abfallEinstellungenResult] = await Promise.all([
     ladeMaengelDaten(supabase, gemeindeId!),
     ladeFragenDaten(supabase, gemeindeId!),
     ladePostsDaten(service, gemeindeId!),
     service.from('posts').select('id, titel, inhalt, channel, tag, created_at, publish_at, bild_url, bilder_urls, profiles(display_name, verein_name, role)').eq('gemeinde_id', gemeindeId!).eq('status', 'pending').order('created_at', { ascending: false }),
-    supabase.from('umfragen').select('*, umfrage_fragen(*, umfrage_optionen(*))').eq('gemeinde_id', gemeindeId!).order('created_at', { ascending: false }),
+    ladeUmfragenDaten(supabase, gemeindeId!),
     service.from('profiles').select('id, role', { count: 'exact' }).eq('gemeinde_id', gemeindeId!),
     supabase.from('abfallkalender_einstellungen').select('*').eq('gemeinde_id', gemeindeId!).maybeSingle(),
   ])
@@ -410,61 +474,9 @@ export default async function DashboardPage() {
   const postsGesamt = postsDaten.gesamt
   const veranstaltungenVerborgen = postsDaten.veranstaltungenVerborgen
   const pendingPosts = pendingPostsResult.data ?? []
-  const umfragen = umfragenResult.data ?? []
+  const umfragen = umfragenDaten.umfragen
   const nutzerAnzahl = nutzerResult.count ?? 0
 
-  // Umfragen-Ergebnisse — aggregierte RPC-Funktionen, eine pro Umfrage
-  type ErgebnisZeile = { frage_id: string; option_id: string | null; antwort_text: string | null; anzahl: number }
-
-  const umfragenMitErgebnissen = await Promise.all(
-    umfragen.map(async (umfrage) => {
-      const [ergebnisResult, teilnehmerResult] = await Promise.all([
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase.rpc as any)('umfrage_ergebnisse', { p_umfrage_id: umfrage.id }),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase.rpc as any)('umfrage_teilnehmer_anzahl', { p_umfrage_id: umfrage.id }),
-      ])
-
-      const antworten: ErgebnisZeile[] = ergebnisResult.data ?? []
-      const teilnehmer: number = teilnehmerResult.data ?? 0
-
-      const ergebnisse: FrageErgebnis[] = (umfrage.umfrage_fragen ?? []).map((frage: {
-        id: string; frage_text: string; typ: string;
-        umfrage_optionen?: { id: string; option_text: string; reihenfolge: number }[]
-      }) => {
-        const fa = antworten.filter(a => a.frage_id === frage.id)
-        if (frage.typ === 'ja_nein') {
-          const ja   = fa.filter(a => a.antwort_text === 'ja').reduce((s, a) => s + a.anzahl, 0)
-          const nein = fa.filter(a => a.antwort_text === 'nein').reduce((s, a) => s + a.anzahl, 0)
-          const g = ja + nein || 1
-          return { frage_id: frage.id, frage_text: frage.frage_text, typ: 'ja_nein' as const, gesamt_antworten: ja + nein,
-            optionen: [{ label: 'Ja', anzahl: ja, prozent: Math.round((ja/g)*100) }, { label: 'Nein', anzahl: nein, prozent: Math.round((nein/g)*100) }] }
-        }
-        if (frage.typ === 'bewertung') {
-          const sumAnzahl    = fa.reduce((s, a) => s + a.anzahl, 0)
-          const sumGewichtet = fa.reduce((s, a) => s + parseInt(a.antwort_text ?? '0') * a.anzahl, 0)
-          const avg = sumAnzahl ? sumGewichtet / sumAnzahl : 0
-          return { frage_id: frage.id, frage_text: frage.frage_text, typ: 'bewertung' as const,
-            gesamt_antworten: sumAnzahl, durchschnitt: avg,
-            optionen: [1,2,3,4,5].map(v => {
-              const row = fa.find(a => parseInt(a.antwort_text ?? '') === v)
-              const a = row?.anzahl ?? 0
-              return { label: String(v), anzahl: a, prozent: Math.round((a / (sumAnzahl || 1)) * 100) }
-            }) }
-        }
-        const opts = (frage.umfrage_optionen ?? []).sort((a: {reihenfolge:number}, b: {reihenfolge:number}) => a.reihenfolge - b.reihenfolge)
-        const gesamt = fa.reduce((s, a) => s + a.anzahl, 0)
-        const g = gesamt || 1
-        return { frage_id: frage.id, frage_text: frage.frage_text, typ: frage.typ as 'einzelauswahl'|'mehrfachauswahl', gesamt_antworten: gesamt,
-          optionen: opts.map((o: {id:string; option_text:string}) => {
-            const row = fa.find(x => x.option_id === o.id)
-            const a = row?.anzahl ?? 0
-            return { label: o.option_text, anzahl: a, prozent: Math.round((a/g)*100), option_id: o.id }
-          }) }
-      })
-      return { umfrage, ergebnisse, teilnehmer }
-    })
-  )
 
   const reichweite = gemeinde?.haushalte
     ? Math.min(100, Math.round((nutzerAnzahl / gemeinde.haushalte) * 100))
@@ -552,7 +564,9 @@ export default async function DashboardPage() {
 
           {gemeindeId && (
             <UmfragenSection
-              umfragen={umfragenMitErgebnissen as unknown as Parameters<typeof UmfragenSection>[0]['umfragen']}
+              umfragen={umfragen}
+              gesamt={umfragenDaten.gesamt}
+              laufendeVerborgen={umfragenDaten.laufendeVerborgen}
               gemeindeId={gemeindeId}
               haushalte={gemeinde?.haushalte ?? null}
             />

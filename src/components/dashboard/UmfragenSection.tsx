@@ -1,28 +1,61 @@
 'use client'
 
 import { useState } from 'react'
-import { BarChart2, ChevronDown, ChevronUp, Pencil, Star } from 'lucide-react'
+import { BarChart2, ChevronDown, ChevronUp, Loader2, Pencil, Star } from 'lucide-react'
 import UmfrageErstellenButton from './UmfrageErstellenButton'
 import UmfrageBearbeiten from '@/components/umfrage/UmfrageBearbeiten'
+import AeltereSuche from '@/components/dashboard/AeltereSuche'
 import type { Umfrage } from '@/types/umfrage'
 import type { FrageErgebnis } from '@/types/umfrage'
 
-interface UmfrageMitErgebnis {
+interface UmfrageEintrag {
   umfrage: Umfrage
-  ergebnisse: FrageErgebnis[]
   teilnehmer: number
 }
 
 interface Props {
-  umfragen: UmfrageMitErgebnis[]
+  umfragen: UmfrageEintrag[]
+  gesamt: number
+  laufendeVerborgen: number
   gemeindeId: string
   haushalte: number | null
 }
 
-export default function UmfragenSection({ umfragen, gemeindeId, haushalte }: Props) {
+export default function UmfragenSection({ umfragen, gesamt, laufendeVerborgen, gemeindeId, haushalte }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [editingUmfrage, setEditingUmfrage] = useState<Umfrage | null>(null)
   const [localUmfragen, setLocalUmfragen] = useState(umfragen)
+
+  // Ergebnisse kommen nicht mehr mit der Seite, sondern erst beim Aufklappen.
+  // Sie werden ohnehin nur bei beendeten Umfragen angezeigt — vorher wurden sie
+  // fuer jede Umfrage berechnet und fast immer verworfen.
+  const [ergebnisse, setErgebnisse] = useState<Record<string, FrageErgebnis[]>>({})
+  const [laden, setLaden] = useState<string | null>(null)
+  const [fehler, setFehler] = useState<string | null>(null)
+
+  async function toggle(umfrageId: string) {
+    if (expandedId === umfrageId) {
+      setExpandedId(null)
+      return
+    }
+    setExpandedId(umfrageId)
+    setFehler(null)
+
+    // Schon geladen? Dann nicht erneut anfragen.
+    if (ergebnisse[umfrageId]) return
+
+    setLaden(umfrageId)
+    try {
+      const res = await fetch(`/api/verwaltung/umfrage-ergebnisse?umfrageId=${umfrageId}`)
+      if (!res.ok) throw new Error()
+      const daten = await res.json()
+      setErgebnisse(prev => ({ ...prev, [umfrageId]: daten.ergebnisse as FrageErgebnis[] }))
+    } catch {
+      setFehler('Ergebnisse konnten nicht geladen werden.')
+    } finally {
+      setLaden(null)
+    }
+  }
 
   function handleUpdated(updated: Umfrage) {
     setLocalUmfragen(prev =>
@@ -45,7 +78,7 @@ export default function UmfragenSection({ umfragen, gemeindeId, haushalte }: Pro
           <h2 className="font-bold text-gray-900 flex items-center gap-2">
             <BarChart2 className="w-4 h-4 text-primary-500" />
             Umfragen
-            <span className="text-xs text-gray-400 font-normal">({umfragen.length})</span>
+            <span className="text-xs text-gray-500 font-normal">{umfragen.length} von {gesamt}</span>
           </h2>
           <UmfrageErstellenButton gemeindeId={gemeindeId} />
         </div>
@@ -54,7 +87,7 @@ export default function UmfragenSection({ umfragen, gemeindeId, haushalte }: Pro
           <p className="text-sm text-gray-400 text-center py-8">Noch keine Umfragen erstellt</p>
         ) : (
           <ul className="divide-y divide-gray-100">
-            {localUmfragen.map(({ umfrage, ergebnisse, teilnehmer }) => {
+            {localUmfragen.map(({ umfrage, teilnehmer }) => {
               const abgelaufen = new Date(umfrage.enddatum) < new Date()
               const isOpen = expandedId === umfrage.id
               const beteiligung = haushalte
@@ -65,7 +98,7 @@ export default function UmfragenSection({ umfragen, gemeindeId, haushalte }: Pro
                 <li key={umfrage.id}>
                   <div className="flex items-center justify-between px-5 py-3.5">
                     <button
-                      onClick={() => abgelaufen && setExpandedId(isOpen ? null : umfrage.id)}
+                      onClick={() => { if (abgelaufen) toggle(umfrage.id) }}
                       className={`flex-1 min-w-0 text-left ${abgelaufen ? 'cursor-pointer' : 'cursor-default'}`}
                     >
                       <p className="font-medium text-gray-900 truncate">{umfrage.titel}</p>
@@ -88,7 +121,7 @@ export default function UmfragenSection({ umfragen, gemeindeId, haushalte }: Pro
                       </span>
                       {abgelaufen && (
                         <button
-                          onClick={() => setExpandedId(isOpen ? null : umfrage.id)}
+                          onClick={() => toggle(umfrage.id)}
                           aria-label={isOpen ? 'Zuklappen' : 'Aufklappen'}
                         >
                           {isOpen ? <ChevronUp className="w-4 h-4 text-gray-400" aria-hidden="true" /> : <ChevronDown className="w-4 h-4 text-gray-400" aria-hidden="true" />}
@@ -105,7 +138,16 @@ export default function UmfragenSection({ umfragen, gemeindeId, haushalte }: Pro
 
                   {abgelaufen && isOpen && (
                     <div className="px-5 pb-5 space-y-4">
-                      {ergebnisse.map(ergebnis => (
+                      {laden === umfrage.id && (
+                        <p className="text-xs text-gray-500 flex items-center gap-1" aria-live="polite">
+                          <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
+                          Ergebnisse werden geladen …
+                        </p>
+                      )}
+                      {fehler && laden !== umfrage.id && !ergebnisse[umfrage.id] && (
+                        <p role="alert" className="text-sm text-red-600">{fehler}</p>
+                      )}
+                      {(ergebnisse[umfrage.id] ?? []).map(ergebnis => (
                         <div key={ergebnis.frage_id} className="border-t border-gray-100 pt-3">
                           <p className="text-xs font-semibold text-gray-700 mb-2">{ergebnis.frage_text}</p>
 
@@ -155,6 +197,30 @@ export default function UmfragenSection({ umfragen, gemeindeId, haushalte }: Pro
             })}
           </ul>
         )}
+
+        {laufendeVerborgen > 0 && (
+          <p className="px-5 pb-3 text-xs text-gray-500">
+            {laufendeVerborgen} weitere laufende Umfragen — bitte über die Suche aufrufen
+          </p>
+        )}
+
+        <AeltereSuche<{ id: string; titel: string; created_at: string }>
+          typ="umfragen"
+          label="Ältere Umfragen durchsuchen"
+        >
+          {treffer => (
+            <ul className="divide-y divide-gray-50">
+              {treffer.map(u => (
+                <li key={u.id} className="py-2 flex items-center justify-between gap-3">
+                  <span className="text-sm text-gray-800 truncate">{u.titel}</span>
+                  <span className="text-xs text-gray-500 shrink-0">
+                    {new Date(u.created_at).toLocaleDateString('de-DE')}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </AeltereSuche>
       </section>
     </>
   )
