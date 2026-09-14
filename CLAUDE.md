@@ -108,7 +108,7 @@ Vor dem Commit jede Frage durchgehen:
 - [ ] Neue Tab-Navigationen: `role="tablist"`, `role="tab"`, `aria-selected`, `role="tabpanel"`
 - [ ] Fehlermeldungen haben `role="alert"`
 - [ ] Neue Routen haben `export const metadata` mit aussagekräftigem Seitentitel
-- [ ] Texte mit Informationsgehalt haben mindestens 4.5:1 Kontrast (kein `text-gray-400` für Fließtext — `text-gray-500` minimum)
+- [ ] Texte mit Informationsgehalt haben mindestens 4.5:1 Kontrast. `text-gray-400` reicht nie. **Der nötige Grauwert hängt vom Hintergrund ab:** auf Weiß genügt `text-gray-500` (4.83:1), auf `bg-gray-50`/`bg-gray-100` nicht mehr (dort nur ~4.4:1) — da gehört `text-gray-600` hin (~6.9:1). Also den tatsächlichen Hintergrund mitrechnen, statt den Wert aus dieser Zeile abzuschreiben.
 - [ ] Nutzer-generierte Inhalte (Posts, Fragen, Meldungen) haben einen `<ReportButton>` aus `src/components/ReportButton.tsx`
 
 ### Regeln die immer gelten
