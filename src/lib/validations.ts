@@ -400,3 +400,9 @@ export const dashboardSucheSchema = z.object({
       .min(2, 'Bitte mindestens zwei Zeichen eingeben')
       .max(100, 'Suchbegriff ist zu lang')),
 })
+
+// ── Umfrage-Ergebnisse ────────────────────────────────────────────────────────
+
+export const umfrageErgebnisseSchema = z.object({
+  umfrageId: uuid,
+})
