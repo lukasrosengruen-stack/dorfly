@@ -127,7 +127,9 @@ export default function MaengelSection({ maengel: initialMaengel, gesamt, offene
         onClick={() => m.status !== s && updateStatus(m.id, s)}
         disabled={updating === m.id || m.status === s}
         className={`text-xs px-2 py-0.5 rounded-full font-medium transition-colors ${
-          m.status === s ? STATUS_AKTIV_CLS[s] : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+          // gray-600 statt gray-500: Auf bg-gray-100 kaeme gray-500 nur auf
+          // etwa 4.39:1 und verfehlt die 4.5:1 fuer Text unter 18px knapp.
+          m.status === s ? STATUS_AKTIV_CLS[s] : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
         }`}>
         {updating === m.id ? <Loader2 className="w-3 h-3 animate-spin inline" aria-hidden="true" /> : null}
         {STATUS_LABEL[s]}
