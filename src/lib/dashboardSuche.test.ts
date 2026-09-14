@@ -28,7 +28,7 @@ describe('escapeIlike', () => {
 })
 
 describe('SUCH_TYPEN', () => {
-  it('enthaelt genau die vier unterstuetzten Listen', () => {
-    expect(SUCH_TYPEN).toEqual(['beitraege', 'maengel', 'fragen', 'warnmeldungen'])
+  it('enthaelt genau die fuenf unterstuetzten Listen', () => {
+    expect(SUCH_TYPEN).toEqual(['beitraege', 'maengel', 'fragen', 'warnmeldungen', 'umfragen'])
   })
 })

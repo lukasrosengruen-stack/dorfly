@@ -81,6 +81,16 @@ export const GET = withAuth(
         .limit(grenze)
       zeilen = data ?? []
       fehler = error?.message ?? null
+    } else if (typ === 'umfragen') {
+      const { data, error } = await service
+        .from('umfragen')
+        .select('id, titel, enddatum, created_at')
+        .eq('gemeinde_id', gemeindeId)
+        .ilike('titel', muster)
+        .order('created_at', { ascending: false })
+        .limit(grenze)
+      zeilen = data ?? []
+      fehler = error?.message ?? null
     } else {
       // Kann durch das Zod-Enum in dashboardSucheSchema aktuell nicht eintreten.
       // Explizit statt als stiller Default, damit ein kuenftig erweitertes

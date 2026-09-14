@@ -15,7 +15,7 @@ describe('dashboardSucheSchema', () => {
   })
 
   it('lehnt einen unbekannten Typ ab', () => {
-    expect(dashboardSucheSchema.safeParse({ typ: 'umfragen', q: 'test' }).success).toBe(false)
+    expect(dashboardSucheSchema.safeParse({ typ: 'abfallkalender', q: 'test' }).success).toBe(false)
   })
 
   it('lehnt weniger als zwei Zeichen ab', () => {

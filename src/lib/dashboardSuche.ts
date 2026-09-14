@@ -2,7 +2,7 @@
  * Suche im Verwaltungs-Dashboard.
  */
 
-export const SUCH_TYPEN = ['beitraege', 'maengel', 'fragen', 'warnmeldungen'] as const
+export const SUCH_TYPEN = ['beitraege', 'maengel', 'fragen', 'warnmeldungen', 'umfragen'] as const
 export type SuchTyp = (typeof SUCH_TYPEN)[number]
 
 /**
