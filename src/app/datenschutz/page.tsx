@@ -71,6 +71,12 @@ export default function DatenschutzPage() {
       location: 'USA / SCC (Art. 46 DSGVO)',
     },
     {
+      name: 'Google Ireland Ltd.',
+      purpose: 'Zustellung der Push-Benachrichtigungen an Android-Geräte (Firebase Cloud Messaging)',
+      data: 'Push-Token, Gerätekennung',
+      location: 'EU / USA, SCC (Art. 46 DSGVO)',
+    },
+    {
       name: 'Resend, Inc.',
       purpose: 'Transaktions-E-Mails, Demo-Anfragen',
       data: 'E-Mail-Adresse, Name',
@@ -190,6 +196,8 @@ export default function DatenschutzPage() {
           <P>
             Mit Einwilligung über die Browser-/Geräteberechtigung können Push-Benachrichtigungen
             aktiviert werden. Dabei werden über OneSignal Nutzer-ID und Gemeinde-Slug verarbeitet.
+            Die Zustellung an Android-Geräte erfolgt technisch über Firebase Cloud Messaging von
+            Google; dabei werden Push-Token und Gerätekennung übermittelt.
             Die Einwilligung kann jederzeit in den Profileinstellungen widerrufen werden.
           </P>
           <P>
