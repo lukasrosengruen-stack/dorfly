@@ -89,7 +89,7 @@ export default function MaengelSection({ maengel: initialMaengel, gesamt, offene
       const res = await fetch('/api/maengel/status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mangelId: id, status, nachricht: nachricht || undefined }),
+        body: JSON.stringify({ mangelId: id, status, nachricht }),
       })
       if (!res.ok) throw new Error()
       setMaengel(prev => prev.map(m => m.id === id ? { ...m, nachricht_an_buerger: nachricht || null } : m))

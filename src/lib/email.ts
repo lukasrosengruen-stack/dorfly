@@ -142,7 +142,11 @@ function benachrichtigungsHtml(params: {
   text: string
   linkLabel: string
   link: string
+  /** Fusszeile. Der Standard passt auf Nachrichten mit vertraulichem Inhalt. */
+  hinweis?: string
 }) {
+  const hinweis = params.hinweis
+    ?? 'Aus Datenschutzgründen steht der Inhalt der Nachricht nicht in dieser E-Mail. Sie sehen ihn nur in der App.'
   return `
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
       <h2 style="color:#1a1a1a">${params.ueberschrift}</h2>
@@ -151,8 +155,7 @@ function benachrichtigungsHtml(params: {
         ${params.linkLabel}
       </a>
       <p style="color:#999;font-size:13px;margin-top:24px">
-        Aus Datenschutzgründen steht der Inhalt der Nachricht nicht in dieser
-        E-Mail. Sie sehen ihn nur in der App.
+        ${hinweis}
       </p>
     </div>
   `
@@ -192,6 +195,63 @@ export async function sendeGemeinderatAntwortEmail(params: {
       text: 'Auf Ihre Anfrage an den Gemeinderat gibt es eine Antwort.',
       linkLabel: 'Antwort ansehen',
       link: `https://${params.gemeindeSlug}.${ROOT_DOMAIN}/gemeinderat`,
+    }),
+  })
+}
+
+// ── Mängelmelder ────────────────────────────────────────────────────────────
+// Mängel sind privat (RLS: nur Melder und Verwaltung). Titel und Status stehen
+// in der Mail, damit der Melder erkennt, worum es geht — die Nachricht der
+// Verwaltung bleibt der App vorbehalten.
+
+const MAENGEL_STATUS_LABEL: Record<string, string> = {
+  offen: 'Offen',
+  in_bearbeitung: 'In Bearbeitung',
+  erledigt: 'Erledigt',
+}
+
+/** An den Melder, wenn die Verwaltung den Status ändert oder eine Nachricht hinterlässt. */
+export async function sendeMangelUpdateEmail(params: {
+  to: string
+  gemeindeName: string
+  gemeindeSlug: string
+  titel: string
+  status: string | null
+  statusGeaendert: boolean
+  nachrichtGeaendert: boolean
+}) {
+  const statusLabel = params.status ? MAENGEL_STATUS_LABEL[params.status] ?? params.status : null
+
+  // Betreff und Einstiegssatz richten sich danach, was sich tatsächlich getan
+  // hat — eine reine Statusänderung liest sich anders als eine Rückmeldung.
+  const betreff = params.statusGeaendert && statusLabel
+    ? `Dorfly ${params.gemeindeName}: Ihre Meldung ist jetzt „${statusLabel}“`
+    : `Dorfly ${params.gemeindeName}: Rückmeldung zu Ihrer Meldung`
+
+  const saetze: string[] = []
+  if (params.statusGeaendert && statusLabel) {
+    saetze.push(`Ihre Meldung <strong>„${params.titel}“</strong> hat den Status <strong>${statusLabel}</strong>.`)
+  } else {
+    saetze.push(`Es gibt eine Neuigkeit zu Ihrer Meldung <strong>„${params.titel}“</strong>.`)
+  }
+  if (params.nachrichtGeaendert) {
+    saetze.push('Die Verwaltung hat Ihnen dazu eine Nachricht hinterlassen.')
+  }
+
+  return resend().emails.send({
+    from: FROM,
+    to: [params.to],
+    subject: betreff,
+    html: benachrichtigungsHtml({
+      ueberschrift: 'Update zu Ihrer Meldung',
+      text: saetze.join(' '),
+      linkLabel: 'Meldung ansehen',
+      link: `https://${params.gemeindeSlug}.${ROOT_DOMAIN}/maengel`,
+      // Der Standardhinweis spricht von „der Nachricht“ — ohne Nachricht
+      // waere das irrefuehrend.
+      hinweis: params.nachrichtGeaendert
+        ? 'Aus Datenschutzgründen steht die Nachricht der Verwaltung nicht in dieser E-Mail. Sie lesen sie in der App.'
+        : 'Den vollständigen Stand Ihrer Meldung sehen Sie in der App.',
     }),
   })
 }
