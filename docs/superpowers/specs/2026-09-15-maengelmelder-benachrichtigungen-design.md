@@ -97,3 +97,27 @@ nicht aus `profiles.email` — die kann abweichen oder leer sein.
 - Keine Migration: es kommen weder Spalten noch Tabellen dazu.
 - Kein Präferenz-UI im Profil.
 - Keine Benachrichtigung an die Verwaltung bei neuer Meldung.
+
+---
+
+## Nachtrag: „Frag den Bürgermeister“
+
+Dieselben Entscheidungen gelten für die Bürgerfragen (`fragen`): kein Opt-out,
+nur bei echter Änderung, Antworttext der Verwaltung nicht in der Mail.
+
+**Unterschiede zum Mängelmelder:**
+
+- `frageUpdateSchema.antwort` ist `nonEmpty`, der Status wird immer auf
+  `beantwortet` gesetzt. Es gibt also weder einen Status-ohne-Antwort- noch
+  einen Löschfall — die Entscheidungslogik reduziert sich auf „hat sich die
+  Antwort inhaltlich geändert?“
+- Statt eines Titels gibt es nur den Fragetext. Er steht **gekürzt** in Mail
+  und Push, damit der Fragesteller seine Frage wiedererkennt. Das ist seine
+  eigene Eingabe, nicht die Antwort der Verwaltung.
+- Eine nachträglich überarbeitete Antwort wird als Korrektur formuliert
+  („Ergänzte Antwort“) statt als erste Antwort.
+
+**Bausteine:** `src/lib/frageBenachrichtigung.ts` (`frageAntwortIstNeu`,
+`kuerzeFrage`, beide getestet), `sendeBuergerfrageAntwortEmail` in
+`src/lib/email.ts`, Versand in `src/app/api/fragen/update/route.ts`.
+Der Push-Helfer `sendePushAnNutzer` wird mitbenutzt.

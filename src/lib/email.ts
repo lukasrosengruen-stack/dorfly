@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import { kuerzeFrage } from '@/lib/frageBenachrichtigung'
 
 const FROM = `Dorfly <noreply@${process.env.RESEND_FROM_DOMAIN ?? 'dorfly.de'}>`
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'
@@ -252,6 +253,40 @@ export async function sendeMangelUpdateEmail(params: {
       hinweis: params.nachrichtGeaendert
         ? 'Aus Datenschutzgründen steht die Nachricht der Verwaltung nicht in dieser E-Mail. Sie lesen sie in der App.'
         : 'Den vollständigen Stand Ihrer Meldung sehen Sie in der App.',
+    }),
+  })
+}
+
+// ── Frag den Bürgermeister ──────────────────────────────────────────────────
+// Die eigene Frage steht (gekürzt) in der Mail, damit der Fragesteller sie
+// wiedererkennt — sie ist seine eigene Eingabe. Die Antwort der Verwaltung
+// bleibt der App vorbehalten, auch bei öffentlich gestellten Fragen.
+
+/** An den Fragesteller, wenn die Verwaltung seine Frage beantwortet. */
+export async function sendeBuergerfrageAntwortEmail(params: {
+  to: string
+  gemeindeName: string
+  gemeindeSlug: string
+  frage: string
+  /** true, wenn eine bereits beantwortete Frage nachträglich korrigiert wurde. */
+  korrektur: boolean
+}) {
+  const kurz = kuerzeFrage(params.frage, 60)
+
+  return resend().emails.send({
+    from: FROM,
+    to: [params.to],
+    subject: params.korrektur
+      ? `Dorfly ${params.gemeindeName}: Ergänzte Antwort auf Ihre Frage`
+      : `Dorfly ${params.gemeindeName}: Antwort auf Ihre Frage`,
+    html: benachrichtigungsHtml({
+      ueberschrift: params.korrektur ? 'Ergänzte Antwort' : 'Antwort auf Ihre Frage',
+      text: params.korrektur
+        ? `Die Verwaltung hat ihre Antwort auf Ihre Frage <strong>„${kurz}“</strong> überarbeitet.`
+        : `Die Verwaltung hat Ihre Frage <strong>„${kurz}“</strong> beantwortet.`,
+      linkLabel: 'Antwort lesen',
+      link: `https://${params.gemeindeSlug}.${ROOT_DOMAIN}/buergermeister`,
+      hinweis: 'Aus Datenschutzgründen steht die Antwort nicht in dieser E-Mail. Sie lesen sie in der App.',
     }),
   })
 }
