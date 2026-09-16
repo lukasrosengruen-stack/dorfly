@@ -52,7 +52,7 @@ export default function VereinProfil({ verein, posts, istAbonniert: initialAbonn
 
   return (
     <div>
-      <PageHeader gemeindeName="" title={verein.verein_name} showBack />
+      <PageHeader gemeindeName="" title={verein.verein_name} showBack backFallback="/vereine" />
 
       <div className="p-4 space-y-4 pt-4">
         {/* Kopfbereich */}

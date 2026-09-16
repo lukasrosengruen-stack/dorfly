@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { ShieldAlert, ShieldCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { getGemeinde } from '@/lib/gemeinde'
+import { ZurueckButton } from '@/components/ui'
 import { SEVERITY_LABEL, SEVERITY_COLOR, SEVERITY_BG, type WarnSeverity } from '@/features/warnmeldungen/types'
 
 export const metadata: Metadata = { title: 'Warnmeldungen – Dorfly' }
@@ -24,12 +25,16 @@ export default async function WarnmeldungenPage() {
 
   return (
     <div className="min-h-screen bg-[#f5f7fc]">
-      <div className="bg-red-600 px-6 pt-14 pb-6">
-        <p className="text-[10px] font-bold tracking-[3px] text-red-200 uppercase">{gemeinde?.name}</p>
+      {/* pt-safe-header statt pt-14 wegen Notch/Dynamic Island */}
+      <div className="bg-red-600 px-6 pt-safe-header pb-6">
+        <div className="-ml-2 -mt-1 mb-1">
+          <ZurueckButton fallback="/home" variant="hell" />
+        </div>
+        <p className="text-[10px] font-bold tracking-[3px] text-red-50 uppercase">{gemeinde?.name}</p>
         <h1 className="text-white font-extrabold text-[28px] mt-1.5 leading-snug">
           Warnmeldungen
         </h1>
-        <p className="text-white/60 text-[13px] mt-1.5">
+        <p className="text-red-50 text-[13px] mt-1.5">
           {liste.length > 0
             ? `${liste.length} aktive Warnung${liste.length !== 1 ? 'en' : ''}`
             : 'Keine aktiven Warnmeldungen'}

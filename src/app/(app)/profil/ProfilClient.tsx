@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { useState, useEffect } from 'react'
 import { Profile } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
+import { ZurueckButton } from '@/components/ui'
 import { updateProfil } from '@/app/actions/profil'
 import { useRouter } from 'next/navigation'
 import { LogOut, Shield, Pencil, X, Check, Loader2, User, MapPin, KeyRound, Eye, EyeOff, Bell, Mail } from 'lucide-react'
@@ -180,8 +181,10 @@ export default function ProfilClient({ profile, email, gemeindeSlug }: { profile
 
   return (
     <div>
-      <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">Profil</h1>
+      {/* pt-safe-header statt pt-12 wegen Notch/Dynamic Island */}
+      <div className="bg-white border-b border-gray-100 px-4 pt-safe-header pb-4 flex items-center gap-2">
+        <ZurueckButton fallback="/home" variant="dunkel" label={false} />
+        <h1 className="text-xl font-bold text-gray-900 flex-1">Profil</h1>
         {!editing
           ? <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 text-sm text-primary-500 font-medium">
               <Pencil className="w-4 h-4" /> Bearbeiten

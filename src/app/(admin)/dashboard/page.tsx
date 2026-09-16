@@ -11,6 +11,7 @@ import PostVerwaltungSection from '@/components/dashboard/PostVerwaltungSection'
 import BuergerfrageSection from '@/components/dashboard/BuergerfrageSection'
 import MaengelSection from '@/components/dashboard/MaengelSection'
 import UmfragenSection from '@/components/dashboard/UmfragenSection'
+import { ZurueckButton } from '@/components/ui'
 import { mergeArbeitsset } from '@/lib/dashboardArbeitsset'
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
@@ -489,9 +490,12 @@ export default async function DashboardPage() {
           unter Statusleiste/Dynamic Island. Gleiches Muster wie in
           VereinPostVerwaltung und PageHeader. */}
       <div className="bg-white border-b border-gray-200 px-4 sm:px-8 pt-safe-header pb-5">
+        <div className="-ml-2 mb-1">
+          <ZurueckButton fallback="/home" variant="dunkel" />
+        </div>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-0.5">
+            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-0.5">
               {gemeinde?.name ?? 'Gemeinde'} · {gemeinde?.bundesland}
             </p>
             <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>

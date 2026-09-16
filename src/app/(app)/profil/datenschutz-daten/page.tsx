@@ -2,7 +2,8 @@ import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Shield, Database, Download, ChevronLeft } from 'lucide-react'
+import { Shield, Database, Download } from 'lucide-react'
+import { ZurueckButton } from '@/components/ui'
 import DownloadButton from './DownloadButton'
 
 export const metadata: Metadata = { title: 'Datenschutz & Daten – Dorfly' }
@@ -14,10 +15,9 @@ export default async function DatenschutzDatenPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-4 flex items-center gap-3">
-        <Link href="/profil" className="p-1.5 rounded-xl hover:bg-gray-100 transition-colors">
-          <ChevronLeft className="w-5 h-5 text-gray-500" />
-        </Link>
+      {/* pt-safe-header statt pt-12 wegen Notch/Dynamic Island */}
+      <div className="bg-white border-b border-gray-100 px-4 pt-safe-header pb-4 flex items-center gap-2">
+        <ZurueckButton fallback="/profil" variant="dunkel" label={false} />
         <h1 className="text-xl font-bold text-gray-900">Datenschutz & Daten</h1>
       </div>
 

@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
-import { ChevronLeft, Accessibility } from 'lucide-react'
+import { Accessibility } from 'lucide-react'
+import { ZurueckButton } from '@/components/ui'
 
 export const metadata: Metadata = { title: 'Barrierefreiheit – Dorfly' }
 
@@ -25,10 +25,9 @@ export default async function BarrierefreiheitPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-100 px-4 pt-12 pb-4 flex items-center gap-3 sticky top-0 z-10">
-        <Link href="/profil" className="p-1.5 rounded-xl hover:bg-gray-100 transition-colors" aria-label="Zurück zum Profil">
-          <ChevronLeft className="w-5 h-5 text-gray-500" aria-hidden="true" />
-        </Link>
+      {/* pt-safe-header statt pt-12 wegen Notch/Dynamic Island */}
+      <div className="bg-white border-b border-gray-100 px-4 pt-safe-header pb-4 flex items-center gap-2 sticky top-0 z-10">
+        <ZurueckButton fallback="/profil" variant="dunkel" label={false} />
         <h1 className="text-xl font-bold text-gray-900">Barrierefreiheit</h1>
       </div>
 

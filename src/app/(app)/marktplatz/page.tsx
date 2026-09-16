@@ -16,6 +16,7 @@ export default async function MarktplatzPage() {
       <PageHeader
         gemeindeName={gemeinde?.name}
         title="Marktplatz"
+        showBack
         subtitle="Lokale Angebote & Gesuche"
       />
 

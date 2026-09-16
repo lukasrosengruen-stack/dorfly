@@ -26,7 +26,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="min-h-screen bg-[#F4F6F9]">
-      <main className="pb-nav">
+      {/* id + tabIndex wie im (app)-Layout: Ziel des Skip-Links und des
+          Fokussprungs beim Tap auf den bereits aktiven Tab. */}
+      <main id="main-content" tabIndex={-1} className="pb-nav outline-none">
         {children}
       </main>
       <BottomNav

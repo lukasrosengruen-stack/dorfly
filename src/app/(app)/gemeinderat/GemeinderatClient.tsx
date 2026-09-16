@@ -7,6 +7,7 @@ import { format, formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
 import { Scale, Users, Send, X, Loader2, MessageCircle, User, CheckCircle, Clock, Mail, ChevronDown } from 'lucide-react'
 import { buildSocialUrl } from '@/lib/social'
+import { ZurueckButton } from '@/components/ui'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 import Link from 'next/link'
 import { clsx } from 'clsx'
@@ -112,15 +113,22 @@ export default function GemeinderatClient({ posts, raete, meineFragen, gemeindeI
 
   return (
     <div className="min-h-screen bg-[#f5f7fc]">
-      {/* Header */}
-      <div className="bg-primary-500 px-4 pt-10 pb-0 sticky top-0 z-10">
+      {/* Header – pt-safe-header statt pt-10 wegen Notch/Dynamic Island */}
+      <div className="bg-primary-500 px-4 pt-safe-header pb-0 sticky top-0 z-10">
+        <div className="-mt-1 mb-1">
+          <ZurueckButton fallback="/home" variant="hell" />
+        </div>
         <div className="flex items-start justify-between mb-3">
           <div>
             <p className="text-gold-500 text-[10px] font-bold tracking-[3px] uppercase">{gemeindeName}</p>
             <h1 className="text-white font-extrabold text-[22px] leading-tight mt-0.5">Gemeinderat</h1>
           </div>
-          <Link href="/profil" className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-            <User className="w-4 h-4 text-white" />
+          <Link
+            href="/profil"
+            aria-label="Zum Profil"
+            className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0"
+          >
+            <User className="w-4 h-4 text-white" aria-hidden="true" />
           </Link>
         </div>
         <div role="tablist" aria-label="Gemeinderat Bereiche" className="flex gap-1.5 pb-3">

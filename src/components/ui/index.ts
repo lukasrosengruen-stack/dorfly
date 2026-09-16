@@ -23,3 +23,12 @@ export type { BadgeProps } from './Badge'
 
 export { Logo } from './Logo'
 export type { LogoProps } from './Logo'
+
+export { ZurueckButton } from './ZurueckButton'
+export type { ZurueckButtonProps } from './ZurueckButton'
+
+export { PostBild } from './PostBild'
+export type { PostBildProps } from './PostBild'
+
+export { AufklappbarerText } from './AufklappbarerText'
+export type { AufklappbarerTextProps } from './AufklappbarerText'

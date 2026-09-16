@@ -137,7 +137,7 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
 
   return (
     <div>
-      <PageHeader gemeindeName={gemeindeName} title="Mein Gewerbe" />
+      <PageHeader gemeindeName={gemeindeName} title="Mein Gewerbe" showBack />
 
       <div className="p-4 space-y-4 pt-4">
         {/* Kein Betrieb angelegt */}

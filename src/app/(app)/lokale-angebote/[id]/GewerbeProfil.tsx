@@ -1,12 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { ArrowLeft, Globe, MapPin, Clock, Users, Building2 } from 'lucide-react'
+import { Globe, MapPin, Clock, Users, Building2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
 import { toast } from 'sonner'
-import { Button, Card } from '@/components/ui'
+import { Button, Card, ZurueckButton } from '@/components/ui'
 import type { OrganisationMitBranche, Post } from '@/types/database'
 import { useGuestGuard } from '@/hooks/useGuestGuard'
 
@@ -20,7 +19,6 @@ interface Props {
 
 export default function GewerbeProfil({ betrieb, posts, istAbonniert: initialAbonniert, abonnentenAnzahl: initialAnzahl }: Props) {
   const brancheName = betrieb.gewerbe_branchen?.name
-  const router = useRouter()
   const [abonniert, setAbonniert] = useState(initialAbonniert)
   const [anzahl, setAnzahl] = useState(initialAnzahl)
   const [loading, setLoading] = useState(false)
@@ -50,10 +48,11 @@ export default function GewerbeProfil({ betrieb, posts, istAbonniert: initialAbo
     <div>
       {/* Header */}
       <div className="bg-primary-500 text-white">
-        <div className="px-4 pt-12 pb-6">
-          <button onClick={() => router.back()} className="flex items-center gap-1 text-white/70 text-xs font-bold mb-4">
-            <ArrowLeft className="w-4 h-4" /> Zurück
-          </button>
+        {/* pt-safe-header statt pt-12 wegen Notch/Dynamic Island */}
+        <div className="px-4 pt-safe-header pb-6">
+          <div className="-ml-2 mb-3">
+            <ZurueckButton fallback="/lokale-angebote" variant="hell" />
+          </div>
 
           <div className="flex items-center gap-4">
             {betrieb.logo_url ? (

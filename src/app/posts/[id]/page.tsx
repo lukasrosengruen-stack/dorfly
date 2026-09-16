@@ -89,8 +89,12 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
       {/* Beitrag */}
       <div className="max-w-2xl mx-auto">
+        {/* Gleiche Bildregeln wie im Newsfeed statt fester h-64: sonst werden
+            Hochkant-Plakate hier beschnitten, obwohl sie in der Liste passen. */}
         {bilder.length > 0 && (
-          <img src={bilder[0]} alt={post.titel} className="w-full h-64 object-cover" />
+          <span className="feed-bild-rahmen block">
+            <img src={bilder[0]} alt={post.titel} className="feed-bild" />
+          </span>
         )}
 
         <div className="bg-white p-6 shadow-sm">

@@ -14,6 +14,7 @@ import { PostMitProfil, PostChannel } from '@/types/database'
 import GalleryLightbox from '@/components/GalleryLightbox'
 import ShareButton from '@/components/ShareButton'
 import ReportButton from '@/components/ReportButton'
+import { AufklappbarerText, PostBild } from '@/components/ui'
 import { renderRichText } from '@/lib/richText'
 import { useState } from 'react'
 
@@ -106,23 +107,13 @@ export function FeedCard({ post, expanded, onToggleExpand, gemeindeName }: FeedC
           </div>
         </div>
 
-        {/* Bild */}
-        {bilder.length > 0 && (
-          <button
-            className="relative w-full cursor-pointer"
-            onClick={() => setGallery({ bilder, index: 0 })}
-            aria-label={`Bildergalerie öffnen (${bilder.length} ${bilder.length === 1 ? 'Bild' : 'Bilder'})`}
-          >
-            <span className="feed-bild-rahmen block">
-              <img src={bilder[0]} alt={post.titel} className="feed-bild" />
-            </span>
-            {bilder.length > 1 && (
-              <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                <Images className="w-3 h-3" aria-hidden="true" /> {bilder.length}
-              </div>
-            )}
-          </button>
-        )}
+        {/* Bild – onOeffnen, weil der "N Fotos"-Knopf im Banner dieselbe
+            Galerie öffnet und beide sich einen Status teilen müssen. */}
+        <PostBild
+          bilder={bilder}
+          alt={post.titel}
+          onOeffnen={() => setGallery({ bilder, index: 0 })}
+        />
 
         {/* Inhalt */}
         <div className="p-4">
@@ -179,14 +170,15 @@ export function FeedCard({ post, expanded, onToggleExpand, gemeindeName }: FeedC
             </div>
           )}
 
-          <button onClick={onToggleExpand} className="w-full text-left" aria-expanded={expanded}>
-            <p className={clsx('text-gray-600 text-sm mt-2 leading-relaxed whitespace-pre-wrap', !expanded && 'line-clamp-3')}>
+          <div className="mt-2">
+            <AufklappbarerText
+              expanded={expanded}
+              onToggle={onToggleExpand}
+              className="text-gray-600 text-sm leading-relaxed"
+            >
               {renderRichText(post.inhalt)}
-            </p>
-            {!expanded && (
-              <span className="text-xs text-primary-500 font-semibold mt-1 block">Mehr lesen</span>
-            )}
-          </button>
+            </AufklappbarerText>
+          </div>
 
           {/* Footer */}
           <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">

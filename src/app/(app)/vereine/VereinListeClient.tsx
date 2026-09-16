@@ -48,6 +48,7 @@ export default function VereinListeClient({ vereine, kategorien, profile, abonne
       <PageHeader
         gemeindeName={gemeindeName}
         title="Vereine & Organisationen"
+        showBack
         actions={
           kategorien.length > 0 ? (
             <div className="flex items-center gap-1.5">

@@ -1,9 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronLeft, Bell, Mail, CheckCircle } from 'lucide-react'
+import { Bell, Mail, CheckCircle } from 'lucide-react'
 import { clsx } from 'clsx'
-import Link from 'next/link'
+import { ZurueckButton } from '@/components/ui'
 import { ABFALL_TYP_CONFIG } from '@/lib/icsParser'
 import type { AbfallTypSchluessel } from '@/lib/icsParser'
 import { Trash2 } from 'lucide-react'
@@ -64,11 +64,10 @@ export default function AbfallEinstellungenClient({
   return (
     <div className="min-h-screen bg-[#F4F6F9] pb-28">
       {/* Header */}
-      <div className="bg-primary-500 px-4 pt-14 pb-5">
-        <div className="flex items-center gap-3 mb-1">
-          <Link href="/abfallkalender" className="text-white/80 hover:text-white">
-            <ChevronLeft className="w-5 h-5" />
-          </Link>
+      {/* pt-safe-header statt pt-14 wegen Notch/Dynamic Island */}
+      <div className="bg-primary-500 px-4 pt-safe-header pb-5">
+        <div className="flex items-center gap-2 mb-1">
+          <ZurueckButton fallback="/abfallkalender" variant="hell" label={false} />
           <p className="text-primary-200 text-xs font-bold tracking-[0.2em] uppercase">
             {gemeindeName}
           </p>

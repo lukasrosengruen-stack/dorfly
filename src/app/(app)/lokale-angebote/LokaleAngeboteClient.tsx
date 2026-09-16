@@ -49,6 +49,7 @@ export default function LokaleAngeboteClient({ betriebe, branchen, profile, abon
       <PageHeader
         gemeindeName={gemeindeName}
         title="Lokale Angebote"
+        showBack
         actions={
           branchen.length > 0 ? (
             <div className="flex items-center gap-1.5">

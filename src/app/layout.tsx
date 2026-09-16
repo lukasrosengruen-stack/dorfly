@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next'
 import { Plus_Jakarta_Sans, DM_Sans } from 'next/font/google'
 import { Toaster } from 'sonner'
+import NavigationTracker from '@/components/NavigationTracker'
+import HardwareBackHandler from '@/components/HardwareBackHandler'
 import { getGemeinde } from '@/lib/gemeinde'
 import { buildThemeStyle } from '@/lib/buildThemeStyle'
 import './globals.css'
@@ -60,6 +62,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         >
           Zum Hauptinhalt springen
         </a>
+        {/* Stempelt die Navigationstiefe in jeden History-Eintrag. Im
+            Root-Layout, damit auch /impressum & Co. davon profitieren. */}
+        <NavigationTracker />
+        <HardwareBackHandler />
         {children}
         <Toaster richColors position="top-center" />
       </body>

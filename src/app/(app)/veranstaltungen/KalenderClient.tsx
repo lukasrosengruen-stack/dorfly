@@ -3,9 +3,11 @@
 import { useState, useMemo } from 'react'
 import { format, isToday, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addMonths, isWithinInterval, parseISO } from 'date-fns'
 import { de } from 'date-fns/locale'
-import { Calendar, Clock, MapPin, ChevronLeft, User } from 'lucide-react'
+import { Calendar, Clock, MapPin, User } from 'lucide-react'
 import { clsx } from 'clsx'
 import Link from 'next/link'
+import { AufklappbarerText, PostBild, ZurueckButton } from '@/components/ui'
+import { renderRichText } from '@/lib/richText'
 
 type Zeitraum = 'heute' | 'woche' | 'monat' | 'naechster_monat'
 
@@ -76,17 +78,20 @@ export default function KalenderClient({ veranstaltungen, gemeindeName }: Props)
 
   return (
     <div className="min-h-screen bg-[#F4F6F9] pb-28">
-      {/* Header */}
-      <div className="bg-primary-500 px-4 pt-14 pb-5">
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center gap-3">
-            <Link href="/home" className="text-white/80 hover:text-white">
-              <ChevronLeft className="w-5 h-5" />
-            </Link>
+      {/* Header – pt-safe-header statt pt-14: sonst liegt der Gemeindename
+          unter der Notch. */}
+      <div className="bg-primary-500 px-4 pt-safe-header pb-5">
+        <div className="mb-1 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ZurueckButton fallback="/home" variant="hell" label={false} />
             <p className="text-primary-200 text-xs font-bold tracking-[0.2em] uppercase">{gemeindeName}</p>
           </div>
-          <Link href="/profil" className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-            <User className="w-4 h-4 text-white" />
+          <Link
+            href="/profil"
+            aria-label="Zum Profil"
+            className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0"
+          >
+            <User className="w-4 h-4 text-white" aria-hidden="true" />
           </Link>
         </div>
         <h1 className="text-white font-black text-2xl">Veranstaltungen</h1>
@@ -114,9 +119,9 @@ export default function KalenderClient({ veranstaltungen, gemeindeName }: Props)
       <div className="px-4 py-5 space-y-6">
         {grouped.length === 0 && (
           <div className="bg-white rounded-2xl shadow-sm p-10 text-center">
-            <Calendar className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="font-black text-gray-400 uppercase tracking-wide text-sm">Keine Veranstaltungen</p>
-            <p className="text-gray-400 text-xs mt-1">für diesen Zeitraum</p>
+            <Calendar className="w-10 h-10 text-gray-400 mx-auto mb-3" aria-hidden="true" />
+            <p className="font-black text-gray-600 uppercase tracking-wide text-sm">Keine Veranstaltungen</p>
+            <p className="text-gray-600 text-xs mt-1">für diesen Zeitraum</p>
           </div>
         )}
 
@@ -132,7 +137,7 @@ export default function KalenderClient({ veranstaltungen, gemeindeName }: Props)
                   'w-12 h-12 rounded-2xl flex flex-col items-center justify-center shrink-0',
                   istHeute ? 'bg-primary-500' : 'bg-white shadow-sm'
                 )}>
-                  <span className={clsx('text-xs font-bold uppercase leading-none', istHeute ? 'text-primary-200' : 'text-gray-400')}>
+                  <span className={clsx('text-xs font-bold uppercase leading-none', istHeute ? 'text-primary-200' : 'text-gray-600')}>
                     {format(datum, 'EEE', { locale: de })}
                   </span>
                   <span className={clsx('text-xl font-black leading-tight', istHeute ? 'text-white' : 'text-gray-900')}>
@@ -143,7 +148,7 @@ export default function KalenderClient({ veranstaltungen, gemeindeName }: Props)
                   <p className={clsx('font-black text-sm', istHeute ? 'text-primary-600' : 'text-gray-700')}>
                     {istHeute ? 'Heute' : format(datum, 'EEEE', { locale: de })}
                   </p>
-                  <p className="text-xs text-gray-400">{format(datum, 'd. MMMM yyyy', { locale: de })}</p>
+                  <p className="text-xs text-gray-600">{format(datum, 'd. MMMM yyyy', { locale: de })}</p>
                 </div>
               </div>
 
@@ -156,29 +161,35 @@ export default function KalenderClient({ veranstaltungen, gemeindeName }: Props)
 
                   return (
                     <div key={v.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                      {v.bild_url && (
-                        <img src={v.bild_url} alt={v.titel} className="w-full h-40 object-cover" />
-                      )}
+                      {/* Gleiche Bilddarstellung wie im Newsfeed: natürliches
+                          Seitenverhältnis im Korridor 1.91:1 bis 4:5 statt
+                          fester Höhe. Alt-Text ist wie dort der Titel. */}
+                      <PostBild bilder={v.bild_url ? [v.bild_url] : []} alt={v.titel} />
                       <div className="p-4">
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
                           <span className="flex items-center gap-1 text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full">
-                            <Clock className="w-3 h-3" />
+                            <Clock className="w-3 h-3" aria-hidden="true" />
                             {uhrzeit} Uhr
                           </span>
                           {v.veranstaltung_ort && (
                             <span className="flex items-center gap-1 text-xs font-bold text-gray-600 bg-gray-100 px-2.5 py-1 rounded-full">
-                              <MapPin className="w-3 h-3" />
+                              <MapPin className="w-3 h-3" aria-hidden="true" />
                               {v.veranstaltung_ort}
                             </span>
                           )}
-                          <span className="text-xs text-gray-400 ml-auto truncate">{autorName}</span>
+                          <span className="text-xs text-gray-500 ml-auto truncate">{autorName}</span>
                         </div>
                         <h3 className="font-black text-gray-900 text-base leading-snug uppercase tracking-wide">
                           {v.titel}
                         </h3>
-                        <p className="text-gray-600 text-sm mt-1.5 leading-relaxed line-clamp-3">
-                          {v.inhalt}
-                        </p>
+                        {/* Der volle Text steht schon in der Query – gekürzt
+                            wurde bisher nur per CSS, ohne Ausweg. Jetzt
+                            derselbe Aufklapper wie im Newsfeed. */}
+                        <div className="mt-1.5">
+                          <AufklappbarerText className="text-gray-600 text-sm leading-relaxed">
+                            {renderRichText(v.inhalt)}
+                          </AufklappbarerText>
+                        </div>
                       </div>
                     </div>
                   )

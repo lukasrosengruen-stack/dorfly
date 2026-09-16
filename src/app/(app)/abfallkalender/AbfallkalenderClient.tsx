@@ -3,7 +3,8 @@
 import { useState, useMemo } from 'react'
 import { format, isToday, isTomorrow, parseISO, addDays, isWithinInterval } from 'date-fns'
 import { de } from 'date-fns/locale'
-import { ChevronLeft, Settings, Trash2, User } from 'lucide-react'
+import { Settings, Trash2, User } from 'lucide-react'
+import { ZurueckButton } from '@/components/ui'
 import { clsx } from 'clsx'
 import Link from 'next/link'
 import { getTerminAnzeigeConfig } from '@/lib/abfallkalenderSammlung'
@@ -57,13 +58,11 @@ export default function AbfallkalenderClient({
 
   return (
     <div className="min-h-screen bg-[#F4F6F9] pb-28">
-      {/* Header */}
-      <div className="bg-primary-500 px-4 pt-14 pb-5">
+      {/* Header – pt-safe-header statt pt-14 wegen Notch/Dynamic Island */}
+      <div className="bg-primary-500 px-4 pt-safe-header pb-5">
         <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center gap-3">
-            <Link href="/home" className="text-white/80 hover:text-white">
-              <ChevronLeft className="w-5 h-5" />
-            </Link>
+          <div className="flex items-center gap-2">
+            <ZurueckButton fallback="/home" variant="hell" label={false} />
             <p className="text-primary-200 text-xs font-bold tracking-[0.2em] uppercase">
               {gemeindeName}
             </p>
@@ -71,13 +70,17 @@ export default function AbfallkalenderClient({
           <div className="flex items-center gap-2">
             <Link
               href="/abfallkalender/einstellungen"
+              aria-label="Abfallkalender-Einstellungen"
               className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0"
-              title="Einstellungen"
             >
-              <Settings className="w-4 h-4 text-white" />
+              <Settings className="w-4 h-4 text-white" aria-hidden="true" />
             </Link>
-            <Link href="/profil" className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-              <User className="w-4 h-4 text-white" />
+            <Link
+              href="/profil"
+              aria-label="Zum Profil"
+              className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0"
+            >
+              <User className="w-4 h-4 text-white" aria-hidden="true" />
             </Link>
           </div>
         </div>

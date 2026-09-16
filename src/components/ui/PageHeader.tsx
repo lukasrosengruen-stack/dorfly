@@ -14,9 +14,9 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { ArrowLeft, User } from 'lucide-react'
+import { User } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { ZurueckButton } from './ZurueckButton'
 
 export interface PageHeaderProps {
   /** Gemeindename – wird in Gold über dem Titel angezeigt */
@@ -27,8 +27,14 @@ export interface PageHeaderProps {
   subtitle?: string
   /** Zusätzliche Elemente rechts neben dem Profil-Link (z. B. Filter-Button) */
   actions?: React.ReactNode
-  /** Zeigt einen "Zurück"-Button über dem Titel (nutzt router.back()) */
+  /** Zeigt einen "Zurück"-Button über dem Titel */
   showBack?: boolean
+  /**
+   * Ziel, wenn keine In-App-History existiert (Deep Link, Push-Öffnung,
+   * PWA-Kaltstart direkt auf dieser Seite). Standard: die Übersicht hinter dem
+   * Mitte-Button der Bottom-Navigation.
+   */
+  backFallback?: string
   /** Sticky (fixiert beim Scrollen) – Standard: true */
   sticky?: boolean
   className?: string
@@ -40,11 +46,10 @@ export function PageHeader({
   subtitle,
   actions,
   showBack = false,
+  backFallback = '/home',
   sticky = true,
   className,
 }: PageHeaderProps) {
-  const router = useRouter()
-
   return (
     <div
       className={cn(
@@ -54,12 +59,9 @@ export function PageHeader({
       )}
     >
       {showBack && (
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-1 text-white/70 text-xs font-bold mb-3"
-        >
-          <ArrowLeft className="w-4 h-4" aria-hidden="true" /> Zurück
-        </button>
+        <div className="-mt-1 mb-1">
+          <ZurueckButton fallback={backFallback} variant="hell" />
+        </div>
       )}
       <div className="flex items-start justify-between gap-3">
         {/* Linke Seite: Gemeindename + Titel */}
