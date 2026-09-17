@@ -109,7 +109,7 @@ export default function DatenschutzPage() {
           Datenschutzerklärung
         </h1>
         <p style={{ color: C.muted, fontSize: 14, marginBottom: 40 }}>
-          Stand: Juli 2026
+          Stand: September 2026
         </p>
 
         {/* 1 */}
@@ -119,14 +119,14 @@ export default function DatenschutzPage() {
           </P>
           <InfoBox>
             <p style={{ margin: 0, color: C.navy, fontSize: 15, lineHeight: 1.8 }}>
-              <strong>Dorfly</strong><br />
-              Lukas Rosengrün<br />
+              <strong>Dorfly UG (haftungsbeschränkt) i.G.</strong><br />
+              vertreten durch den Geschäftsführer Lukas Rosengrün<br />
               Goldregenweg 15<br />
               71139 Ehningen<br />
               Deutschland<br />
               E-Mail:{' '}
-              <a href="mailto:lr@lukas-rosengruen.de" style={{ color: C.blue }}>
-                lr@lukas-rosengruen.de
+              <a href="mailto:lukas.rosengruen@dorfly.de" style={{ color: C.blue }}>
+                lukas.rosengruen@dorfly.de
               </a>
             </p>
           </InfoBox>
@@ -353,8 +353,8 @@ export default function DatenschutzPage() {
           </div>
           <P>
             Zur Wahrnehmung dieser Rechte:{' '}
-            <a href="mailto:lr@lukas-rosengruen.de" style={{ color: C.blue }}>
-              lr@lukas-rosengruen.de
+            <a href="mailto:lukas.rosengruen@dorfly.de" style={{ color: C.blue }}>
+              lukas.rosengruen@dorfly.de
             </a>
           </P>
           <P>
@@ -402,8 +402,8 @@ export default function DatenschutzPage() {
           <div>
             <p style={{ margin: 0, fontWeight: 700, color: C.navy, fontSize: 15 }}>Kontakt bei Datenschutzfragen</p>
             <p style={{ margin: '4px 0 0', color: C.muted, fontSize: 14 }}>
-              <a href="mailto:lr@lukas-rosengruen.de" style={{ color: C.blue }}>
-                lr@lukas-rosengruen.de
+              <a href="mailto:lukas.rosengruen@dorfly.de" style={{ color: C.blue }}>
+                lukas.rosengruen@dorfly.de
               </a>
             </p>
           </div>

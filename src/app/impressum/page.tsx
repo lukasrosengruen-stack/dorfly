@@ -46,10 +46,23 @@ export default function ImpressumPage() {
         {/* Angaben gemäß § 5 DDG */}
         <Section title="Angaben gemäß § 5 DDG">
           <P>
-            <strong>Lukas Rosengrün</strong><br />
+            <strong>Dorfly UG (haftungsbeschränkt) i.G.</strong><br />
             Goldregenweg 15<br />
             71139 Ehningen<br />
             Deutschland
+          </P>
+          <P>
+            <strong>Vertreten durch:</strong><br />
+            Lukas Rosengrün (Geschäftsführer)
+          </P>
+        </Section>
+
+        {/* Registereintrag */}
+        <Section title="Registereintrag">
+          <P>
+            Die Gesellschaft befindet sich in Gründung. Die Eintragung in das Handelsregister
+            steht noch aus; Registergericht und Registernummer werden nach erfolgter Eintragung
+            an dieser Stelle ergänzt.
           </P>
         </Section>
 
@@ -57,8 +70,8 @@ export default function ImpressumPage() {
         <Section title="Kontakt">
           <P>
             E-Mail:{' '}
-            <a href="mailto:lr@lukas-rosengruen.de" style={{ color: C.blue }}>
-              lr@lukas-rosengruen.de
+            <a href="mailto:lukas.rosengruen@dorfly.de" style={{ color: C.blue }}>
+              lukas.rosengruen@dorfly.de
             </a>
           </P>
         </Section>
