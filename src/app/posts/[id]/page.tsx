@@ -2,9 +2,10 @@ import { createClient } from '@supabase/supabase-js'
 import { notFound } from 'next/navigation'
 import { format } from 'date-fns'
 import { de } from 'date-fns/locale'
-import { Calendar, Eye, MapPin, MessageSquare, Users } from 'lucide-react'
+import { Calendar, Eye, MapPin, Users } from 'lucide-react'
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import Image from 'next/image'
 import { PUBLIC_POST_SELECT } from '@/lib/publicPostQuery'
 import { shareCtaZiele } from '@/lib/shareCta'
 import { getGemeindeSlug } from '@/lib/gemeinde'
@@ -88,14 +89,21 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-primary-500 px-4 pt-10 pb-4">
-        <div className="flex items-center gap-2 mb-1">
-          <MessageSquare className="w-5 h-5 text-white" />
-          <span className="text-white font-black text-lg tracking-wide uppercase">Dorfly</span>
-        </div>
-        <p className="text-primary-200 text-xs font-medium">{gemeindeName}</p>
-      </div>
+      {/* Kopf in der Bildsprache der App: offizielle Wortmarke in der weissen
+          Variante (Markenblau waere auf primary-500 nicht lesbar), Gemeindename
+          als Gold-Eyebrow wie im PageHeader. pt-safe-header haelt ihn aus der Notch. */}
+      <header className="bg-primary-500 px-4 pt-safe-header pb-5">
+        <Image
+          src="/logo_dorfly_weiss.png"
+          alt="Dorfly"
+          width={71}
+          height={22}
+          priority
+        />
+        <p className="text-gold-500 text-[10px] font-bold tracking-[3px] uppercase mt-3">
+          {gemeindeName}
+        </p>
+      </header>
 
       {/* Beitrag */}
       <div className="max-w-2xl mx-auto">
@@ -112,12 +120,13 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
             <span className={`text-xs px-2 py-0.5 rounded-full font-bold uppercase tracking-wide ${TAG_COLORS[tag] ?? TAG_COLORS.nachricht}`}>
               {TAG_LABELS[tag] ?? tag}
             </span>
-            <span className="text-xs text-gray-400 ml-auto">
+            {/* text-gray-400 erreicht auf Weiss nur 2.8:1 (Checkliste: mind. 4.5:1) */}
+            <span className="text-xs text-gray-500 ml-auto">
               {format(new Date(post.published_at), 'd. MMMM yyyy', { locale: de })}
             </span>
           </div>
 
-          <h1 className="text-2xl font-black text-gray-900 uppercase tracking-wide leading-snug mb-3">
+          <h1 className="text-[26px] font-extrabold text-gray-900 tracking-[-0.02em] leading-tight mb-3">
             {post.titel}
           </h1>
 
@@ -178,16 +187,26 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
 
-        {/* CTA */}
-        <div className="bg-primary-500 mx-4 my-6 rounded-2xl p-6 text-center">
-          <p className="text-white font-black text-lg uppercase tracking-wide leading-snug mb-1">
+        {/* CTA in der Kartensprache der App: weiche Ecken, getragener Schatten,
+            Sekundaertext aus dem Vordergrund getoent statt in primary-200. */}
+        <div className="bg-primary-500 mx-4 my-6 rounded-[20px] p-6 text-center shadow-[0_4px_14px_rgba(15,45,107,0.33)]">
+          {/* Wortmarke statt App-Icon: Die Karte nennt die Marke, nach der man
+              sucht — der Name gehoert hierher, nicht das Kachel-Symbol. */}
+          <Image
+            src="/logo_dorfly_weiss.png"
+            alt=""
+            width={97}
+            height={30}
+            className="mx-auto mb-4"
+          />
+          <p className="text-white font-extrabold text-xl leading-tight mb-1.5">
             Alle Neuigkeiten aus {gemeindeName}
           </p>
-          <p className="text-primary-200 text-sm mb-4">
+          <p className="text-white/70 text-sm mb-5">
             Bleib informiert – jetzt Dorfly herunterladen
           </p>
           <Link href={ziele.primaer}
-            className="block bg-white text-primary-600 font-bold px-6 py-3 rounded-xl text-sm">
+            className="block bg-white text-primary-600 font-semibold px-6 py-3.5 rounded-2xl text-sm transition-all duration-150 ease-out active:scale-[0.97]">
             Dorfly für {gemeindeName} holen
           </Link>
 
@@ -195,7 +214,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
               Wer hier ankommt, soll auch ohne Anmeldung weiterlesen koennen. */}
           {ziele.sekundaer && (
             <Link href={ziele.sekundaer}
-              className="mt-3 flex items-center justify-center gap-2 border-2 border-white/70 text-white font-semibold px-6 py-3 rounded-xl text-sm">
+              className="mt-3 flex items-center justify-center gap-2 border-2 border-white/60 text-white font-semibold px-6 py-3.5 rounded-2xl text-sm transition-all duration-150 ease-out active:scale-[0.97]">
               <Eye className="w-4 h-4" aria-hidden="true" />
               Ohne Anmeldung ansehen
             </Link>
