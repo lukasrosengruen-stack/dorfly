@@ -2,9 +2,12 @@ import { createClient } from '@supabase/supabase-js'
 import { notFound } from 'next/navigation'
 import { format } from 'date-fns'
 import { de } from 'date-fns/locale'
-import { Calendar, MapPin, MessageSquare, Users } from 'lucide-react'
+import { Calendar, Eye, MapPin, MessageSquare, Users } from 'lucide-react'
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { PUBLIC_POST_SELECT } from '@/lib/publicPostQuery'
+import { shareCtaZiele } from '@/lib/shareCta'
+import { getGemeindeSlug } from '@/lib/gemeinde'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,12 +15,18 @@ const supabase = createClient(
 )
 
 async function getPost(id: string) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('posts')
-    .select('id, titel, inhalt, bild_url, bilder_urls, tag, channel, veranstaltung_datum, veranstaltung_ort, post_termine(datum), sammlung_datum, sammlung_organisator, published_at, gemeinde_id, profiles(display_name, verein_name), gemeinden(name)')
+    .select(PUBLIC_POST_SELECT)
     .eq('id', id)
     .eq('status', 'published')
     .single()
+
+  // PGRST116 heisst "keine Zeile" — das ist ein echtes 404. Jeder andere Fehler
+  // muss sichtbar werden: Ein fehlendes Leserecht (42501) hat sich hier lange als
+  // "Beitrag nicht gefunden" getarnt, weil der Fehler verschluckt wurde.
+  if (error && error.code !== 'PGRST116') throw error
+
   return data
 }
 
@@ -65,6 +74,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   const post = await getPost(id)
   if (!post) notFound()
 
+  const ziele = shareCtaZiele(await getGemeindeSlug())
   const gemeindeName = (post.gemeinden as { name?: string } | null)?.name ?? 'Gemeinde Ehningen'
   const autor = post.profiles as { display_name?: string; verein_name?: string } | null
   const autorName = autor?.verein_name ?? autor?.display_name ?? gemeindeName
@@ -176,10 +186,20 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           <p className="text-primary-200 text-sm mb-4">
             Bleib informiert – jetzt Dorfly herunterladen
           </p>
-          <Link href="/login"
-            className="inline-block bg-white text-primary-600 font-bold px-6 py-3 rounded-xl text-sm">
-            Jetzt registrieren
+          <Link href={ziele.primaer}
+            className="block bg-white text-primary-600 font-bold px-6 py-3 rounded-xl text-sm">
+            Dorfly für {gemeindeName} holen
           </Link>
+
+          {/* Seit dem Gastzugang ist Registrierung nicht mehr der einzige Weg:
+              Wer hier ankommt, soll auch ohne Anmeldung weiterlesen koennen. */}
+          {ziele.sekundaer && (
+            <Link href={ziele.sekundaer}
+              className="mt-3 flex items-center justify-center gap-2 border-2 border-white/70 text-white font-semibold px-6 py-3 rounded-xl text-sm">
+              <Eye className="w-4 h-4" aria-hidden="true" />
+              Ohne Anmeldung ansehen
+            </Link>
+          )}
         </div>
       </div>
     </div>

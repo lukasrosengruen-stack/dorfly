@@ -15,7 +15,12 @@ export default function ShareButton({ postId, titel, inhalt, gemeindeName = 'Ehn
   const [copied, setCopied] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
-  const url = `${typeof window !== 'undefined' ? window.location.origin : 'https://dorfly.vercel.app'}/posts/${postId}`
+  // Im Browser zaehlt der tatsaechliche Origin, damit der Link die Gemeinde-Subdomain
+  // behaelt — ohne sie fehlt dem Empfaenger der Gemeinde-Kontext.
+  const origin = typeof window !== 'undefined'
+    ? window.location.origin
+    : process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.dorfly.de'
+  const url = `${origin}/posts/${postId}`
   const text = `${titel}\n\n${inhalt.slice(0, 200)}${inhalt.length > 200 ? '...' : ''}`
 
   useEffect(() => {
