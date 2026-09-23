@@ -124,5 +124,12 @@ export default async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon\\.ico|manifest\\.json|icons|screenshots|badges|OneSignalSDKWorker\\.js|lukas-rosengruen\\.jpg).*)'],
+  // Statische Bilddateien generisch ausnehmen, nicht nur einzelne Ordner und
+  // Dateinamen: Eine neue Datei direkt in public/ lief sonst durch die Middleware,
+  // wurde wie eine geschuetzte Route behandelt und nach /login umgeleitet — der
+  // Image-Optimizer bekam den Redirect statt des Bildes ("isn't a valid image").
+  // public/ ist ohnehin oeffentlich, hier gibt es nichts zu schuetzen.
+  matcher: [
+    '/((?!_next/static|_next/image|favicon\\.ico|manifest\\.json|icons|screenshots|badges|OneSignalSDKWorker\\.js|lukas-rosengruen\\.jpg|.*\\.(?:png|jpe?g|gif|svg|webp|avif|ico)$).*)',
+  ],
 }
