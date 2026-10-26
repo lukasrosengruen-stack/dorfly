@@ -46,7 +46,7 @@ export function MangelMeldenForm({ profile, onClose, onSuccess }: MangelMeldenFo
     try {
       const permission = await Camera.requestPermissions({ permissions: ['camera'] })
       if (permission.camera === 'denied') {
-        toast.error('Kamera-Zugriff verweigert – bitte in den iOS-Einstellungen für Dorfly erlauben')
+        toast.error('Kamera-Zugriff verweigert – bitte in den App-Einstellungen für Dorfly erlauben')
         return
       }
 
@@ -84,7 +84,7 @@ export function MangelMeldenForm({ profile, onClose, onSuccess }: MangelMeldenFo
       try {
         const permission = await Geolocation.requestPermissions()
         if (permission.location === 'denied') {
-          toast.error('Standort-Zugriff verweigert – bitte in den iOS-Einstellungen für Dorfly erlauben')
+          toast.error('Standort-Zugriff verweigert – bitte in den App-Einstellungen für Dorfly erlauben')
           return
         }
         const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true })
