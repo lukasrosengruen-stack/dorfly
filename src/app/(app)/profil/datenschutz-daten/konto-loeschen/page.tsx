@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { ChevronLeft, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
+import { oneSignalAbmelden } from '@/lib/oneSignalAbmelden'
 
 export default function KontoLoeschenPage() {
   const router = useRouter()
@@ -18,6 +19,7 @@ export default function KontoLoeschenPage() {
     try {
       const res = await fetch('/api/auth/loeschen', { method: 'DELETE' })
       if (res.ok) {
+        await oneSignalAbmelden()
         await supabase.auth.signOut()
         router.push('/login')
       } else {

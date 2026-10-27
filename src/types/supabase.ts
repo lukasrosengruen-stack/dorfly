@@ -159,7 +159,7 @@ export type Database = {
         Row: {
           ablauft_am: string
           angenommen_am: string | null
-          eingeladen_von: string
+          eingeladen_von: string | null
           email: string
           erstellt_am: string
           gemeinde_id: string
@@ -175,7 +175,7 @@ export type Database = {
         Insert: {
           ablauft_am?: string
           angenommen_am?: string | null
-          eingeladen_von: string
+          eingeladen_von?: string | null
           email: string
           erstellt_am?: string
           gemeinde_id: string
@@ -191,7 +191,7 @@ export type Database = {
         Update: {
           ablauft_am?: string
           angenommen_am?: string | null
-          eingeladen_von?: string
+          eingeladen_von?: string | null
           email?: string
           erstellt_am?: string
           gemeinde_id?: string
@@ -1051,7 +1051,7 @@ export type Database = {
           id: string
           option_id: string | null
           umfrage_id: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           antwort_text?: string | null
@@ -1060,7 +1060,7 @@ export type Database = {
           id?: string
           option_id?: string | null
           umfrage_id: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           antwort_text?: string | null
@@ -1069,7 +1069,7 @@ export type Database = {
           id?: string
           option_id?: string | null
           umfrage_id?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -1178,19 +1178,19 @@ export type Database = {
           created_at: string
           id: string
           umfrage_id: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           umfrage_id: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           umfrage_id?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -1769,6 +1769,8 @@ export type Database = {
       gettransactionid: { Args: never; Returns: unknown }
       is_super_admin: { Args: never; Returns: boolean }
       is_verwaltung: { Args: never; Returns: boolean }
+      konto_dateipfade: { Args: { p_user_id: string }; Returns: string[] }
+      konto_loeschen: { Args: { p_user_id: string }; Returns: undefined }
       longtransactionsenabled: { Args: never; Returns: boolean }
       populate_geometry_columns:
         | { Args: { tbl_oid: unknown; use_typmod?: boolean }; Returns: number }
