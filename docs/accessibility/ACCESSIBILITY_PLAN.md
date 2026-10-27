@@ -356,6 +356,25 @@ Speicherort: `docs/accessibility/ERKLAERUNG_VORLAGE.md`.
 
 ---
 
+### P1.13 Lösch-Seite in der App (`/profil/datenschutz-daten/konto-loeschen`)
+
+**Was:**
+- Zurück-Link (nur Chevron-Icon) braucht `aria-label`, das Icon `aria-hidden="true"`. Besser gleich `ZurueckButton` wie auf der Elternseite verwenden.
+- Bestätigungsdialog „Wirklich löschen?“: `role="dialog"`, `aria-modal="true"`, `aria-labelledby`, `useFocusTrap`, Fokus-Restore auf den auslösenden Button, Schließen mit Escape.
+- Kontraste: `text-gray-400` („Endgültig löschen“, Listen-Punkte) und `text-gray-500`/`text-gray-600` auf `bg-gray-100`/`bg-gray-50` auf mindestens 4.5:1 anheben.
+- Fehlermeldungen kommen nur als Toast — prüfen, ob sie für Screenreader angesagt werden, sonst zusätzlich `role="alert"`.
+- Die Liste „Was wird gelöscht“ an die tatsächliche Löschung angleichen (siehe `/konto-loeschen`).
+
+**Warum:** SC 1.1.1, 1.4.3, 2.1.2, 2.4.3, 4.1.2. Die Kontolöschung ist ein Pflichtweg (DSGVO Art. 17, Google Play) und muss für alle bedienbar sein.
+
+**Betroffene Dateien:** `src/app/(app)/profil/datenschutz-daten/konto-loeschen/page.tsx`
+
+**Aufwand:** 2 Stunden
+
+**Abhängigkeiten:** Keine (`useFocusTrap` existiert).
+
+---
+
 ## P2-Maßnahmen
 
 ### P2.1 Konsistente Du/Sie-Form

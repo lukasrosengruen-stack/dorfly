@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { isGuestRoute } from '@/lib/guestRoutes'
 
-const PUBLIC_ROUTES = ['/login', '/start', '/homepage', '/posts/', '/api/', '/auth/', '/datenschutz', '/impressum', '/nutzungsbedingungen', '/support']
+const PUBLIC_ROUTES = ['/login', '/start', '/homepage', '/posts/', '/api/', '/auth/', '/datenschutz', '/impressum', '/nutzungsbedingungen', '/support', '/konto-loeschen']
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'
 // Muss zu lib/supabase/client.ts und server.ts passen — sonst schreibt die
 // Middleware das erneuerte Token auf eine andere Cookie-Domain als der Rest.

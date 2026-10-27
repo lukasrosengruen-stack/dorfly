@@ -93,7 +93,17 @@ export default function DatenschutzPage() {
   const rights = [
     { right: 'Auskunft (Art. 15 DSGVO)', desc: 'Recht auf Auskunft über die gespeicherten personenbezogenen Daten.' },
     { right: 'Berichtigung (Art. 16 DSGVO)', desc: 'Recht auf Berichtigung unrichtiger oder unvollständiger Daten.' },
-    { right: 'Löschung (Art. 17 DSGVO)', desc: 'Recht auf Löschung der personenbezogenen Daten. Die Kontolöschung kann direkt in den Profileinstellungen vorgenommen werden.' },
+    {
+      right: 'Löschung (Art. 17 DSGVO)',
+      desc: (
+        <>
+          Recht auf Löschung der personenbezogenen Daten. Die Kontolöschung kann direkt in der App
+          unter „Profil, Datenschutz & Daten, Konto löschen“ vorgenommen werden. Wie das geht, auch
+          ohne App, steht unter{' '}
+          <a href="/konto-loeschen" style={{ color: C.blue }}>Konto löschen</a>.
+        </>
+      ),
+    },
     { right: 'Einschränkung (Art. 18 DSGVO)', desc: 'Recht auf Einschränkung der Verarbeitung unter bestimmten Voraussetzungen.' },
     { right: 'Datenübertragbarkeit (Art. 20 DSGVO)', desc: 'Recht, die bereitgestellten Daten in einem strukturierten, maschinenlesbaren Format zu erhalten.' },
     { right: 'Widerspruch (Art. 21 DSGVO)', desc: 'Recht, der Verarbeitung personenbezogener Daten zu widersprechen.' },
@@ -109,7 +119,7 @@ export default function DatenschutzPage() {
           Datenschutzerklärung
         </h1>
         <p style={{ color: C.muted, fontSize: 14, marginBottom: 40 }}>
-          Stand: September 2026
+          Stand: Oktober 2026
         </p>
 
         {/* 1 */}
@@ -119,7 +129,7 @@ export default function DatenschutzPage() {
           </P>
           <InfoBox>
             <p style={{ margin: 0, color: C.navy, fontSize: 15, lineHeight: 1.8 }}>
-              <strong>Dorfly UG (haftungsbeschränkt) i.G.</strong><br />
+              <strong>Dorfly UG (haftungsbeschränkt)</strong><br />
               vertreten durch den Geschäftsführer Lukas Rosengrün<br />
               Goldregenweg 15<br />
               71139 Ehningen<br />
@@ -318,13 +328,41 @@ export default function DatenschutzPage() {
           <UL items={[
             'Kontodaten: bis zur Löschung des Nutzerkontos',
             'Nutzergenerierte Inhalte: bis zur Kontolöschung oder auf Anfrage',
+            'Umfrage-Antworten: werden bei der Kontolöschung anonymisiert und bleiben ohne Personenbezug im Ergebnis erhalten',
             'Session-Cookies: werden bei der Abmeldung gelöscht',
             'Demo-Anfragen: im Regelfall keine Speicherung (nur E-Mail-Versand); nur bei fehlgeschlagenem Mailversand wird die Anfrage in der Datenbank gespeichert und nach abgeschlossener Bearbeitung, spätestens nach 6 Monaten, gelöscht',
+            'Sicherungskopien der Datenbank: werden spätestens nach 30 Tagen automatisch überschrieben',
           ]} />
           <P>
-            Nutzer können ihr Konto und alle damit verbundenen Daten jederzeit vollständig löschen
-            (Profileinstellungen → Konto löschen). Die Löschung umfasst Profil, Beiträge,
-            Mängelberichte, Umfrage-Antworten, gestellte Fragen und alle weiteren nutzerbezogenen Daten.
+            Nutzer können ihr Konto jederzeit selbst löschen, in der App unter „Profil, Datenschutz
+            & Daten, Konto löschen“. Ohne App ist die Löschung per E-Mail an hallo@dorfly.de möglich.
+            Beide Wege sind unter{' '}
+            <a href="/konto-loeschen" style={{ color: C.blue }}>dorfly.de/konto-loeschen</a>{' '}
+            beschrieben.
+          </P>
+          <P>
+            Mit dem Konto werden sofort und endgültig gelöscht: die Anmeldedaten (E-Mail-Adresse und
+            Passwort), das Profil einschließlich Profilbild, Mängelberichte mit Fotos und Standort,
+            Fragen an Bürgermeister und Gemeinderat einschließlich der Antworten, Abonnements,
+            Einstellungen zum Abfallkalender, Meldungen von Inhalten sowie die Push-Kennung bei
+            OneSignal. Bei Konten von Vereinen, Gewerbebetrieben und der Verwaltung werden zusätzlich
+            Beiträge, Umfragen und das Vereins- oder Gewerbeprofil mit allen Bildern gelöscht.
+          </P>
+          <P>
+            Umfrage-Antworten werden nicht gelöscht, sondern anonymisiert. Die Verknüpfung mit dem
+            Konto wird entfernt. Die abgegebene Stimme bleibt im Ergebnis erhalten.
+          </P>
+          <P>
+            In Einladungen und im Rollenprotokoll der Gemeindeverwaltung wird die E-Mail-Adresse
+            durch einen Platzhalter ersetzt.
+          </P>
+          <P>
+            Die Anmeldung zum Newsletter ist nicht mit dem Konto verbunden. Sie wird auf Wunsch
+            gesondert gelöscht.
+          </P>
+          <P>
+            Sicherungskopien der Datenbank werden spätestens nach 30 Tagen automatisch überschrieben.
+            Bis dahin können gelöschte Daten dort noch enthalten sein.
           </P>
         </Section>
 
@@ -385,10 +423,10 @@ export default function DatenschutzPage() {
         {/* 12 */}
         <Section title="12. Aktualität und Änderungen">
           <P>
-            Diese Datenschutzerklärung hat den Stand Juli 2026. Bei Änderungen der Plattform oder
+            Diese Datenschutzerklärung hat den Stand Oktober 2026. Bei Änderungen der Plattform oder
             der Rechtslage wird sie entsprechend aktualisiert. Die jeweils aktuelle Version ist
             unter{' '}
-            <a href="/datenschutz" style={{ color: C.blue }}>dorfly.app/datenschutz</a>{' '}
+            <a href="/datenschutz" style={{ color: C.blue }}>dorfly.de/datenschutz</a>{' '}
             abrufbar.
           </P>
         </Section>

@@ -46,7 +46,7 @@ export default function ImpressumPage() {
         {/* Angaben gemäß § 5 DDG */}
         <Section title="Angaben gemäß § 5 DDG">
           <P>
-            <strong>Dorfly UG (haftungsbeschränkt) i.G.</strong><br />
+            <strong>Dorfly UG (haftungsbeschränkt)</strong><br />
             Goldregenweg 15<br />
             71139 Ehningen<br />
             Deutschland

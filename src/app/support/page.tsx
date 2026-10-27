@@ -47,6 +47,12 @@ export default function SupportPage() {
             hallo@dorfly.de
           </a>
         </P>
+        <P>
+          Sie möchten Ihr Konto löschen? Hier steht, wie das geht:{' '}
+          <a href="/konto-loeschen" style={{ color: C.blue, fontWeight: 600 }}>
+            Konto löschen
+          </a>
+        </P>
       </main>
     </div>
   )

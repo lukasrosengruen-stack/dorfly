@@ -1,8 +1,8 @@
 'use client'
 
 /**
- * LegalNav – gemeinsame Kopfleiste für /datenschutz, /impressum und
- * /nutzungsbedingungen.
+ * LegalNav – gemeinsame Kopfleiste für /datenschutz, /impressum,
+ * /nutzungsbedingungen und /konto-loeschen.
  *
  * Diese Seiten liegen außerhalb der Route-Group (app) und haben deshalb weder
  * BottomNav noch PageHeader. Ohne eigenen Ausweg waren sie in der nativen App

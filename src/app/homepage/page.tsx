@@ -1187,6 +1187,7 @@ function Footer() {
             { label: 'Impressum',            href: '/impressum'            },
             { label: 'Datenschutz',          href: '/datenschutz'          },
             { label: 'Nutzungsbedingungen',  href: '/nutzungsbedingungen'  },
+            { label: 'Konto löschen',        href: '/konto-loeschen'       },
             { label: 'Kontakt',              href: 'mailto:hallo@dorfly.de' },
           ].map(({ label, href }) => (
             <li key={label}>
