@@ -19,6 +19,15 @@ export const MEDIA_BUCKET = 'dorfly-media'
 // Storage-API nimmt höchstens 1000 Pfade pro remove()-Aufruf
 const STORAGE_BATCH = 1000
 
+/** Löscht Pfade im Media-Bucket in Paketen. Gibt die Fehlermeldung zurück oder null. */
+export async function entferneDateien(service: SupabaseClient<Database>, pfade: string[]): Promise<string | null> {
+  for (let i = 0; i < pfade.length; i += STORAGE_BATCH) {
+    const { error } = await service.storage.from(MEDIA_BUCKET).remove(pfade.slice(i, i + STORAGE_BATCH))
+    if (error) return error.message
+  }
+  return null
+}
+
 export type LoeschSchritt = 'onesignal' | 'dateien' | 'datenbank'
 
 export type LoeschErgebnis =
@@ -74,10 +83,8 @@ export async function loescheKonto(userId: string, deps: Abhaengigkeiten): Promi
   if (pfadFehler) return { ok: false, schritt: 'dateien', fehler: pfadFehler.message }
 
   const liste = pfade ?? []
-  for (let i = 0; i < liste.length; i += STORAGE_BATCH) {
-    const { error } = await service.storage.from(MEDIA_BUCKET).remove(liste.slice(i, i + STORAGE_BATCH))
-    if (error) return { ok: false, schritt: 'dateien', fehler: error.message }
-  }
+  const dateiFehler = await entferneDateien(service, liste)
+  if (dateiFehler) return { ok: false, schritt: 'dateien', fehler: dateiFehler }
 
   // 3. Datenbank — eine Transaktion, ganz oder gar nicht
   const { error: dbFehler } = await service.rpc('konto_loeschen', { p_user_id: userId })
