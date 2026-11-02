@@ -101,19 +101,31 @@ von jeder Route einzeln abhängt.
 | `mitglied_hinzufuegen(p_profile_id, p_verein_id, p_organisation_id, p_rolle, p_ausgefuehrt_von)` | prüft: Ziel-Person ist `buerger`, in derselben Gemeinde, ohne Mitgliedschaft (sonst Fehler `P0001` mit fester Meldung). Legt Mitgliedschaft an, setzt Rolle passend zum Ziel. |
 | `mitglied_entfernen(p_profile_id, p_ausgefuehrt_von)` | entfernt Mitgliedschaft, setzt Rolle `buerger`. Sperre „letzter Verwalter“, außer die Verwaltung handelt. Selbst austreten ist erlaubt. |
 | `mitglied_rolle_aendern(p_profile_id, p_rolle, p_ausgefuehrt_von)` | ändert `verwalter`/`autor`. Sperre „letzter Verwalter“ wie oben. |
-| `verein_loeschen(p_verein_id, p_ausgefuehrt_von)` / `organisation_loeschen(…)` | siehe „Verein löschen“ |
-| `verein_dateipfade(p_verein_id)` / `organisation_dateipfade(…)` | Storage-Pfade des Vereins (nur lesend) |
+| `verein_anlegen(p_profile_id, p_typ, p_name, p_ausgefuehrt_von)` | legt Verein (`verein`/`organisation`) oder Gewerbe an und trägt die Person als `verwalter` ein. Erlaubt für die Verwaltung (Person ohne Mitgliedschaft, beliebige Rolle) und für die Person selbst, wenn ihre Rolle zum Typ passt (Selbstanlage). |
+| `einladung_einloesen(p_profile_id, p_einladung_id)` | beim Registrieren: Mitglied im eingeladenen Verein oder neuen Verein aus `organisation_name` anlegen |
+| `verein_loeschen(p_verein_id, p_organisation_id, p_ausgefuehrt_von)` | siehe „Verein löschen“; liefert die übrigen Mitglieder für die Benachrichtigung |
+| `verein_dateipfade(p_verein_id, p_organisation_id)` | Storage-Pfade des Vereins bzw. Gewerbes (nur lesend) |
 
 `konto_loeschen` und `konto_dateipfade` werden in 065 neu definiert (siehe unten).
 
 ### RLS und Grants
 
-- `mitgliedschaften`: RLS an. `authenticated` darf lesen, wenn die Zeile zum eigenen
-  Verein/Gewerbe gehört oder die Person Verwaltung derselben Gemeinde ist. Schreiben nur
-  `service_role`. Explizite GRANTs nach Projekt-Template.
+- `mitgliedschaften`: RLS an. `authenticated` darf nur die eigene Zeile lesen
+  (`profile_id = auth.uid()`). Mitgliederlisten lädt der Server mit dem Service-Client
+  nach der Berechtigungsprüfung — eine Policy „Mitglieder desselben Vereins“ auf derselben
+  Tabelle würde in Postgres rekursiv. Schreiben nur `service_role`. Explizite GRANTs nach
+  Projekt-Template.
 - `vereine` / `organisationen`: Insert- und Update-Policies für `authenticated`
   entfallen, `insert, update, delete` wird für `authenticated` entzogen. Alle Schreibwege
   laufen über API-Routen mit Service-Client. Lesen bleibt unverändert.
+
+### Ausrollen in zwei Migrationen
+
+- **065 vor dem Deploy**, rückwärtskompatibel: Tabelle, Funktionen, Backfill, gelockerte
+  Spalten. Alter Code läuft damit weiter.
+- **066 nach dem Deploy**: übernimmt Vereine, die alter Code zwischen 065 und Deploy
+  angelegt hat, entzieht danach `authenticated` die Schreibrechte auf `vereine` und
+  `organisationen`.
 
 ## Abläufe
 
