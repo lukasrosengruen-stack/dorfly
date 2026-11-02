@@ -1,6 +1,7 @@
 import { withAuth } from '@/lib/api'
 import { validate, vereinPostSchema, vereinPostUpdateSchema, vereinPostDeleteSchema } from '@/lib/validations'
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { meinVereinsziel } from '@/lib/mitgliedschaft'
 import { NextResponse } from 'next/server'
 
 export const POST = withAuth(
@@ -14,20 +15,16 @@ export const POST = withAuth(
       sammlungArt, sammlungDatum, sammlungOrganisator,
     } = v.data
 
-    const supabase = await createClient()
+    const service = await createServiceClient()
 
-    const { data: verein, error: fetchError } = await supabase
-      .from('vereine')
-      .select('id, gemeinde_id')
-      .eq('id', vereinId)
-      .eq('profile_id', profile.id)
-      .single()
+    const m = await meinVereinsziel(service, profile.id, 'verein')
+    const { data: verein } = m && m.id === vereinId
+      ? await service.from('vereine').select('id, gemeinde_id').eq('id', vereinId).single()
+      : { data: null }
 
-    if (fetchError || !verein) {
+    if (!verein) {
       return NextResponse.json({ error: 'Verein nicht gefunden' }, { status: 404 })
     }
-
-    const service = await createServiceClient()
     const { data: post, error } = await service
       .from('posts')
       .insert({
@@ -72,14 +69,17 @@ export const PATCH = withAuth(
 
     const { postId, titel, inhalt, tag, bildUrl, bilderUrls, publishAt, veranstaltungDatum, veranstaltungOrt, weitereTermine } = v.data
 
-    const supabase = await createClient()
     const service = await createServiceClient()
+    const m = await meinVereinsziel(service, profile.id, 'verein')
+    if (!m) return NextResponse.json({ error: 'Beitrag nicht gefunden' }, { status: 404 })
 
-    const { data: existing, error: fetchError } = await supabase
+    // Alle Mitglieder dürfen alle Beiträge ihres Vereins bearbeiten
+    const { data: existing, error: fetchError } = await service
       .from('posts')
       .select('id, tag')
       .eq('id', postId)
-      .eq('author_id', profile.id)
+      .eq('org_id', m.id)
+      .eq('channel', 'verein')
       .single()
 
     if (fetchError || !existing) {
@@ -126,12 +126,15 @@ export const DELETE = withAuth(
     if (!v.success) return v.error
 
     const service = await createServiceClient()
+    const m = await meinVereinsziel(service, profile.id, 'verein')
+    if (!m) return NextResponse.json({ error: 'Beitrag nicht gefunden' }, { status: 404 })
 
     const { error } = await service
       .from('posts')
       .delete()
       .eq('id', v.data.postId)
-      .eq('author_id', profile.id)
+      .eq('org_id', m.id)
+      .eq('channel', 'verein')
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
