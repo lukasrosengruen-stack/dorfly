@@ -370,8 +370,6 @@ export const rolleZuweisenSchema = z.object({
   email: z.email('Ungültige E-Mail'),
   neueRolle: einladungRolleMitVerwaltung,
   organisation_name: z.string().max(200).optional(),
-  verein_id: uuid.optional(),
-  org_id: uuid.optional(),
 })
 
 // ── Mitglieder von Vereinen, Organisationen und Gewerben ─────────────────────
