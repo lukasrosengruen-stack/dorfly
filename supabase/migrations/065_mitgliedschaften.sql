@@ -618,6 +618,102 @@ begin
 end;
 $$;
 
+-- ─── Storage-Pfade eines Vereins/Gewerbes (nur lesend) ───────────────────────
+-- Die API-Route löscht die Dateien VOR verein_loeschen (Muster wie Kontolöschung).
+create or replace function public.verein_dateipfade(
+  p_verein_id uuid default null,
+  p_organisation_id uuid default null
+)
+returns setof text
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  with urls as (
+    select logo_url as url from public.vereine where id = p_verein_id
+    union all select logo_url from public.organisationen where id = p_organisation_id
+    union all select bild_url from public.posts where org_id = coalesce(p_verein_id, p_organisation_id)
+    union all select unnest(bilder_urls) from public.posts where org_id = coalesce(p_verein_id, p_organisation_id)
+  ),
+  aus_urls as (
+    select nullif(split_part(url, '/storage/v1/object/public/dorfly-media/', 2), '') as pfad
+    from urls
+    where url is not null
+  ),
+  ordner as (
+    select 'vereine/' || p_verein_id || '/' as praefix where p_verein_id is not null
+    union all select 'gewerbe/' || p_organisation_id || '/' where p_organisation_id is not null
+  ),
+  aus_ordnern as (
+    select o.name as pfad
+    from storage.objects o
+    join ordner on starts_with(o.name, ordner.praefix)
+    where o.bucket_id = 'dorfly-media'
+  )
+  select pfad from aus_urls where pfad is not null
+  union
+  select pfad from aus_ordnern
+$$;
+
+-- ─── Verein/Gewerbe löschen (Verwalter oder Verwaltung) ──────────────────────
+-- Liefert die übrigen Mitglieder (ohne die löschende Person) für die Benachrichtigung.
+-- Sperrreihenfolge wie überall: Ziel (_vereinsziel) -> Profile -> Mitgliedschaften (Cascade).
+create or replace function public.verein_loeschen(
+  p_ausgefuehrt_von uuid,
+  p_verein_id uuid default null,
+  p_organisation_id uuid default null
+)
+returns table (mitglied_id uuid, mitglied_email text, mitglied_name text)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  z record;
+  v_ziel uuid := coalesce(p_verein_id, p_organisation_id);
+begin
+  select * into z from public._vereinsziel(p_verein_id, p_organisation_id);
+
+  if public._mitglieder_recht(p_ausgefuehrt_von, p_verein_id, p_organisation_id, z.o_gemeinde_id) is null then
+    raise exception 'Keine Berechtigung.' using errcode = '42501';
+  end if;
+
+  return query
+    select m.profile_id, p.email, p.display_name
+      from public.mitgliedschaften m
+      join public.profiles p on p.id = m.profile_id
+     where (m.verein_id = p_verein_id or m.organisation_id = p_organisation_id)
+       and m.profile_id is distinct from p_ausgefuehrt_von;
+
+  perform public._rollen_log(z.o_gemeinde_id, 'verein_geloescht', m.profile_id, z.o_rolle, 'buerger', p_ausgefuehrt_von)
+     from public.mitgliedschaften m
+    where m.verein_id = p_verein_id or m.organisation_id = p_organisation_id;
+
+  update public.profiles p
+     set role = 'buerger'
+    from public.mitgliedschaften m
+   where m.profile_id = p.id
+     and (m.verein_id = p_verein_id or m.organisation_id = p_organisation_id);
+
+  update public.einladungen
+     set status = 'widerrufen'
+   where status = 'offen'
+     and (verein_id = p_verein_id or org_id = p_organisation_id);
+
+  -- posts.org_id hat keinen Fremdschlüssel (033) — ausdrücklich löschen.
+  -- post_termine hängt per Cascade dran.
+  delete from public.posts where org_id = v_ziel;
+
+  -- Cascade: Abonnements, Mitgliedschaften
+  if p_verein_id is not null then
+    delete from public.vereine where id = p_verein_id;
+  else
+    delete from public.organisationen where id = p_organisation_id;
+  end if;
+end;
+$$;
+
 -- ═══ Grants ═══════════════════════════════════════════════════════════════════
 -- Hilfsfunktionen (_…) nur intern. Öffentliche Funktionen nur für service_role:
 -- die API-Routen übergeben die Akteur-ID aus der Session, nie aus dem Request.
@@ -639,3 +735,8 @@ revoke all on function public.verein_anlegen(uuid, text, text, uuid) from public
 revoke all on function public.einladung_einloesen(uuid, uuid) from public, anon, authenticated;
 grant execute on function public.verein_anlegen(uuid, text, text, uuid) to service_role;
 grant execute on function public.einladung_einloesen(uuid, uuid) to service_role;
+
+revoke all on function public.verein_dateipfade(uuid, uuid) from public, anon, authenticated;
+revoke all on function public.verein_loeschen(uuid, uuid, uuid) from public, anon, authenticated;
+grant execute on function public.verein_dateipfade(uuid, uuid) to service_role;
+grant execute on function public.verein_loeschen(uuid, uuid, uuid) to service_role;

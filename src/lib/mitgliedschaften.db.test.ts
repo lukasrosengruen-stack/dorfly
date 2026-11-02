@@ -494,3 +494,108 @@ describe('verein_anlegen — Härtung', () => {
     await expect(anlegen(RAT, VERWALTUNG)).rejects.toThrow(/Konten der Verwaltung/)
   })
 })
+
+describe('verein_loeschen / verein_dateipfade', () => {
+  const URL = 'https://xyz.supabase.co/storage/v1/object/public/dorfly-media/'
+  let verein: string
+  let anderer: string
+  let gewerbe: string
+
+  beforeEach(async () => {
+    await neueDb(async () => {
+      await nutzer(ANNA, 'anna@example.de', 'verein')
+      await nutzer(DORA, 'dora@example.de', 'verein')
+      await nutzer(RAT, 'rat@example.de', 'gewerbe')
+      verein = (await db.query<{ id: string }>(
+        `insert into public.vereine (profile_id, gemeinde_id, logo_url) values ($1, $2, $3) returning id`,
+        [ANNA, G1, `${URL}vereine/logo.jpg`])).rows[0].id
+      anderer = (await db.query<{ id: string }>(
+        `insert into public.vereine (profile_id, gemeinde_id) values ($1, $2) returning id`, [DORA, G1])).rows[0].id
+      gewerbe = (await db.query<{ id: string }>(
+        `insert into public.organisationen (profile_id, gemeinde_id, logo_url) values ($1, $2, $3) returning id`,
+        [RAT, G1, `${URL}gewerbe/logo.jpg`])).rows[0].id
+    })
+    await nutzer(BERT, 'bert@example.de')
+    await nutzer(CARL, 'carl@example.de')
+    await db.query('select public.mitglied_hinzufuegen($1, $2, $3, $4)', [BERT, 'autor', ANNA, verein])
+    const post = (await db.query<{ id: string }>(
+      `insert into public.posts (author_id, org_id, channel, bild_url, bilder_urls) values ($1, $2, 'verein', $3, $4) returning id`,
+      [BERT, verein, `${URL}posts/a.jpg`, [`${URL}posts/b.jpg`]])).rows[0].id
+    await db.query('insert into public.post_termine (post_id) values ($1)', [post])
+    await db.query(`insert into public.posts (author_id, org_id, channel) values ($1, $2, 'verein')`, [DORA, anderer])
+    await db.query('insert into public.verein_abonnements (user_id, verein_id) values ($1, $2)', [CARL, verein])
+    await db.query(
+      `insert into public.einladungen (gemeinde_id, email, rolle, verein_id, status, eingeladen_von)
+       values ($1, 'neu@example.de', 'verein', $2, 'offen', $3)`, [G1, verein, ANNA])
+    await db.query(
+      `insert into storage.objects (bucket_id, name) values
+        ('dorfly-media', 'vereine/${verein}/alt.jpg'),
+        ('dorfly-media', 'vereine/${anderer}/fremd.jpg'),
+        ('dorfly-media', 'gewerbe/${gewerbe}/shop.jpg')`)
+  })
+
+  it('liefert Logo, Beitragsbilder und den Vereinsordner — nichts vom anderen Verein', async () => {
+    const res = await db.query<{ pfad: string }>('select public.verein_dateipfade($1) as pfad', [verein])
+    expect(res.rows.map(r => r.pfad).sort()).toEqual(
+      ['posts/a.jpg', 'posts/b.jpg', `vereine/${verein}/alt.jpg`, 'vereine/logo.jpg'].sort(),
+    )
+  })
+
+  it('liefert für ein Gewerbe Logo und Gewerbeordner', async () => {
+    await db.query(`insert into public.posts (author_id, org_id, channel, bild_url) values ($1, $2, 'gewerbe', $3)`,
+      [RAT, gewerbe, `${URL}posts/g.jpg`])
+    const res = await db.query<{ pfad: string }>('select public.verein_dateipfade(null, $1) as pfad', [gewerbe])
+    expect(res.rows.map(r => r.pfad).sort()).toEqual(
+      ['gewerbe/logo.jpg', `gewerbe/${gewerbe}/shop.jpg`, 'posts/g.jpg'].sort(),
+    )
+  })
+
+  it('löscht Verein, Beiträge, Abos, Mitgliedschaften und setzt alle auf buerger', async () => {
+    const res = await db.query<{ mitglied_id: string; mitglied_email: string }>(
+      'select * from public.verein_loeschen($1, $2)', [ANNA, verein])
+    expect(res.rows.map(r => r.mitglied_id)).toEqual([BERT])   // ohne die Löschende
+
+    expect(await wert<number>('select count(*)::int from public.vereine where id = $1', [verein])).toBe(0)
+    expect(await wert<number>('select count(*)::int from public.posts where org_id = $1', [verein])).toBe(0)
+    expect(await wert<number>('select count(*)::int from public.post_termine')).toBe(0)
+    expect(await wert<number>('select count(*)::int from public.verein_abonnements')).toBe(0)
+    expect(await rolle(ANNA)).toBe('buerger')
+    expect(await rolle(BERT)).toBe('buerger')
+    expect(await wert<string>(`select status from public.einladungen where email = 'neu@example.de'`)).toBe('widerrufen')
+    expect(await wert<number>(`select count(*)::int from public.rollen_log where aktion = 'verein_geloescht'`)).toBe(2)
+    // Anderer Verein unberührt
+    expect(await wert<number>('select count(*)::int from public.posts where org_id = $1', [anderer])).toBe(1)
+    expect(await rolle(DORA)).toBe('verein')
+  })
+
+  it('löscht ein Gewerbe samt Abos und Beiträgen über p_organisation_id', async () => {
+    await db.query('insert into public.gewerbe_abonnements (user_id, gewerbe_id) values ($1, $2)', [CARL, gewerbe])
+    await db.query(`insert into public.posts (author_id, org_id, channel) values ($1, $2, 'gewerbe')`, [RAT, gewerbe])
+    await db.query('select * from public.verein_loeschen($1, null, $2)', [RAT, gewerbe])
+    expect(await wert<number>('select count(*)::int from public.organisationen where id = $1', [gewerbe])).toBe(0)
+    expect(await wert<number>('select count(*)::int from public.gewerbe_abonnements')).toBe(0)
+    expect(await wert<number>('select count(*)::int from public.posts where org_id = $1', [gewerbe])).toBe(0)
+    expect(await rolle(RAT)).toBe('buerger')
+    // Vereine unberührt
+    expect(await wert<number>('select count(*)::int from public.vereine')).toBe(2)
+  })
+
+  it('verweigert Autoren das Löschen und ändert nichts', async () => {
+    await expect(db.query('select * from public.verein_loeschen($1, $2)', [BERT, verein])).rejects.toThrow(/Keine Berechtigung/)
+    expect(await wert<number>('select count(*)::int from public.vereine where id = $1', [verein])).toBe(1)
+  })
+
+  it('erlaubt der Verwaltung das Löschen', async () => {
+    await db.query('select * from public.verein_loeschen($1, $2)', [VERWALTUNG, verein])
+    expect(await wert<number>('select count(*)::int from public.vereine where id = $1', [verein])).toBe(0)
+  })
+
+  it('nur service_role darf verein_dateipfade und verein_loeschen ausführen', async () => {
+    for (const fn of ['verein_dateipfade(uuid, uuid)', 'verein_loeschen(uuid, uuid, uuid)']) {
+      for (const r of ['anon', 'authenticated']) {
+        expect(await wert<boolean>(`has_function_privilege('${r}', 'public.${fn}', 'execute')`)).toBe(false)
+      }
+      expect(await wert<boolean>(`has_function_privilege('service_role', 'public.${fn}', 'execute')`)).toBe(true)
+    }
+  })
+})
