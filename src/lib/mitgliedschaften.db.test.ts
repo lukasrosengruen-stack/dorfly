@@ -291,3 +291,118 @@ describe('Rechte auf die Funktionen', () => {
     }
   })
 })
+
+describe('verein_anlegen', () => {
+  beforeEach(async () => {
+    await neueDb()
+    await nutzer(BERT, 'bert@example.de')
+    await nutzer(CARL, 'carl@example.de', 'verein')
+    await nutzer(RAT, 'rat@example.de', 'gemeinderat')
+  })
+
+  async function anlegen(profil: string, typ: string, akteur: string) {
+    return wert<string>('public.verein_anlegen($1, $2, $3, $4)', [profil, typ, 'Musikverein', akteur])
+  }
+
+  it('Selbstanlage: Person mit passender Rolle wird Verwalterin', async () => {
+    const id = await anlegen(CARL, 'verein', CARL)
+    expect(await wert<string>('select rolle from public.mitgliedschaften where profile_id = $1', [CARL])).toBe('verwalter')
+    expect(await wert<string>('select verein_name from public.vereine where id = $1', [id])).toBe('Musikverein')
+    expect(await wert<string>('select gemeinde_id from public.vereine where id = $1', [id])).toBe(G1)
+  })
+
+  it('Selbstanlage mit unpassender Rolle wird abgelehnt', async () => {
+    await expect(anlegen(BERT, 'verein', BERT)).rejects.toThrow(/Keine Berechtigung/)
+  })
+
+  it('Verwaltung legt ein Gewerbe für einen Bürger an', async () => {
+    const id = await anlegen(BERT, 'gewerbe', VERWALTUNG)
+    expect(await rolle(BERT)).toBe('gewerbe')
+    expect(await wert<string>('select organisation_id from public.mitgliedschaften where profile_id = $1', [BERT])).toBe(id)
+  })
+
+  it('Verwaltung darf eine Person mit anderer Rolle umstellen', async () => {
+    await anlegen(RAT, 'organisation', VERWALTUNG)
+    expect(await rolle(RAT)).toBe('organisation')
+    expect(await wert<string>('select typ from public.vereine')).toBe('organisation')
+  })
+
+  it('zweiter Verein für dieselbe Person wird abgelehnt', async () => {
+    await anlegen(CARL, 'verein', CARL)
+    await expect(anlegen(CARL, 'verein', VERWALTUNG)).rejects.toThrow(/bereits einem Verein/)
+  })
+
+  it('Verwaltung einer anderen Gemeinde darf nicht', async () => {
+    await expect(anlegen(BERT, 'verein', VERWALTUNG_G2)).rejects.toThrow(/Keine Berechtigung/)
+  })
+
+  it('verein_anlegen und einladung_einloesen sind nur für service_role ausführbar; _vereinszeile_anlegen für niemanden', async () => {
+    for (const fn of ['verein_anlegen(uuid, text, text, uuid)', 'einladung_einloesen(uuid, uuid)']) {
+      for (const r of ['anon', 'authenticated']) {
+        expect(await wert<boolean>(`has_function_privilege('${r}', 'public.${fn}', 'execute')`)).toBe(false)
+      }
+      expect(await wert<boolean>(`has_function_privilege('service_role', 'public.${fn}', 'execute')`)).toBe(true)
+    }
+    for (const r of ['anon', 'authenticated', 'service_role']) {
+      expect(await wert<boolean>(`has_function_privilege('${r}', 'public._vereinszeile_anlegen(text, uuid, text, uuid)', 'execute')`)).toBe(false)
+    }
+  })
+})
+
+describe('einladung_einloesen', () => {
+  let verein: string
+
+  beforeEach(async () => {
+    await neueDb(async () => {
+      await nutzer(ANNA, 'anna@example.de', 'verein')
+      verein = (await db.query<{ id: string }>(
+        `insert into public.vereine (profile_id, gemeinde_id, verein_name) values ($1, $2, 'TSV') returning id`, [ANNA, G1])).rows[0].id
+    })
+  })
+
+  async function einladung(werte: Record<string, unknown>) {
+    const spalten = Object.keys(werte)
+    const res = await db.query<{ id: string }>(
+      `insert into public.einladungen (${spalten.join(', ')}) values (${spalten.map((_, i) => `$${i + 1}`).join(', ')}) returning id`,
+      Object.values(werte),
+    )
+    return res.rows[0].id
+  }
+
+  it('trägt in einen bestehenden Verein mit der eingeladenen Mitgliedsrolle ein', async () => {
+    await nutzer(BERT, 'bert@example.de', 'verein')
+    const id = await einladung({
+      gemeinde_id: G1, email: 'bert@example.de', rolle: 'verein', verein_id: verein,
+      mitglied_rolle: 'verwalter', status: 'angenommen', eingeladen_von: ANNA,
+    })
+    await db.query('select public.einladung_einloesen($1, $2)', [BERT, id])
+    expect(await wert<string>('select rolle from public.mitgliedschaften where profile_id = $1', [BERT])).toBe('verwalter')
+  })
+
+  it('legt aus organisation_name einen neuen Verein an — Rolle organisation landet in vereine', async () => {
+    await nutzer(BERT, 'bert@example.de', 'organisation')
+    const id = await einladung({
+      gemeinde_id: G1, email: 'bert@example.de', rolle: 'organisation', organisation_name: 'Tafel',
+      status: 'angenommen', eingeladen_von: VERWALTUNG,
+    })
+    await db.query('select public.einladung_einloesen($1, $2)', [BERT, id])
+    expect(await wert<string>(`select typ from public.vereine where verein_name = 'Tafel'`)).toBe('organisation')
+    expect(await wert<string>('select rolle from public.mitgliedschaften where profile_id = $1', [BERT])).toBe('verwalter')
+  })
+
+  it('verweigert eine Einladung für eine andere E-Mail-Adresse', async () => {
+    await nutzer(BERT, 'bert@example.de', 'verein')
+    const id = await einladung({
+      gemeinde_id: G1, email: 'jemand@example.de', rolle: 'verein', verein_id: verein,
+      status: 'angenommen', eingeladen_von: ANNA,
+    })
+    await expect(db.query('select public.einladung_einloesen($1, $2)', [BERT, id])).rejects.toThrow(/andere E-Mail/)
+  })
+
+  it('ignoriert Einladungen ohne Vereinsrolle', async () => {
+    await nutzer(BERT, 'bert@example.de')
+    const id = await einladung({ gemeinde_id: G1, email: 'bert@example.de', rolle: 'buerger', status: 'angenommen', eingeladen_von: ANNA })
+    await db.query('select public.einladung_einloesen($1, $2)', [BERT, id])
+    expect(await wert<number>('select count(*)::int from public.mitgliedschaften where profile_id = $1', [BERT])).toBe(0)
+  })
+})

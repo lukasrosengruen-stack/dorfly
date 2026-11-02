@@ -458,6 +458,154 @@ begin
 end;
 $$;
 
+-- ─── Zeile für Verein (verein/organisation) oder Gewerbe anlegen (nur intern) ─
+create or replace function public._vereinszeile_anlegen(
+  p_typ text,
+  p_gemeinde_id uuid,
+  p_name text,
+  p_profile_id uuid
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_id uuid;
+begin
+  if p_typ = 'gewerbe' then
+    insert into public.organisationen (gemeinde_id, profile_id, name, typ)
+    values (p_gemeinde_id, p_profile_id, p_name, 'gewerbe')
+    returning id into v_id;
+  elsif p_typ in ('verein', 'organisation') then
+    insert into public.vereine (gemeinde_id, profile_id, verein_name, typ)
+    values (p_gemeinde_id, p_profile_id, p_name, p_typ)
+    returning id into v_id;
+  else
+    raise exception 'Unbekannter Typ %.', p_typ using errcode = '22023';
+  end if;
+  return v_id;
+end;
+$$;
+
+-- ─── Verein/Organisation/Gewerbe anlegen, Person wird Verwalter ──────────────
+-- Erlaubt für
+--   * die Verwaltung der Gemeinde (Person ohne Mitgliedschaft, beliebige Rolle),
+--   * die Person selbst, wenn ihre Rolle zum Typ passt (Selbstanlage im Dashboard).
+create or replace function public.verein_anlegen(
+  p_profile_id uuid,
+  p_typ text,
+  p_name text,
+  p_ausgefuehrt_von uuid
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_rolle text;
+  v_gemeinde uuid;
+  v_akteur_rolle text;
+  v_akteur_gemeinde uuid;
+  v_jede_rolle boolean;
+  v_id uuid;
+begin
+  if p_typ not in ('verein', 'organisation', 'gewerbe') then
+    raise exception 'Unbekannter Typ %.', p_typ using errcode = '22023';
+  end if;
+  if coalesce(btrim(p_name), '') = '' then
+    raise exception 'Bitte einen Namen angeben.' using errcode = '22023';
+  end if;
+
+  -- Das Ziel entsteht erst unten in dieser Transaktion, die Sperrreihenfolge
+  -- Ziel -> Profil -> Mitgliedschaft ist deshalb nicht verletzt.
+  select p.role::text, p.gemeinde_id into v_rolle, v_gemeinde
+    from public.profiles p where p.id = p_profile_id for update;
+  if not found then
+    raise exception 'Konto nicht gefunden.' using errcode = 'P0002';
+  end if;
+  if v_gemeinde is null then
+    raise exception 'Diese Person ist keiner Gemeinde zugeordnet.' using errcode = 'P0001';
+  end if;
+
+  select p.role::text, p.gemeinde_id into v_akteur_rolle, v_akteur_gemeinde
+    from public.profiles p where p.id = p_ausgefuehrt_von;
+
+  if v_akteur_rolle = 'super_admin'
+     or (v_akteur_rolle = 'verwaltung' and v_akteur_gemeinde = v_gemeinde) then
+    v_jede_rolle := true;
+  elsif p_ausgefuehrt_von = p_profile_id and v_rolle = p_typ then
+    v_jede_rolle := false;
+  else
+    raise exception 'Keine Berechtigung.' using errcode = '42501';
+  end if;
+
+  if exists (select 1 from public.mitgliedschaften m where m.profile_id = p_profile_id) then
+    raise exception 'Diese Person ist bereits einem Verein zugeordnet oder hat eine andere Rolle.'
+      using errcode = 'P0001';
+  end if;
+
+  v_id := public._vereinszeile_anlegen(p_typ, v_gemeinde, btrim(p_name), p_profile_id);
+
+  if p_typ = 'gewerbe' then
+    perform public._mitglied_eintragen(p_profile_id, null, v_id, 'verwalter', p_ausgefuehrt_von, v_jede_rolle);
+  else
+    perform public._mitglied_eintragen(p_profile_id, v_id, null, 'verwalter', p_ausgefuehrt_von, v_jede_rolle);
+  end if;
+
+  return v_id;
+end;
+$$;
+
+-- ─── Einladung beim Registrieren einlösen ────────────────────────────────────
+-- profilAnlegen markiert die Einladung als angenommen und legt das Profil mit der
+-- eingeladenen Rolle an; danach entsteht hier die Mitgliedschaft.
+create or replace function public.einladung_einloesen(
+  p_profile_id uuid,
+  p_einladung_id uuid
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  e record;
+  v_email text;
+  v_id uuid;
+begin
+  select * into e from public.einladungen where id = p_einladung_id;
+  if not found then
+    raise exception 'Einladung nicht gefunden.' using errcode = 'P0002';
+  end if;
+
+  select p.email into v_email from public.profiles p where p.id = p_profile_id;
+  if lower(coalesce(v_email, '')) <> lower(e.email) then
+    raise exception 'Diese Einladung ist für eine andere E-Mail-Adresse ausgestellt.' using errcode = '42501';
+  end if;
+  if e.status <> 'angenommen' then
+    raise exception 'Die Einladung wurde nicht angenommen.' using errcode = 'P0001';
+  end if;
+
+  if e.rolle not in ('verein', 'organisation', 'gewerbe') then
+    return;
+  end if;
+
+  if e.verein_id is not null or e.org_id is not null then
+    perform public._mitglied_eintragen(
+      p_profile_id, e.verein_id, e.org_id, coalesce(e.mitglied_rolle, 'autor'), e.eingeladen_von, false);
+  elsif coalesce(btrim(e.organisation_name), '') <> '' then
+    v_id := public._vereinszeile_anlegen(e.rolle, e.gemeinde_id, btrim(e.organisation_name), p_profile_id);
+    if e.rolle = 'gewerbe' then
+      perform public._mitglied_eintragen(p_profile_id, null, v_id, 'verwalter', e.eingeladen_von, false);
+    else
+      perform public._mitglied_eintragen(p_profile_id, v_id, null, 'verwalter', e.eingeladen_von, false);
+    end if;
+  end if;
+end;
+$$;
+
 -- ═══ Grants ═══════════════════════════════════════════════════════════════════
 -- Hilfsfunktionen (_…) nur intern. Öffentliche Funktionen nur für service_role:
 -- die API-Routen übergeben die Akteur-ID aus der Session, nie aus dem Request.
@@ -466,6 +614,7 @@ revoke all on function public._mitglieder_recht(uuid, uuid, uuid, uuid) from pub
 revoke all on function public._rollen_log(uuid, text, uuid, text, text, uuid) from public, anon, authenticated, service_role;
 revoke all on function public._weiterer_verwalter(uuid, uuid, uuid) from public, anon, authenticated, service_role;
 revoke all on function public._mitglied_eintragen(uuid, uuid, uuid, text, uuid, boolean) from public, anon, authenticated, service_role;
+revoke all on function public._vereinszeile_anlegen(text, uuid, text, uuid) from public, anon, authenticated, service_role;
 
 revoke all on function public.mitglied_hinzufuegen(uuid, text, uuid, uuid, uuid) from public, anon, authenticated;
 revoke all on function public.mitglied_entfernen(uuid, uuid) from public, anon, authenticated;
@@ -473,3 +622,8 @@ revoke all on function public.mitglied_rolle_aendern(uuid, text, uuid) from publ
 grant execute on function public.mitglied_hinzufuegen(uuid, text, uuid, uuid, uuid) to service_role;
 grant execute on function public.mitglied_entfernen(uuid, uuid) to service_role;
 grant execute on function public.mitglied_rolle_aendern(uuid, text, uuid) to service_role;
+
+revoke all on function public.verein_anlegen(uuid, text, text, uuid) from public, anon, authenticated;
+revoke all on function public.einladung_einloesen(uuid, uuid) from public, anon, authenticated;
+grant execute on function public.verein_anlegen(uuid, text, text, uuid) to service_role;
+grant execute on function public.einladung_einloesen(uuid, uuid) to service_role;
