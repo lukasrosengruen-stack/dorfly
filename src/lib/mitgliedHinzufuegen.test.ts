@@ -48,8 +48,15 @@ describe('mitgliedPerEmailHinzufuegen', () => {
   it('lehnt Konten anderer Gemeinden ab', async () => {
     const d = deps({ profilPerEmail: vi.fn(async () => ({ id: 'x', gemeinde_id: 'g2', display_name: null })) })
     const e = await mitgliedPerEmailHinzufuegen(eingabe, d)
-    expect(e).toMatchObject({ ok: false, status: 409 })
+    expect(e).toEqual({ ok: false, status: 409, fehler: 'Diese E-Mail-Adresse kann nicht hinzugefügt werden.' })
     expect(d.mitgliedHinzufuegen).not.toHaveBeenCalled()
+  })
+
+  it('weist Autoren ab, ohne etwas aufzurufen', async () => {
+    const d = deps()
+    const e = await mitgliedPerEmailHinzufuegen({ ...eingabe, ziel: { ...ZIEL, recht: 'autor' } }, d)
+    expect(e).toEqual({ ok: false, status: 403, fehler: 'Nur Verwalter können Personen hinzufügen.' })
+    for (const fn of Object.values(d)) expect(fn).not.toHaveBeenCalled()
   })
 
   it('lädt unbekannte Adressen ein — mit Ziel und Mitgliedsrolle', async () => {

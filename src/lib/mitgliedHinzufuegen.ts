@@ -17,7 +17,7 @@ export interface HinzufuegenDeps {
     p_verein_id?: string
     p_organisation_id?: string
   }): Promise<{ error: { code?: string; message: string } | null }>
-  /** Widerruft offene Einladungen derselben Adresse und legt die neue an. */
+  /** Widerruft offene Einladungen derselben Adresse in DIESEN Verein bzw. dieses Gewerbe und legt die neue an. */
   einladungAnlegen(daten: {
     email: string
     rolle: string
@@ -68,6 +68,7 @@ export async function mitgliedPerEmailHinzufuegen(
   deps: HinzufuegenDeps,
 ): Promise<HinzufuegenErgebnis> {
   const { ziel, rolle, akteurId, gemeinde } = eingabe
+  if (ziel.recht === 'autor') return { ok: false, status: 403, fehler: 'Nur Verwalter können Personen hinzufügen.' }
   const email = eingabe.email.trim().toLowerCase()
   const absender = absenderFuer(ziel)
 
@@ -75,7 +76,7 @@ export async function mitgliedPerEmailHinzufuegen(
 
   if (profil) {
     if (profil.gemeinde_id !== ziel.gemeinde_id) {
-      return { ok: false, status: 409, fehler: 'Diese E-Mail-Adresse gehört zu einem Konto einer anderen Gemeinde.' }
+      return { ok: false, status: 409, fehler: 'Diese E-Mail-Adresse kann nicht hinzugefügt werden.' }
     }
     const { error } = await deps.mitgliedHinzufuegen({
       p_profile_id: profil.id,
