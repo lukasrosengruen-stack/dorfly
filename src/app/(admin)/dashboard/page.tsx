@@ -14,6 +14,7 @@ import UmfragenSection from '@/components/dashboard/UmfragenSection'
 import { ZurueckButton } from '@/components/ui'
 import { mergeArbeitsset } from '@/lib/dashboardArbeitsset'
 import { ladeVereinsnamen, mitVereinsabsender } from '@/lib/absender'
+import { meinVereinsziel, kurzname } from '@/lib/mitgliedschaft'
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
 type SupabaseServiceClient = Awaited<ReturnType<typeof createServiceClient>>
@@ -374,17 +375,21 @@ export default async function DashboardPage() {
 
   // Verein / Organisation sieht eigene Beiträge + Profil
   if (profile.role === 'verein' || profile.role === 'organisation') {
+    const vereinService = await createServiceClient()
+    const mitgliedschaft = await meinVereinsziel(vereinService, user!.id, 'verein')
+
     const [vereinPostsResult, vereinProfilResult, kategorienResult] = await Promise.all([
-      supabase
-        .from('posts')
-        .select('id, titel, inhalt, status, created_at, tag, bild_url, publish_at, rejection_reason, veranstaltung_datum, veranstaltung_ort, post_termine(datum)')
-        .eq('author_id', user!.id)
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('vereine')
-        .select('*')
-        .eq('profile_id', user!.id)
-        .maybeSingle(),
+      mitgliedschaft
+        ? vereinService
+            .from('posts')
+            .select('id, titel, inhalt, status, created_at, tag, bild_url, publish_at, rejection_reason, veranstaltung_datum, veranstaltung_ort, author_id, post_termine(datum)')
+            .eq('org_id', mitgliedschaft.id)
+            .eq('channel', 'verein')
+            .order('created_at', { ascending: false })
+        : Promise.resolve({ data: [] }),
+      mitgliedschaft
+        ? vereinService.from('vereine').select('*').eq('id', mitgliedschaft.id).maybeSingle()
+        : Promise.resolve({ data: null }),
       supabase
         .from('verein_kategorien')
         .select('id, name, reihenfolge')
@@ -393,10 +398,20 @@ export default async function DashboardPage() {
 
     const vereinProfil = vereinProfilResult.data ?? null
 
+    // „von Vorname N.“ an jedem Beitrag
+    const rohPosts = (vereinPostsResult.data ?? []) as { author_id: string | null }[]
+    const autorIds = [...new Set(rohPosts.map(p => p.author_id).filter((id): id is string => !!id))]
+    const { data: autoren } = autorIds.length
+      ? await vereinService.from('profiles').select('id, vorname, nachname, display_name').in('id', autorIds)
+      : { data: [] }
+    const vereinPosts = rohPosts.map(p => ({
+      ...p,
+      autor_name: kurzname((autoren ?? []).find(a => a.id === p.author_id) ?? null),
+    }))
+
     // Abonnenten-Stats nur wenn Profil vorhanden
     let abonnentenStats = null
     if (vereinProfil) {
-      const vereinService = await createServiceClient()
       const jetzt = new Date()
       const vor7  = new Date(jetzt); vor7.setDate(jetzt.getDate() - 7)
       const vor30 = new Date(jetzt); vor30.setDate(jetzt.getDate() - 30)
@@ -416,11 +431,12 @@ export default async function DashboardPage() {
     const VereinPostVerwaltung = (await import('@/components/dashboard/VereinPostVerwaltung')).default
     return (
       <VereinPostVerwaltung
-        posts={(vereinPostsResult.data ?? []) as Parameters<typeof VereinPostVerwaltung>[0]['posts']}
+        posts={vereinPosts as unknown as Parameters<typeof VereinPostVerwaltung>[0]['posts']}
         gemeindeId={profile.gemeinde_id!}
         profileId={user!.id}
-        vereinName={profile.verein_name}
+        vereinName={vereinProfil?.verein_name ?? null}
         role={profile.role as 'verein' | 'organisation'}
+        mitgliedRolle={mitgliedschaft?.rolle ?? null}
         vereinProfil={vereinProfil}
         kategorien={kategorienResult.data ?? []}
         abonnentenStats={abonnentenStats}

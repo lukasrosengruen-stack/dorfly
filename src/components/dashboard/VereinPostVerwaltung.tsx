@@ -12,6 +12,7 @@ import BilderUpload from './BilderUpload'
 import { VereinProfilForm, AbonnentenStats } from '@/features/verein'
 import type { Verein, VereinKategorie } from '@/types/database'
 import { SAMMLUNG_ART_OPTIONEN } from '@/lib/abfallkalenderSammlung'
+import MitgliederSection from './MitgliederSection'
 
 interface Post {
   id: string
@@ -26,6 +27,7 @@ interface Post {
   veranstaltung_datum?: string | null
   veranstaltung_ort?: string | null
   post_termine?: { datum: string }[] | null
+  autor_name?: string | null
 }
 
 interface Props {
@@ -34,6 +36,7 @@ interface Props {
   profileId: string
   vereinName: string | null
   role?: 'verein' | 'organisation'
+  mitgliedRolle?: 'verwalter' | 'autor' | null
   vereinProfil?: Verein | null
   kategorien?: VereinKategorie[]
   abonnentenStats?: { gesamt: number; letzter7Tage: number; letzter30Tage: number } | null
@@ -67,7 +70,7 @@ const emptyForm: FormState = {
   geplant: false, scheduled_date: '', scheduled_time: '',
 }
 
-export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, profileId, vereinName, role, vereinProfil: initialVereinProfil, kategorien = [], abonnentenStats }: Props) {
+export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, profileId, vereinName, role, mitgliedRolle = null, vereinProfil: initialVereinProfil, kategorien = [], abonnentenStats }: Props) {
   const [vereinProfil, setVereinProfil] = useState(initialVereinProfil ?? null)
   const [showProfilForm, setShowProfilForm] = useState(false)
   const [posts, setPosts] = useState(initialPosts)
@@ -83,6 +86,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
   const supabase = createClient()
 
   const accentColor = role === 'organisation' ? 'teal' : 'violet'
+  const istVerwalter = mitgliedRolle === 'verwalter'
 
   const emptyVereinProfil: Verein = {
     id: '', profile_id: profileId, gemeinde_id: gemeindeId,
@@ -278,7 +282,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">{vereinName ?? 'Meine Beiträge'}</h1>
           <div className="flex items-center gap-2">
-            {vereinProfil && (
+            {vereinProfil && istVerwalter && (
               <button onClick={() => setShowProfilForm(v => !v)}
                 className="flex items-center gap-2 bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl text-sm">
                 <Pencil className="w-4 h-4" /> Profil
@@ -317,11 +321,11 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
         )}
 
         {/* Profil bearbeiten (aufklappbar via Header-Button) */}
-        {vereinProfil && showProfilForm && (
+        {vereinProfil && istVerwalter && showProfilForm && (
           <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-bold text-gray-900">Profil bearbeiten</h2>
-              <button onClick={() => setShowProfilForm(false)}><X className="w-5 h-5 text-gray-400" /></button>
+              <button onClick={() => setShowProfilForm(false)} aria-label="Profil bearbeiten schließen"><X aria-hidden="true" className="w-5 h-5 text-gray-400" /></button>
             </div>
             <VereinProfilForm
               verein={vereinProfil}
@@ -511,9 +515,10 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
                   <p className="font-semibold text-gray-900">{post.titel}</p>
                   <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">{post.inhalt}</p>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-gray-600">
                       {new Date(post.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                     </p>
+                    <p className="text-xs text-gray-600">von {post.autor_name ?? 'ehemaligem Mitglied'}</p>
                     {post.publish_at && new Date(post.publish_at) > new Date() && (
                       <span className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
                         <CalendarClock className="w-3 h-3" />
@@ -548,6 +553,13 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
             )
           })}
         </div>
+
+        {vereinProfil && (
+          <section aria-labelledby="team-titel" className="bg-white rounded-2xl shadow-sm p-6 mt-6">
+            <h2 id="team-titel" className="font-bold text-gray-900 mb-4">Team</h2>
+            <MitgliederSection />
+          </section>
+        )}
       </div>
     </div>
   )
