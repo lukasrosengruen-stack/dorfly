@@ -1,6 +1,7 @@
 import { withAuth } from '@/lib/api'
 import { validate, gewerbePostSchema, gewerbePostUpdateSchema, gewerbePostDeleteSchema } from '@/lib/validations'
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { meinVereinsziel } from '@/lib/mitgliedschaft'
 import { NextResponse } from 'next/server'
 
 function getWochenstart(): Date {
@@ -27,28 +28,25 @@ export const POST = withAuth(
 
     const { gewerbeId, titel, text, bildUrl, ablaufdatum } = v.data
 
-    const supabase = await createClient()
+    const service = await createServiceClient()
 
-    // Eigentümerprüfung + Plan laden
-    const { data: betrieb, error: fetchError } = await supabase
-      .from('organisationen')
-      .select('id, plan, gemeinde_id')
-      .eq('id', gewerbeId)
-      .eq('profile_id', profile.id)
-      .eq('typ', 'gewerbe')
-      .single()
+    // Mitgliedschaft + Plan laden
+    const m = await meinVereinsziel(service, profile.id, 'gewerbe')
+    const { data: betrieb } = m && m.id === gewerbeId
+      ? await service.from('organisationen').select('id, plan, gemeinde_id').eq('id', gewerbeId).eq('typ', 'gewerbe').single()
+      : { data: null }
 
-    if (fetchError || !betrieb) {
+    if (!betrieb) {
       return NextResponse.json({ error: 'Gewerbe nicht gefunden' }, { status: 404 })
     }
 
-    // Wochenlimit für Standard-Plan prüfen
+    // Wochenlimit gilt für den Betrieb, nicht für die einzelne Person
     if (betrieb.plan === 'standard') {
       const wochenstart = getWochenstart().toISOString()
-      const { count } = await supabase
+      const { count } = await service
         .from('posts')
         .select('id', { count: 'exact', head: true })
-        .eq('author_id', profile.id)
+        .eq('org_id', betrieb.id)
         .eq('channel', 'gewerbe')
         .gte('published_at', wochenstart)
 
@@ -60,7 +58,6 @@ export const POST = withAuth(
       }
     }
 
-    const service = await createServiceClient()
     const { data: post, error } = await service
       .from('posts')
       .insert({
@@ -93,13 +90,15 @@ export const PATCH = withAuth(
 
     const { postId, titel, text, bildUrl, ablaufdatum } = v.data
 
-    const supabase = await createClient()
+    const service = await createServiceClient()
+    const m = await meinVereinsziel(service, profile.id, 'gewerbe')
+    if (!m) return NextResponse.json({ error: 'Beitrag nicht gefunden' }, { status: 404 })
 
-    const { data: existing, error: fetchError } = await supabase
+    const { data: existing, error: fetchError } = await service
       .from('posts')
       .select('id')
       .eq('id', postId)
-      .eq('author_id', profile.id)
+      .eq('org_id', m.id)
       .eq('channel', 'gewerbe')
       .single()
 
@@ -107,7 +106,6 @@ export const PATCH = withAuth(
       return NextResponse.json({ error: 'Beitrag nicht gefunden' }, { status: 404 })
     }
 
-    const service = await createServiceClient()
     const { data: post, error } = await service
       .from('posts')
       .update({
@@ -136,12 +134,14 @@ export const DELETE = withAuth(
     const { postId } = v.data
 
     const service = await createServiceClient()
+    const m = await meinVereinsziel(service, profile.id, 'gewerbe')
+    if (!m) return NextResponse.json({ error: 'Beitrag nicht gefunden' }, { status: 404 })
 
     const { error } = await service
       .from('posts')
       .delete()
       .eq('id', postId)
-      .eq('author_id', profile.id)
+      .eq('org_id', m.id)
       .eq('channel', 'gewerbe')
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })

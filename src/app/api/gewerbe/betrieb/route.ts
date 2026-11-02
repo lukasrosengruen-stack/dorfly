@@ -1,6 +1,7 @@
-import { withAuth } from '@/lib/api'
+import { withAuth, apiError } from '@/lib/api'
 import { validate } from '@/lib/validations'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { meineMitgliedschaft, rpcFehler } from '@/lib/mitgliedschaft'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
@@ -24,27 +25,26 @@ export const POST = withAuth(
     const v = validate(erstellenSchema, body)
     if (!v.success) return v.error
 
-    const supabase = await createClient()
+    const service = await createServiceClient()
 
-    // Sicherstellen dass noch kein Betrieb existiert
-    const { data: existing } = await supabase
-      .from('organisationen')
-      .select('id')
-      .eq('profile_id', profile.id)
-      .eq('typ', 'gewerbe')
-      .maybeSingle()
-
-    if (existing) {
+    if (await meineMitgliedschaft(service, profile.id)) {
       return NextResponse.json({ error: 'Betrieb bereits vorhanden' }, { status: 409 })
     }
 
-    const { data: betrieb, error } = await supabase
+    const { data: betriebId, error: anlegeFehler } = await service.rpc('verein_anlegen', {
+      p_profile_id: profile.id,
+      p_typ: 'gewerbe',
+      p_name: v.data.name,
+      p_ausgefuehrt_von: profile.id,
+    })
+    if (anlegeFehler || !betriebId) {
+      const f = rpcFehler(anlegeFehler ?? { message: 'kein Ergebnis' })
+      return apiError(f.meldung, f.status)
+    }
+
+    const { data: betrieb, error } = await service
       .from('organisationen')
-      .insert({
-        gemeinde_id: profile.gemeinde_id,
-        profile_id: profile.id,
-        typ: 'gewerbe',
-        name: v.data.name,
+      .update({
         branche_id: v.data.branche_id ?? null,
         beschreibung: v.data.beschreibung ?? null,
         adresse: v.data.adresse ?? null,
@@ -52,6 +52,7 @@ export const POST = withAuth(
         website: v.data.website || null,
         logo_url: v.data.logo_url ?? null,
       })
+      .eq('id', betriebId)
       .select()
       .single()
 

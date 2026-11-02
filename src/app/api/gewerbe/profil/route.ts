@@ -1,32 +1,22 @@
-import { withAuth } from '@/lib/api'
+import { withAuth, apiError } from '@/lib/api'
 import { validate, gewerbeProfilSchema } from '@/lib/validations'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { meinVereinsziel } from '@/lib/mitgliedschaft'
 import { NextResponse } from 'next/server'
 
 export const PATCH = withAuth(
   async (req, { profile }) => {
-    const body = await req.json()
-    const v = validate(gewerbeProfilSchema, body)
+    const v = validate(gewerbeProfilSchema, await req.json())
     if (!v.success) return v.error
 
     const { gewerbeId, name, branche_id, beschreibung, adresse, oeffnungszeiten, website, logo_url } = v.data
 
-    const supabase = await createClient()
+    const service = await createServiceClient()
+    const m = await meinVereinsziel(service, profile.id, 'gewerbe')
+    if (!m || m.id !== gewerbeId) return apiError('Gewerbe nicht gefunden', 404)
+    if (m.rolle !== 'verwalter') return apiError('Nur Verwalter können das Profil bearbeiten.', 403)
 
-    // Sicherstellen dass der Nutzer Eigentümer dieses Gewerbes ist
-    const { data: betrieb, error: fetchError } = await supabase
-      .from('organisationen')
-      .select('id')
-      .eq('id', gewerbeId)
-      .eq('profile_id', profile.id)
-      .eq('typ', 'gewerbe')
-      .single()
-
-    if (fetchError || !betrieb) {
-      return NextResponse.json({ error: 'Gewerbe nicht gefunden' }, { status: 404 })
-    }
-
-    const { data: updated, error } = await supabase
+    const { data: updated, error } = await service
       .from('organisationen')
       .update({
         name,
@@ -37,7 +27,7 @@ export const PATCH = withAuth(
         website: website || null,
         logo_url: logo_url ?? null,
       })
-      .eq('id', gewerbeId)
+      .eq('id', m.id)
       .select()
       .single()
 
