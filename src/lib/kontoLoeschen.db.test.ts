@@ -7,130 +7,11 @@
  * Produktion. Darauf wird die echte Migrationsdatei ausgeführt.
  */
 
-import { readFileSync } from 'node:fs'
-import path from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { PGlite } from '@electric-sql/pglite'
+import { BASIS_SCHEMA, migration } from './testing/pgliteSchema'
 
-const MIGRATION = readFileSync(
-  path.resolve(__dirname, '../../supabase/migrations/064_konto_loeschen.sql'),
-  'utf8',
-)
-
-const SCHEMA = `
-  create role anon;
-  create role authenticated;
-  create role service_role;
-
-  create schema auth;
-  create table auth.users (id uuid primary key, email text);
-
-  create schema storage;
-  create table storage.objects (
-    id uuid primary key default gen_random_uuid(),
-    bucket_id text not null,
-    name text not null
-  );
-
-  create table public.gemeinden (id uuid primary key default gen_random_uuid());
-
-  create table public.profiles (
-    id uuid primary key references auth.users(id) on delete cascade,
-    role text not null default 'buerger',
-    email text,
-    avatar_url text
-  );
-
-  create table public.organisationen (
-    id uuid primary key default gen_random_uuid(),
-    profile_id uuid not null references public.profiles(id),
-    logo_url text
-  );
-  create table public.vereine (
-    id uuid primary key default gen_random_uuid(),
-    profile_id uuid not null unique references public.profiles(id) on delete cascade,
-    logo_url text
-  );
-  create table public.verein_abonnements (
-    id uuid primary key default gen_random_uuid(),
-    user_id uuid not null references public.profiles(id) on delete cascade,
-    verein_id uuid not null references public.vereine(id) on delete cascade
-  );
-  create table public.gewerbe_abonnements (
-    id uuid primary key default gen_random_uuid(),
-    user_id uuid not null references public.profiles(id) on delete cascade,
-    gewerbe_id uuid not null references public.organisationen(id) on delete cascade
-  );
-
-  create table public.posts (
-    id uuid primary key default gen_random_uuid(),
-    author_id uuid not null references public.profiles(id),
-    bild_url text,
-    bilder_urls text[]
-  );
-  create table public.maengel (
-    id uuid primary key default gen_random_uuid(),
-    melder_id uuid not null references public.profiles(id),
-    foto_url text
-  );
-  create table public.fragen (
-    id uuid primary key default gen_random_uuid(),
-    fragesteller_id uuid not null references public.profiles(id),
-    antwort text
-  );
-  create table public.gemeinderat_fragen (
-    id uuid primary key default gen_random_uuid(),
-    fragesteller_id uuid not null references public.profiles(id) on delete cascade,
-    gemeinderat_id uuid not null references public.profiles(id) on delete cascade
-  );
-
-  create table public.umfragen (
-    id uuid primary key default gen_random_uuid(),
-    author_id uuid not null references public.profiles(id) on delete cascade,
-    bilder_urls text[] not null default '{}'
-  );
-  create table public.umfrage_fragen (
-    id uuid primary key default gen_random_uuid(),
-    umfrage_id uuid not null references public.umfragen(id) on delete cascade,
-    bilder_urls text[] not null default '{}'
-  );
-  create table public.umfrage_antworten (
-    id uuid primary key default gen_random_uuid(),
-    umfrage_id uuid not null references public.umfragen(id) on delete cascade,
-    frage_id uuid not null references public.umfrage_fragen(id) on delete cascade,
-    user_id uuid not null references public.profiles(id) on delete cascade,
-    antwort_text text
-  );
-  create table public.umfrage_teilnahmen (
-    id uuid primary key default gen_random_uuid(),
-    umfrage_id uuid not null references public.umfragen(id) on delete cascade,
-    user_id uuid not null references public.profiles(id) on delete cascade,
-    unique (umfrage_id, user_id)
-  );
-
-  create table public.meldungen (
-    id uuid primary key default gen_random_uuid(),
-    melder_id uuid not null references auth.users(id) on delete cascade
-  );
-  create table public.abfallkalender_praeferenzen (
-    id uuid primary key default gen_random_uuid(),
-    user_id uuid not null references auth.users(id) on delete cascade
-  );
-
-  create table public.einladungen (
-    id uuid primary key default gen_random_uuid(),
-    email text not null,
-    status text not null default 'offen'
-      check (status in ('offen', 'angenommen', 'abgelaufen', 'widerrufen')),
-    eingeladen_von uuid not null references public.profiles(id)
-  );
-  create table public.rollen_log (
-    id uuid primary key default gen_random_uuid(),
-    ziel_profile_id uuid,
-    ziel_email text not null,
-    ausgefuehrt_von uuid not null
-  );
-`
+const MIGRATION = migration('064_konto_loeschen.sql')
 
 const URL = 'https://xyz.supabase.co/storage/v1/object/public/dorfly-media/'
 
@@ -168,7 +49,7 @@ async function umfrageMitStimme(teilnehmer: string) {
 
 beforeEach(async () => {
   db = new PGlite()
-  await db.exec(SCHEMA)
+  await db.exec(BASIS_SCHEMA)
   await db.exec(MIGRATION)
   await nutzer(ANDERER, 'andere@example.de')
 })
