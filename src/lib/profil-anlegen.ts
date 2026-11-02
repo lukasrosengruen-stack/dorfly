@@ -123,32 +123,18 @@ export async function profilAnlegen(userId: string, daten: RegistrierungsDaten =
   }
 
   if (einladungId && einladungDetails) {
-    if (einladungDetails.rolle === 'verein') {
-      if (einladungDetails.verein_id) {
-        await serviceClient
-          .from('vereine')
-          .update({ profile_id: userId })
-          .eq('id', einladungDetails.verein_id)
-      } else if (einladungDetails.organisation_name) {
-        await serviceClient.from('vereine').insert({
-          profile_id: userId,
-          gemeinde_id: einladungDetails.gemeinde_id,
-          verein_name: einladungDetails.organisation_name,
-          typ: 'verein',
-        })
-      }
-    } else if (['organisation', 'gewerbe'].includes(einladungDetails.rolle ?? '')) {
-      if (einladungDetails.org_id) {
-        await serviceClient
-          .from('organisationen')
-          .update({ profile_id: userId })
-          .eq('id', einladungDetails.org_id)
-      } else if (einladungDetails.organisation_name) {
-        await serviceClient.from('organisationen').insert({
-          profile_id: userId,
-          gemeinde_id: einladungDetails.gemeinde_id,
-          name: einladungDetails.organisation_name,
-          typ: einladungDetails.rolle as 'gewerbe' | 'verein' | 'institution',
+    if (['verein', 'organisation', 'gewerbe'].includes(einladungDetails.rolle)) {
+      // Mitgliedschaft im eingeladenen Verein bzw. neuen Verein aus organisation_name
+      // (Migration 065). Rolle 'organisation' landet dabei immer in vereine.
+      const { error: einloeseFehler } = await serviceClient.rpc('einladung_einloesen', {
+        p_profile_id: userId,
+        p_einladung_id: einladungId,
+      })
+      if (einloeseFehler) {
+        // Kein Abbruch: Das Konto besteht schon. Ohne Verein kann die Person ihn im
+        // Dashboard selbst anlegen, oder die Verwaltung ordnet sie zu.
+        console.error('[profilAnlegen] Einladung nicht eingeloest:', {
+          userId, einladungId, fehler: einloeseFehler.message,
         })
       }
     }
