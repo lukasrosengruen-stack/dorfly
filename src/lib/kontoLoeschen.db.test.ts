@@ -11,7 +11,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { PGlite } from '@electric-sql/pglite'
 import { BASIS_SCHEMA, migration } from './testing/pgliteSchema'
 
-const MIGRATION = migration('064_konto_loeschen.sql')
+const MIGRATION = migration('064_konto_loeschen.sql') + '\n' + migration('065_mitgliedschaften.sql')
 
 const URL = 'https://xyz.supabase.co/storage/v1/object/public/dorfly-media/'
 
@@ -183,6 +183,76 @@ describe('konto_loeschen — Verwaltungskonto mit verschickten Einladungen', () 
   })
 })
 
+describe('konto_loeschen — Vereinsmitglied', () => {
+  const MITGLIED = '00000000-0000-0000-0000-00000000000d'
+  let verein: string
+
+  beforeEach(async () => {
+    await nutzer(MITGLIED, 'mitglied@example.de', 'verein')
+    verein = (await db.query<{ id: string }>(
+      'insert into public.vereine (profile_id, logo_url) values ($1, $2) returning id', [MITGLIED, `${URL}vereine/logo.jpg`])).rows[0].id
+    await db.query(`insert into public.mitgliedschaften (profile_id, verein_id, rolle) values ($1, $2, 'verwalter')`, [MITGLIED, verein])
+    await db.query(`insert into public.posts (author_id, org_id, channel, bild_url) values ($1, $2, 'verein', $3)`, [MITGLIED, verein, `${URL}posts/verein.jpg`])
+    await db.query(`insert into public.posts (author_id, channel, bild_url) values ($1, 'gemeinde', $2)`, [MITGLIED, `${URL}posts/eigen.jpg`])
+    await db.query('insert into public.verein_abonnements (user_id, verein_id) values ($1, $2)', [ANDERER, verein])
+  })
+
+  it('lässt Verein, Abonnenten und Vereinsbeiträge stehen — ohne Autor', async () => {
+    await loeschen(MITGLIED)
+    expect(await anzahl('public.vereine where id = $1', [verein])).toBe(1)
+    expect(await anzahl('public.verein_abonnements')).toBe(1)
+    expect(await anzahl('public.posts where org_id = $1 and author_id is null', [verein])).toBe(1)
+    expect(await anzahl(`public.posts where channel = 'gemeinde'`)).toBe(0)
+    expect(await anzahl('public.mitgliedschaften')).toBe(0)
+  })
+
+  it('liefert keine Vereinsdateien als Löschpfade', async () => {
+    const res = await db.query<{ pfad: string }>('select public.konto_dateipfade($1) as pfad', [MITGLIED])
+    expect(res.rows.map(r => r.pfad)).toEqual(['posts/eigen.jpg'])
+  })
+})
+
+describe('konto_dateipfade — fremde Dateien', () => {
+  async function pfade(id: string) {
+    const res = await db.query<{ pfad: string }>('select public.konto_dateipfade($1) as pfad', [id])
+    return res.rows.map(r => r.pfad)
+  }
+
+  beforeEach(async () => {
+    await nutzer(BUERGER, 'buerger@example.de')
+  })
+
+  it('liefert Pfade nicht, die ein bleibender Beitrag der Verwaltung ebenfalls nutzt', async () => {
+    await nutzer(VERWALTUNG, 'verwaltung@example.de', 'verwaltung')
+    await db.query('insert into public.posts (author_id, bild_url) values ($1, $2)', [VERWALTUNG, `${URL}posts/geteilt.jpg`])
+    await db.query('insert into public.posts (author_id, bild_url) values ($1, $2)', [ANDERER, `${URL}posts/geteilt.jpg`])
+    await db.query('insert into public.posts (author_id, bild_url) values ($1, $2)', [BUERGER, `${URL}posts/geteilt.jpg`])
+    expect(await pfade(BUERGER)).toEqual([])
+  })
+
+  it('liefert das Gemeindelogo nicht, auch wenn Avatar oder Beitragsbild darauf zeigen', async () => {
+    await db.query('insert into public.gemeinden (logo_url) values ($1)', [`${URL}gemeinden/g1/logo.png`])
+    await db.query('update public.profiles set avatar_url = $2 where id = $1', [BUERGER, `${URL}gemeinden/g1/logo.png`])
+    await db.query('insert into public.posts (author_id, bild_url) values ($1, $2)', [BUERGER, `${URL}gemeinden/g1/logo.png`])
+    expect(await pfade(BUERGER)).toEqual([])
+  })
+
+  it('liefert das Logo eines anderen Vereins nicht', async () => {
+    const v = await db.query<{ id: string }>(
+      'insert into public.vereine (profile_id, logo_url) values ($1, $2) returning id', [ANDERER, `${URL}vereine/fremd/logo.jpg`])
+    const pfad = `vereine/${v.rows[0].id}/logo.jpg`
+    await db.query('update public.vereine set logo_url = $2 where id = $1', [v.rows[0].id, `${URL}${pfad}`])
+    await db.query('insert into public.posts (author_id, bild_url) values ($1, $2)', [BUERGER, `${URL}${pfad}`])
+    expect(await pfade(BUERGER)).toEqual([])
+  })
+
+  it('liefert keine Pfade mit .. oder ?', async () => {
+    await db.query('insert into public.posts (author_id, bild_url) values ($1, $2)', [BUERGER, `${URL}posts/../x.png`])
+    await db.query('insert into public.posts (author_id, bild_url) values ($1, $2)', [BUERGER, `${URL}posts/a.jpg?x=1`])
+    expect(await pfade(BUERGER)).toEqual([])
+  })
+})
+
 describe('konto_loeschen — ganz oder gar nicht', () => {
   it('rollt alles zurück, wenn ein Schritt scheitert', async () => {
     await nutzer(BUERGER, 'buerger@example.de')
@@ -209,7 +279,7 @@ describe('konto_loeschen — ganz oder gar nicht', () => {
 })
 
 describe('konto_dateipfade', () => {
-  it('liefert referenzierte Bilder und eigene Ordner, aber nie gemeinden/', async () => {
+  it('liefert referenzierte Bilder und eigene Ordner, aber nie gemeinden/ und nie Vereinsdateien', async () => {
     await nutzer(BUERGER, 'buerger@example.de', 'verein')
     await db.query('update public.profiles set avatar_url = $2 where id = $1', [BUERGER, `${URL}gemeinderat/${BUERGER}/avatar_2.jpg`])
     await db.query('insert into public.maengel (melder_id, foto_url) values ($1, $2)', [BUERGER, `${URL}maengel/1.jpg`])
@@ -252,8 +322,6 @@ describe('konto_dateipfade', () => {
       `umfragen/${u.rows[0].id}/frage.jpg`,
       `umfragen/tmp/${BUERGER}/kopf.jpg`,
       `umfragen/tmp/${BUERGER}/verwaist.jpg`,
-      `vereine/${vereinId}/logo_alt.jpg`,
-      'vereine/x/logo_2.jpg',
     ].sort())
   })
 })

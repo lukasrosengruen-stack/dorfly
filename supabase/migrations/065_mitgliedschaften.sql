@@ -638,7 +638,9 @@ as $$
   select
     exists (
       select 1 from public.posts p
-       where p.org_id is distinct from p_org_id
+       where (p_org_id is null or p.org_id is distinct from p_org_id)
+         -- Muss exakt dem entsprechen, was konto_loeschen löscht: eigene Beiträge,
+         -- außer Vereins-/Gewerbebeiträge (die bleiben mit author_id = null stehen).
          and not (p_user_id is not null and p.author_id = p_user_id
                   and not (p.org_id is not null and p.channel::text in ('verein', 'gewerbe')))
          and (split_part(p.bild_url, '/storage/v1/object/public/dorfly-media/', 2) = p_pfad
@@ -646,26 +648,26 @@ as $$
                           where split_part(x, '/storage/v1/object/public/dorfly-media/', 2) = p_pfad))
     )
     or exists (select 1 from public.vereine v
-                where v.id is distinct from p_org_id
+                where (p_org_id is null or v.id is distinct from p_org_id)
                   and split_part(v.logo_url, '/storage/v1/object/public/dorfly-media/', 2) = p_pfad)
     or exists (select 1 from public.organisationen o
-                where o.id is distinct from p_org_id
+                where (p_org_id is null or o.id is distinct from p_org_id)
                   and split_part(o.logo_url, '/storage/v1/object/public/dorfly-media/', 2) = p_pfad)
     or exists (select 1 from public.profiles pr
-                where pr.id is distinct from p_user_id
+                where (p_user_id is null or pr.id is distinct from p_user_id)
                   and split_part(pr.avatar_url, '/storage/v1/object/public/dorfly-media/', 2) = p_pfad)
     or exists (select 1 from public.gemeinden g
                 where split_part(g.logo_url, '/storage/v1/object/public/dorfly-media/', 2) = p_pfad)
     or exists (select 1 from public.maengel m
-                where m.melder_id is distinct from p_user_id
+                where (p_user_id is null or m.melder_id is distinct from p_user_id)
                   and split_part(m.foto_url, '/storage/v1/object/public/dorfly-media/', 2) = p_pfad)
     or exists (select 1 from public.umfragen u
-                where u.author_id is distinct from p_user_id
+                where (p_user_id is null or u.author_id is distinct from p_user_id)
                   and exists (select 1 from unnest(u.bilder_urls) x
                                where split_part(x, '/storage/v1/object/public/dorfly-media/', 2) = p_pfad))
     or exists (select 1 from public.umfrage_fragen f
                 join public.umfragen u on u.id = f.umfrage_id
-                where u.author_id is distinct from p_user_id
+                where (p_user_id is null or u.author_id is distinct from p_user_id)
                   and exists (select 1 from unnest(f.bilder_urls) x
                                where split_part(x, '/storage/v1/object/public/dorfly-media/', 2) = p_pfad))
 $$;
@@ -714,6 +716,8 @@ as $$
           or starts_with(k.pfad, 'vereine/neu/')
           or (p_verein_id is not null and starts_with(k.pfad, 'vereine/' || p_verein_id || '/'))
           or (p_organisation_id is not null and starts_with(k.pfad, 'gewerbe/' || p_organisation_id || '/')))
+     and position('..' in k.pfad) = 0
+     and position('?' in k.pfad) = 0
      and not public._pfad_anderweitig_genutzt(k.pfad, coalesce(p_verein_id, p_organisation_id), null)
 $$;
 
@@ -772,6 +776,130 @@ begin
   else
     delete from public.organisationen where id = p_organisation_id;
   end if;
+end;
+$$;
+
+-- ═══ Kontolöschung (ersetzt 064) ═════════════════════════════════════════════
+-- Änderung gegenüber 064: Vereine und Gewerbe überleben das Konto. Die
+-- Mitgliedschaft fällt per Cascade weg, Vereins-/Gewerbebeiträge bleiben ohne
+-- Autor (author_id = null). War die Person letzter Verwalter, zeigt die Verwaltung
+-- „Kein Verwalter“ an.
+
+-- Löschregel für Beiträge: identisch in _pfad_anderweitig_genutzt (p_user_id) und
+-- konto_loeschen — bei Änderungen alle drei Stellen anpassen.
+create or replace function public.konto_dateipfade(p_user_id uuid)
+returns setof text
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  with urls as (
+    select foto_url as url from public.maengel where melder_id = p_user_id
+    union all
+      select bild_url from public.posts
+      where author_id = p_user_id and not (org_id is not null and channel::text in ('verein', 'gewerbe'))
+    union all
+      select unnest(bilder_urls) from public.posts
+      where author_id = p_user_id and not (org_id is not null and channel::text in ('verein', 'gewerbe'))
+    union all select unnest(u.bilder_urls) from public.umfragen u where u.author_id = p_user_id
+    union all
+      select unnest(f.bilder_urls)
+      from public.umfrage_fragen f
+      join public.umfragen u on u.id = f.umfrage_id
+      where u.author_id = p_user_id
+    union all select avatar_url from public.profiles where id = p_user_id
+  ),
+  aus_urls as (
+    select nullif(split_part(url, '/storage/v1/object/public/dorfly-media/', 2), '') as pfad
+    from urls
+    where url is not null
+  ),
+  ordner as (
+    select 'gemeinderat/' || p_user_id || '/' as praefix
+    union all select 'umfragen/tmp/' || p_user_id || '/'
+    union all select 'umfragen/' || id || '/' from public.umfragen where author_id = p_user_id
+  ),
+  aus_ordnern as (
+    select o.name as pfad
+    from storage.objects o
+    join ordner on starts_with(o.name, ordner.praefix)
+    where o.bucket_id = 'dorfly-media'
+  ),
+  kandidaten as (
+    select pfad from aus_urls where pfad is not null
+    union
+    select pfad from aus_ordnern
+  )
+  select k.pfad
+    from kandidaten k
+   where not public._pfad_anderweitig_genutzt(k.pfad, null, p_user_id)
+     and not starts_with(k.pfad, 'gemeinden/')
+     and position('..' in k.pfad) = 0
+     and position('?' in k.pfad) = 0
+$$;
+
+create or replace function public.konto_loeschen(p_user_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_platzhalter constant text := 'geloeschtes-konto';
+  v_emails text[];
+begin
+  perform 1 from auth.users where id = p_user_id for update;
+  if not found then
+    raise exception 'Konto % nicht gefunden', p_user_id using errcode = 'P0002';
+  end if;
+
+  select array_agg(distinct lower(e)) into v_emails
+  from (
+    select email as e from auth.users where id = p_user_id
+    union all
+    select email from public.profiles where id = p_user_id
+  ) x
+  where e is not null;
+
+  update public.umfrage_antworten set user_id = null where user_id = p_user_id;
+  update public.umfrage_teilnahmen set user_id = null where user_id = p_user_id;
+
+  update public.rollen_log
+     set ziel_email = v_platzhalter,
+         ziel_profile_id = null
+   where ziel_profile_id = p_user_id
+      or lower(ziel_email) = any(coalesce(v_emails, '{}'));
+
+  update public.einladungen
+     set email = v_platzhalter,
+         status = case when status = 'offen' then 'widerrufen' else status end
+   where lower(email) = any(coalesce(v_emails, '{}'));
+
+  -- Vereins- und Gewerbebeiträge gehören dem Verein: bleiben, ohne Autor.
+  -- Löschregel für Beiträge: identisch in konto_dateipfade und
+  -- _pfad_anderweitig_genutzt (p_user_id) — bei Änderungen alle Stellen anpassen.
+  update public.posts
+     set author_id = null
+   where author_id = p_user_id
+     and org_id is not null
+     and channel::text in ('verein', 'gewerbe');
+
+  delete from public.umfragen where author_id = p_user_id;
+  delete from public.posts where author_id = p_user_id;
+  delete from public.maengel where melder_id = p_user_id;
+  delete from public.fragen where fragesteller_id = p_user_id;
+  delete from public.gemeinderat_fragen
+   where fragesteller_id = p_user_id or gemeinderat_id = p_user_id;
+  delete from public.gewerbe_abonnements where user_id = p_user_id;
+
+  -- Cascade: mitgliedschaften, verein_abonnements.
+  -- Set null: vereine.profile_id, organisationen.profile_id, einladungen.eingeladen_von,
+  --           mitgliedschaften.hinzugefuegt_von.
+  delete from public.profiles where id = p_user_id;
+
+  -- Cascade: meldungen, abfallkalender_praeferenzen, Sessions und Identitäten
+  delete from auth.users where id = p_user_id;
 end;
 $$;
 

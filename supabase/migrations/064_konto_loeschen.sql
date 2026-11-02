@@ -18,6 +18,8 @@
 --
 -- Die Seite /konto-loeschen beschreibt genau dieses Verhalten. Änderungen hier
 -- dort und in der Datenschutzerklärung (Ziffer 7) nachziehen.
+--
+-- Ersetzt durch 065: Vereine und Gewerbe überleben das Konto (Mitgliedschaften).
 
 -- ─── einladungen.eingeladen_von: Einladungen überleben das Konto ─────────────
 alter table public.einladungen
