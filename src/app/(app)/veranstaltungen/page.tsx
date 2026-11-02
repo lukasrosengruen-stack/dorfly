@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { getGemeinde } from '@/lib/gemeinde'
+import { ladeVereinsnamen, mitVereinsabsender } from '@/lib/absender'
 import KalenderClient from './KalenderClient'
 
 export const metadata: Metadata = { title: 'Veranstaltungen – Dorfly' }
@@ -22,7 +23,7 @@ export default async function VeranstaltungenPage() {
     ? await Promise.all([
         supabase
           .from('posts')
-          .select('id, titel, inhalt, bild_url, veranstaltung_datum, veranstaltung_ort, channel, tag, profiles:profiles_public!posts_author_id_fkey(display_name, verein_name)')
+          .select('id, titel, inhalt, bild_url, veranstaltung_datum, veranstaltung_ort, channel, org_id, tag, profiles:profiles_public!posts_author_id_fkey(display_name, verein_name)')
           .eq('gemeinde_id', gemeindeId)
           .eq('status', 'published')
           .eq('tag', 'veranstaltung')
@@ -32,7 +33,7 @@ export default async function VeranstaltungenPage() {
           .order('veranstaltung_datum', { ascending: true }),
         supabase
           .from('post_termine')
-          .select('datum, posts!inner(id, titel, inhalt, bild_url, veranstaltung_ort, channel, tag, status, gemeinde_id, profiles:profiles_public!posts_author_id_fkey(display_name, verein_name))')
+          .select('datum, posts!inner(id, titel, inhalt, bild_url, veranstaltung_ort, channel, org_id, tag, status, gemeinde_id, profiles:profiles_public!posts_author_id_fkey(display_name, verein_name))')
           .eq('posts.gemeinde_id', gemeindeId)
           .eq('posts.status', 'published')
           .eq('posts.tag', 'veranstaltung')
@@ -45,7 +46,11 @@ export default async function VeranstaltungenPage() {
   const zusatzAlsVeranstaltung = ((zusatztermine ?? []) as unknown as { datum: string; posts: Omit<V, 'id' | 'veranstaltung_datum'> & { id: string } }[])
     .map(({ datum, posts: post }) => ({ ...post, id: `${post.id}::${datum}`, veranstaltung_datum: datum }) as V)
 
-  const veranstaltungen = [...((haupttermine ?? []) as unknown as V[]), ...zusatzAlsVeranstaltung]
+  type MitOrg = V & { channel: string; org_id: string | null }
+  const alle = [...((haupttermine ?? []) as unknown as MitOrg[]), ...(zusatzAlsVeranstaltung as MitOrg[])]
+  const vereinsnamen = await ladeVereinsnamen(supabase, alle)
+  const veranstaltungen = alle
+    .map(v => ({ ...v, profiles: mitVereinsabsender(v, v.profiles ?? null, vereinsnamen) }) as V)
     .sort((a, b) => a.veranstaltung_datum.localeCompare(b.veranstaltung_datum))
 
   return <KalenderClient veranstaltungen={veranstaltungen} gemeindeName={gemeindeName} />

@@ -13,6 +13,7 @@ import MaengelSection from '@/components/dashboard/MaengelSection'
 import UmfragenSection from '@/components/dashboard/UmfragenSection'
 import { ZurueckButton } from '@/components/ui'
 import { mergeArbeitsset } from '@/lib/dashboardArbeitsset'
+import { ladeVereinsnamen, mitVereinsabsender } from '@/lib/absender'
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
 type SupabaseServiceClient = Awaited<ReturnType<typeof createServiceClient>>
@@ -454,7 +455,7 @@ export default async function DashboardPage() {
     ladeMaengelDaten(supabase, gemeindeId!),
     ladeFragenDaten(supabase, gemeindeId!),
     ladePostsDaten(service, gemeindeId!),
-    service.from('posts').select('id, titel, inhalt, channel, tag, created_at, publish_at, bild_url, bilder_urls, profiles(display_name, verein_name, role)').eq('gemeinde_id', gemeindeId!).eq('status', 'pending').order('created_at', { ascending: false }),
+    service.from('posts').select('id, titel, inhalt, channel, org_id, tag, created_at, publish_at, bild_url, bilder_urls, profiles(display_name, verein_name, role)').eq('gemeinde_id', gemeindeId!).eq('status', 'pending').order('created_at', { ascending: false }),
     ladeUmfragenDaten(supabase, gemeindeId!),
     service.from('profiles').select('id, role', { count: 'exact' }).eq('gemeinde_id', gemeindeId!),
     supabase.from('abfallkalender_einstellungen').select('*').eq('gemeinde_id', gemeindeId!).maybeSingle(),
@@ -474,7 +475,9 @@ export default async function DashboardPage() {
   const posts = postsDaten.posts
   const postsGesamt = postsDaten.gesamt
   const veranstaltungenVerborgen = postsDaten.veranstaltungenVerborgen
-  const pendingPosts = pendingPostsResult.data ?? []
+  const pendingRoh = pendingPostsResult.data ?? []
+  const pendingNamen = await ladeVereinsnamen(service, pendingRoh)
+  const pendingPosts = pendingRoh.map(p => ({ ...p, profiles: mitVereinsabsender(p, p.profiles, pendingNamen) }))
   const umfragen = umfragenDaten.umfragen
   const nutzerAnzahl = nutzerResult.count ?? 0
 

@@ -13,4 +13,4 @@
 // Als einzelnes Literal mit `as const`: supabase-js leitet die Ergebnistypen aus
 // dem Select-String ab, was bei einer zusammengesetzten Zeichenkette verloren ginge.
 export const PUBLIC_POST_SELECT =
-  'id, titel, inhalt, bild_url, bilder_urls, tag, channel, veranstaltung_datum, veranstaltung_ort, post_termine(datum), sammlung_datum, sammlung_organisator, published_at, gemeinde_id, profiles:profiles_public!posts_author_id_fkey(display_name, verein_name), gemeinden(name)' as const
+  'id, titel, inhalt, bild_url, bilder_urls, tag, channel, org_id, veranstaltung_datum, veranstaltung_ort, post_termine(datum), sammlung_datum, sammlung_organisator, published_at, gemeinde_id, profiles:profiles_public!posts_author_id_fkey(display_name, verein_name), gemeinden(name)' as const

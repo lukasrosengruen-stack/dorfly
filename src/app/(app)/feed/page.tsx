@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { getGemeinde } from '@/lib/gemeinde'
+import { ladeVereinsnamen, mitVereinsabsender } from '@/lib/absender'
 import FeedClient from './FeedClient'
 
 export const metadata: Metadata = { title: 'Neuigkeiten – Dorfly' }
@@ -39,11 +40,10 @@ export default async function FeedPage() {
       : Promise.resolve({ data: [] }),
 
     gemeindeId
-      ? supabase.from('profiles')
+      ? supabase.from('vereine')
           .select('verein_name')
           .eq('gemeinde_id', gemeindeId)
-          .eq('role', 'verein')
-          .not('verein_name', 'is', null)
+          .eq('typ', 'verein')
       : Promise.resolve({ data: [] }),
 
     // Umfragen sind fuer Gaeste ausgeblendet (login-pflichtig)
@@ -71,9 +71,11 @@ export default async function FeedPage() {
     ? await supabase.from('profiles_public').select('id, display_name, verein_name, role, avatar_url').in('id', authorIds)
     : { data: [] }
 
+  const vereinsnamen = await ladeVereinsnamen(supabase, posts)
+
   const postsWithProfiles = posts.map((post) => ({
     ...post,
-    profiles: (authorProfiles ?? []).find(p => p.id === post.author_id) ?? null,
+    profiles: mitVereinsabsender(post, (authorProfiles ?? []).find(p => p.id === post.author_id) ?? null, vereinsnamen),
   })) as unknown as Parameters<typeof FeedClient>[0]['posts']
 
   const vereine = (vereineResult.data ?? [])

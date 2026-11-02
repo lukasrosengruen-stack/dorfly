@@ -9,8 +9,10 @@ import Image from 'next/image'
 import { PUBLIC_POST_SELECT } from '@/lib/publicPostQuery'
 import { shareCtaZiele } from '@/lib/shareCta'
 import { getGemeindeSlug } from '@/lib/gemeinde'
+import { ladeVereinsnamen, mitVereinsabsender } from '@/lib/absender'
+import type { Database } from '@/types/supabase'
 
-const supabase = createClient(
+const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
@@ -77,7 +79,9 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
   const ziele = shareCtaZiele(await getGemeindeSlug())
   const gemeindeName = (post.gemeinden as { name?: string } | null)?.name ?? 'Gemeinde Ehningen'
-  const autor = post.profiles as { display_name?: string; verein_name?: string } | null
+  // anon darf vereine lesen (Migration 060)
+  const vereinsnamen = await ladeVereinsnamen(supabase, [post])
+  const autor = mitVereinsabsender(post, post.profiles as { display_name?: string | null; verein_name?: string | null } | null, vereinsnamen)
   const autorName = autor?.verein_name ?? autor?.display_name ?? gemeindeName
   const tag = post.tag ?? 'nachricht'
   const bilder = (post.bilder_urls as string[] | null)?.length
@@ -122,7 +126,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
             </span>
             {/* text-gray-400 erreicht auf Weiss nur 2.8:1 (Checkliste: mind. 4.5:1) */}
             <span className="text-xs text-gray-500 ml-auto">
-              {format(new Date(post.published_at), 'd. MMMM yyyy', { locale: de })}
+              {format(new Date(post.published_at as string), 'd. MMMM yyyy', { locale: de })}
             </span>
           </div>
 
