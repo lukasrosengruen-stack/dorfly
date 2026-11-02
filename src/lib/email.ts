@@ -16,6 +16,19 @@ function resend() {
   return new Resend(process.env.RESEND_API_KEY)
 }
 
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+/** „die Gemeindeverwaltung X“ oder ein übergebener Absender wie „der Verein „TSV““. */
+function absenderHtml(gemeindeName: string, absender?: string | null): string {
+  return absender ? escapeHtml(absender) : `die Gemeindeverwaltung <strong>${gemeindeName}</strong>`
+}
+
 export async function sendeEinladungsEmail(params: {
   to: string
   gemeindeName: string
@@ -23,6 +36,7 @@ export async function sendeEinladungsEmail(params: {
   rolle: string
   organisationName?: string | null
   hinweis?: string | null
+  absender?: string | null
   token: string
 }) {
   const link = `https://${params.gemeindeSlug}.dorfly.de/login?token=${params.token}`
@@ -32,7 +46,7 @@ export async function sendeEinladungsEmail(params: {
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
       <h2 style="color:#1a1a1a">Einladung zu Dorfly ${params.gemeindeName}</h2>
       <p>Hallo,</p>
-      <p>die Gemeindeverwaltung <strong>${params.gemeindeName}</strong> lädt Sie ein, sich bei Dorfly zu registrieren.</p>
+      <p>${absenderHtml(params.gemeindeName, params.absender)} lädt Sie ein, sich bei Dorfly ${params.gemeindeName} zu registrieren.</p>
       <table style="border-collapse:collapse;margin:16px 0">
         <tr>
           <td style="padding:4px 12px 4px 0;color:#666;white-space:nowrap">Ihre Rolle:</td>
@@ -41,12 +55,12 @@ export async function sendeEinladungsEmail(params: {
         ${params.organisationName ? `
         <tr>
           <td style="padding:4px 12px 4px 0;color:#666;white-space:nowrap">Für:</td>
-          <td style="padding:4px 0"><strong>${params.organisationName}</strong></td>
+          <td style="padding:4px 0"><strong>${escapeHtml(params.organisationName)}</strong></td>
         </tr>` : ''}
         ${params.hinweis ? `
         <tr>
           <td style="padding:4px 12px 4px 0;color:#666;white-space:nowrap">Hinweis:</td>
-          <td style="padding:4px 0">${params.hinweis}</td>
+          <td style="padding:4px 0">${escapeHtml(params.hinweis)}</td>
         </tr>` : ''}
       </table>
       <a href="${link}" style="display:inline-block;background:#22c55e;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;margin:8px 0">
@@ -72,14 +86,17 @@ export async function sendeRollenentzugEmail(params: {
   name: string | null
   gemeindeName: string
   alteRolle: string
+  absender?: string | null
+  zusatz?: string | null
 }) {
   const alteRolleLabel = ROLLEN_LABEL[params.alteRolle] ?? params.alteRolle
 
   const html = `
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
       <h2 style="color:#1a1a1a">Änderung Ihrer Rolle in Dorfly</h2>
-      <p>Hallo${params.name ? ` ${params.name}` : ''},</p>
-      <p>die Gemeindeverwaltung <strong>${params.gemeindeName}</strong> hat Ihre Rolle in Dorfly geändert.</p>
+      <p>Hallo${params.name ? ` ${escapeHtml(params.name)}` : ''},</p>
+      <p>${absenderHtml(params.gemeindeName, params.absender)} hat Ihre Rolle in Dorfly geändert.</p>
+      ${params.zusatz ? `<p>${escapeHtml(params.zusatz)}</p>` : ''}
       <p>Ihre bisherige Rolle als <strong>${alteRolleLabel}</strong> wurde entzogen.</p>
       <p>Sie sind weiterhin als <strong>Bürger:in</strong> in Dorfly registriert und können die App normal nutzen.</p>
       <p style="color:#999;font-size:13px;margin-top:24px">
@@ -102,14 +119,15 @@ export async function sendeRollenzuweisungEmail(params: {
   gemeindeName: string
   neueRolle: string
   organisationName?: string | null
+  absender?: string | null
 }) {
   const neueRolleLabel = ROLLEN_LABEL[params.neueRolle] ?? params.neueRolle
 
   const html = `
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
       <h2 style="color:#1a1a1a">Neue Rolle in Dorfly</h2>
-      <p>Hallo${params.name ? ` ${params.name}` : ''},</p>
-      <p>die Gemeindeverwaltung <strong>${params.gemeindeName}</strong> hat Ihnen eine neue Rolle zugewiesen.</p>
+      <p>Hallo${params.name ? ` ${escapeHtml(params.name)}` : ''},</p>
+      <p>${absenderHtml(params.gemeindeName, params.absender)} hat Ihnen eine neue Rolle zugewiesen.</p>
       <table style="border-collapse:collapse;margin:16px 0">
         <tr>
           <td style="padding:4px 12px 4px 0;color:#666;white-space:nowrap">Ihre neue Rolle:</td>
@@ -118,7 +136,7 @@ export async function sendeRollenzuweisungEmail(params: {
         ${params.organisationName ? `
         <tr>
           <td style="padding:4px 12px 4px 0;color:#666;white-space:nowrap">Für:</td>
-          <td style="padding:4px 0"><strong>${params.organisationName}</strong></td>
+          <td style="padding:4px 0"><strong>${escapeHtml(params.organisationName)}</strong></td>
         </tr>` : ''}
       </table>
       <p>Sie können sich jetzt unter <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard">Ihr Dashboard</a> anmelden.</p>
