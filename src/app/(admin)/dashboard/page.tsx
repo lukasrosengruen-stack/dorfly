@@ -14,7 +14,8 @@ import UmfragenSection from '@/components/dashboard/UmfragenSection'
 import { ZurueckButton } from '@/components/ui'
 import { mergeArbeitsset } from '@/lib/dashboardArbeitsset'
 import { ladeVereinsnamen, mitVereinsabsender } from '@/lib/absender'
-import { meinVereinsziel, kurzname } from '@/lib/mitgliedschaft'
+import { meinVereinsziel, kurzname, vereinsEintraege } from '@/lib/mitgliedschaft'
+import VereineVerwaltungSection from '@/components/dashboard/VereineVerwaltungSection'
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
 type SupabaseServiceClient = Awaited<ReturnType<typeof createServiceClient>>
@@ -494,6 +495,24 @@ export default async function DashboardPage() {
   const pendingRoh = pendingPostsResult.data ?? []
   const pendingNamen = await ladeVereinsnamen(service, pendingRoh)
   const pendingPosts = pendingRoh.map(p => ({ ...p, profiles: mitVereinsabsender(p, p.profiles, pendingNamen) }))
+
+  // Vereine und Gewerbe der Gemeinde mit Mitgliederzahlen (ohne Gemeinde: leere Liste)
+  const [vereineListe, gewerbeListe] = gemeindeId
+    ? await Promise.all([
+        service.from('vereine').select('id, verein_name, typ').eq('gemeinde_id', gemeindeId),
+        service.from('organisationen').select('id, name').eq('gemeinde_id', gemeindeId).eq('typ', 'gewerbe'),
+      ])
+    : [{ data: [] }, { data: [] }]
+  const vereinData = vereineListe.data ?? []
+  const gewerbeData = gewerbeListe.data ?? []
+  const mitgliedschaftFilter = [
+    vereinData.length > 0 ? `verein_id.in.(${vereinData.map(v => v.id).join(',')})` : null,
+    gewerbeData.length > 0 ? `organisation_id.in.(${gewerbeData.map(g => g.id).join(',')})` : null,
+  ].filter((f): f is string => f !== null)
+  const mitgliedschaftenListe = mitgliedschaftFilter.length > 0
+    ? await service.from('mitgliedschaften').select('verein_id, organisation_id, rolle').or(mitgliedschaftFilter.join(','))
+    : { data: [] }
+  const vereinsListe = vereinsEintraege(vereinData, gewerbeData, mitgliedschaftenListe.data ?? [])
   const umfragen = umfragenDaten.umfragen
   const nutzerAnzahl = nutzerResult.count ?? 0
 
@@ -609,6 +628,9 @@ export default async function DashboardPage() {
           )}
 
         </div>
+
+        {/* Vereine & Gewerbe */}
+        <VereineVerwaltungSection eintraege={vereinsListe} />
 
         {/* Nutzer & Rollen */}
         <EinladungenSection />
