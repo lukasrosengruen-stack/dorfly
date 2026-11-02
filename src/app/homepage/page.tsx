@@ -11,6 +11,7 @@ import { Logo as Wordmark } from '@/components/ui'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 
 const APP_STORE_URL = 'https://apps.apple.com/de/app/dorfly/id6791239032'
+const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=de.dorfly.app'
 
 // ── Brand tokens ──────────────────────────────────────────────────────────────
 const C = {
@@ -613,15 +614,30 @@ function Hero({ onDemo }: { onDemo: () => void }) {
                 <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: C.muted, marginBottom: 12 }}>
                   Jetzt verfügbar
                 </div>
-                <a
-                  href={APP_STORE_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Dorfly im App Store – öffnet in neuem Tab"
-                  style={{ display: 'inline-block' }}
-                >
-                  <img src="/badges/app-store-de.svg" alt="Download on the App Store" height={44} style={{ display: 'block' }} />
-                </a>
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
+                  <a
+                    href={APP_STORE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Dorfly im App Store – öffnet in neuem Tab"
+                    style={{ display: 'inline-block' }}
+                  >
+                    <img src="/badges/app-store-de.svg" alt="Download on the App Store" height={44} style={{ display: 'block' }} />
+                  </a>
+                  {/* Offizielles Badge von play.google.com/intl/de/badges — nicht nachbauen
+                      oder einfärben (Google-Markenrichtlinien). Das PNG hat transparenten
+                      Rand, deshalb 52 statt 44 px: So ist die sichtbare Fläche gleich hoch
+                      wie beim Apple-Badge. */}
+                  <a
+                    href={PLAY_STORE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Dorfly bei Google Play – öffnet in neuem Tab"
+                    style={{ display: 'inline-block' }}
+                  >
+                    <img src="/badges/google-play-de.png" alt="Jetzt bei Google Play" width={134} height={52} style={{ display: 'block' }} />
+                  </a>
+                </div>
               </div>
             </R>
           </div>
@@ -1212,6 +1228,19 @@ function Footer() {
               onMouseLeave={e => (e.currentTarget.style.color = C.muted)}
             >
               App Store
+            </a>
+          </li>
+          <li>
+            <a
+              href={PLAY_STORE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Google Play – öffnet in neuem Tab"
+              style={{ fontSize: 13, color: C.muted, textDecoration: 'none', transition: 'color .2s' }}
+              onMouseEnter={e => (e.currentTarget.style.color = C.navy)}
+              onMouseLeave={e => (e.currentTarget.style.color = C.muted)}
+            >
+              Google Play
             </a>
           </li>
         </ul>
