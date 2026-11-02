@@ -374,6 +374,41 @@ export const rolleZuweisenSchema = z.object({
   org_id: uuid.optional(),
 })
 
+// ── Mitglieder von Vereinen, Organisationen und Gewerben ─────────────────────
+
+const mitgliedRolle = z.enum(['verwalter', 'autor'])
+
+/** Nur für Verwaltung/Super-Admin ausgewertet; Mitglieder handeln immer für den eigenen Verein. */
+const zielAngabe = {
+  verein_id: uuid.optional(),
+  organisation_id: uuid.optional(),
+}
+
+export const mitgliedHinzufuegenSchema = z.object({
+  ...zielAngabe,
+  email: z.email('Ungültige E-Mail'),
+  rolle: mitgliedRolle,
+})
+
+export const mitgliedRolleAendernSchema = z.object({
+  profile_id: uuid,
+  rolle: mitgliedRolle,
+})
+
+export const mitgliedEntfernenSchema = z.object({
+  profile_id: uuid,
+})
+
+export const mitgliedEinladungZurueckziehenSchema = z.object({
+  ...zielAngabe,
+  einladung_id: uuid,
+})
+
+export const vereinLoeschenSchema = z.object({
+  ...zielAngabe,
+  bestaetigung: z.string().min(1, 'Bitte den Namen eintippen.'),
+})
+
 // ── Abfallkalender ────────────────────────────────────────────────────────────
 
 export const abfallPraeferenzenSchema = z.object({
