@@ -209,6 +209,56 @@ describe('mitglied_hinzufuegen / _entfernen / _rolle_aendern', () => {
     expect(await wert<string>('select rolle from public.mitgliedschaften where profile_id = $1', [BERT])).toBe('verwalter')
     await expect(rolleAendern(ANNA, 'autor', BERT)).resolves.toBeUndefined()
   })
+
+  async function fremderVerwalter() {
+    await nutzer(DORA, 'dora@example.de', 'verein')
+    const anderer = (await db.query<{ id: string }>(
+      `insert into public.vereine (profile_id, gemeinde_id) values ($1, $2) returning id`, [DORA, G1])).rows[0].id
+    await db.query(`insert into public.mitgliedschaften (profile_id, verein_id, rolle) values ($1, $2, 'verwalter')`, [DORA, anderer])
+  }
+
+  it('verweigert Verwaltern eines anderen Vereins Entfernen und Rollenänderung', async () => {
+    await hinzufuegen(BERT, 'autor', ANNA)
+    await fremderVerwalter()
+    await expect(entfernen(BERT, DORA)).rejects.toThrow(/Keine Berechtigung/)
+    await expect(rolleAendern(BERT, 'verwalter', DORA)).rejects.toThrow(/Keine Berechtigung/)
+  })
+
+  it('verweigert Autoren das Entfernen anderer Mitglieder', async () => {
+    await hinzufuegen(BERT, 'autor', ANNA)
+    await hinzufuegen(CARL, 'autor', ANNA)
+    await expect(entfernen(CARL, BERT)).rejects.toThrow(/Keine Berechtigung/)
+  })
+
+  it('verweigert der Verwaltung einer anderen Gemeinde Entfernen und Rollenänderung', async () => {
+    await hinzufuegen(BERT, 'autor', ANNA)
+    await expect(entfernen(BERT, VERWALTUNG_G2)).rejects.toThrow(/Keine Berechtigung/)
+    await expect(rolleAendern(BERT, 'verwalter', VERWALTUNG_G2)).rejects.toThrow(/Keine Berechtigung/)
+  })
+
+  it('fügt über p_organisation_id zu einem Gewerbe hinzu und setzt die Rolle gewerbe', async () => {
+    await nutzer(DORA, 'dora@example.de', 'gewerbe')
+    const gewerbe = (await db.query<{ id: string }>(
+      `insert into public.organisationen (profile_id, gemeinde_id) values ($1, $2) returning id`, [DORA, G1])).rows[0].id
+    await db.query(`insert into public.mitgliedschaften (profile_id, organisation_id, rolle) values ($1, $2, 'verwalter')`, [DORA, gewerbe])
+    await db.query('select public.mitglied_hinzufuegen($1,$2,$3,null,$4)', [BERT, 'autor', DORA, gewerbe])
+    expect(await rolle(BERT)).toBe('gewerbe')
+  })
+
+  it('verlangt genau eine Ziel-ID', async () => {
+    const gewerbeId = (await db.query<{ id: string }>(
+      `insert into public.organisationen (gemeinde_id) values ($1) returning id`, [G1])).rows[0].id
+    await expect(db.query('select public.mitglied_hinzufuegen($1,$2,$3,$4,$5)', [BERT, 'autor', ANNA, verein, gewerbeId]))
+      .rejects.toThrow(/genau einen Verein/)
+    await expect(db.query('select public.mitglied_hinzufuegen($1,$2,$3,null,null)', [BERT, 'autor', ANNA]))
+      .rejects.toThrow(/genau einen Verein/)
+  })
+
+  it('lehnt unbekannte Mitgliedsrollen ab', async () => {
+    await expect(hinzufuegen(BERT, 'admin', ANNA)).rejects.toThrow(/Unbekannte Mitgliedsrolle/)
+    await hinzufuegen(BERT, 'autor', ANNA)
+    await expect(rolleAendern(BERT, 'admin', ANNA)).rejects.toThrow(/Unbekannte Mitgliedsrolle/)
+  })
 })
 
 describe('Rechte auf die Funktionen', () => {
@@ -224,6 +274,20 @@ describe('Rechte auf die Funktionen', () => {
         expect(await wert<boolean>(`has_function_privilege('${r}', 'public.${fn}', 'execute')`)).toBe(false)
       }
       expect(await wert<boolean>(`has_function_privilege('service_role', 'public.${fn}', 'execute')`)).toBe(true)
+    }
+  })
+
+  it('interne Hilfsfunktionen sind für niemanden außer dem Owner ausführbar', async () => {
+    for (const fn of [
+      '_vereinsziel(uuid, uuid)',
+      '_mitglieder_recht(uuid, uuid, uuid, uuid)',
+      '_rollen_log(uuid, text, uuid, text, text, uuid)',
+      '_weiterer_verwalter(uuid, uuid, uuid)',
+      '_mitglied_eintragen(uuid, uuid, uuid, text, uuid, boolean)',
+    ]) {
+      for (const r of ['anon', 'authenticated', 'service_role']) {
+        expect(await wert<boolean>(`has_function_privilege('${r}', 'public.${fn}', 'execute')`)).toBe(false)
+      }
     }
   })
 })

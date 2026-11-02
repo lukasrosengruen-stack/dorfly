@@ -170,13 +170,13 @@ begin
       into o_gemeinde_id, o_rolle, o_name
       from public.vereine v
      where v.id = p_verein_id
-       for update;
+       for no key update;
   else
     select o.gemeinde_id, 'gewerbe', o.name
       into o_gemeinde_id, o_rolle, o_name
       from public.organisationen o
      where o.id = p_organisation_id
-       for update;
+       for no key update;
   end if;
 
   if o_rolle is null then
@@ -276,6 +276,10 @@ declare
   v_alte_rolle text;
   v_gemeinde uuid;
 begin
+  if p_rolle is null or p_rolle not in ('verwalter', 'autor') then
+    raise exception 'Unbekannte Mitgliedsrolle.' using errcode = '22023';
+  end if;
+
   select * into z from public._vereinsziel(p_verein_id, p_organisation_id);
 
   select p.role::text, p.gemeinde_id
@@ -322,6 +326,10 @@ as $$
 declare
   z record;
 begin
+  if p_rolle is null or p_rolle not in ('verwalter', 'autor') then
+    raise exception 'Unbekannte Mitgliedsrolle.' using errcode = '22023';
+  end if;
+
   select * into z from public._vereinsziel(p_verein_id, p_organisation_id);
 
   if public._mitglieder_recht(p_ausgefuehrt_von, p_verein_id, p_organisation_id, z.o_gemeinde_id) is null then
@@ -346,18 +354,27 @@ declare
   m record;
   z record;
   v_recht text;
+  v_verein_id uuid;
+  v_organisation_id uuid;
 begin
   select * into m from public.mitgliedschaften where profile_id = p_profile_id;
   if not found then
     raise exception 'Diese Person ist kein Mitglied.' using errcode = 'P0002';
   end if;
+  v_verein_id := m.verein_id;
+  v_organisation_id := m.organisation_id;
 
-  -- Erst das Ziel sperren, dann die Mitgliedschaft neu lesen: so sehen parallele
-  -- Aufrufe für denselben Verein die Verwalter-Anzahl nacheinander.
+  -- Sperrreihenfolge überall gleich: Ziel -> Profil -> Mitgliedschaft (wie
+  -- _mitglied_eintragen), sonst drohen Deadlocks. Parallele Aufrufe für denselben
+  -- Verein sehen so die Verwalter-Anzahl nacheinander.
   select * into z from public._vereinsziel(m.verein_id, m.organisation_id);
+  perform 1 from public.profiles where id = p_profile_id for update;
   select * into m from public.mitgliedschaften where profile_id = p_profile_id for update;
   if not found then
     raise exception 'Diese Person ist kein Mitglied.' using errcode = 'P0002';
+  end if;
+  if m.verein_id is distinct from v_verein_id or m.organisation_id is distinct from v_organisation_id then
+    raise exception 'Die Mitgliedschaft hat sich gerade geändert. Bitte erneut versuchen.' using errcode = 'P0001';
   end if;
 
   v_recht := public._mitglieder_recht(p_ausgefuehrt_von, m.verein_id, m.organisation_id, z.o_gemeinde_id);
@@ -394,14 +411,30 @@ declare
   m record;
   z record;
   v_recht text;
+  v_verein_id uuid;
+  v_organisation_id uuid;
 begin
+  if p_rolle is null or p_rolle not in ('verwalter', 'autor') then
+    raise exception 'Unbekannte Mitgliedsrolle.' using errcode = '22023';
+  end if;
+
   select * into m from public.mitgliedschaften where profile_id = p_profile_id;
   if not found then
     raise exception 'Diese Person ist kein Mitglied.' using errcode = 'P0002';
   end if;
+  v_verein_id := m.verein_id;
+  v_organisation_id := m.organisation_id;
 
+  -- Sperrreihenfolge: Ziel -> Profil -> Mitgliedschaft (siehe mitglied_entfernen).
   select * into z from public._vereinsziel(m.verein_id, m.organisation_id);
+  perform 1 from public.profiles where id = p_profile_id for update;
   select * into m from public.mitgliedschaften where profile_id = p_profile_id for update;
+  if not found then
+    raise exception 'Diese Person ist kein Mitglied.' using errcode = 'P0002';
+  end if;
+  if m.verein_id is distinct from v_verein_id or m.organisation_id is distinct from v_organisation_id then
+    raise exception 'Die Mitgliedschaft hat sich gerade geändert. Bitte erneut versuchen.' using errcode = 'P0001';
+  end if;
 
   v_recht := public._mitglieder_recht(p_ausgefuehrt_von, m.verein_id, m.organisation_id, z.o_gemeinde_id);
   if v_recht is null then
@@ -428,11 +461,11 @@ $$;
 -- ═══ Grants ═══════════════════════════════════════════════════════════════════
 -- Hilfsfunktionen (_…) nur intern. Öffentliche Funktionen nur für service_role:
 -- die API-Routen übergeben die Akteur-ID aus der Session, nie aus dem Request.
-revoke all on function public._vereinsziel(uuid, uuid) from public, anon, authenticated;
-revoke all on function public._mitglieder_recht(uuid, uuid, uuid, uuid) from public, anon, authenticated;
-revoke all on function public._rollen_log(uuid, text, uuid, text, text, uuid) from public, anon, authenticated;
-revoke all on function public._weiterer_verwalter(uuid, uuid, uuid) from public, anon, authenticated;
-revoke all on function public._mitglied_eintragen(uuid, uuid, uuid, text, uuid, boolean) from public, anon, authenticated;
+revoke all on function public._vereinsziel(uuid, uuid) from public, anon, authenticated, service_role;
+revoke all on function public._mitglieder_recht(uuid, uuid, uuid, uuid) from public, anon, authenticated, service_role;
+revoke all on function public._rollen_log(uuid, text, uuid, text, text, uuid) from public, anon, authenticated, service_role;
+revoke all on function public._weiterer_verwalter(uuid, uuid, uuid) from public, anon, authenticated, service_role;
+revoke all on function public._mitglied_eintragen(uuid, uuid, uuid, text, uuid, boolean) from public, anon, authenticated, service_role;
 
 revoke all on function public.mitglied_hinzufuegen(uuid, text, uuid, uuid, uuid) from public, anon, authenticated;
 revoke all on function public.mitglied_entfernen(uuid, uuid) from public, anon, authenticated;
