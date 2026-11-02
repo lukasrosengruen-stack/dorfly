@@ -1758,17 +1758,62 @@ git commit -m "feat: Kontoloeschung laesst Vereine und Vereinsbeitraege bestehen
 **Files:**
 - Modify: `src/types/supabase.ts` (generiert)
 
-- [ ] **Step 1: Mensch spielt 065 im Supabase-SQL-Editor ein**
+- [ ] **Step 1a: Vorabprüfung (Supabase-SQL-Editor)**
 
-Gesamten Inhalt von `supabase/migrations/065_mitgliedschaften.sql` ausführen. Danach prüfen:
+Jede Abfrage soll 0 Zeilen bzw. die erwarteten Werte liefern. Bei Treffern in V1, V3 oder V4: erst bereinigen, dann 065.
 
 ```sql
-select count(*) as mitglieder from public.mitgliedschaften;
-select count(*) as vereine_mit_eigentuemer from public.vereine where profile_id is not null;
-select count(*) as gewerbe_mit_eigentuemer from public.organisationen where profile_id is not null;
+-- V1: Person mehreren Zielen zugeordnet (065 bricht sonst ab) — erwartet 0 Zeilen
+select profile_id, count(*) from (select profile_id from public.vereine union all select profile_id from public.organisationen) x
+ where profile_id is not null group by 1 having count(*) > 1;
+-- V2: Constraint-Namen — erwartet: vereine_profile_id_key, vereine_profile_id_fkey,
+--     organisationen_profile_id_fkey, posts_author_id_fkey (Namen müssen exakt so heißen)
+select conrelid::regclass, conname, pg_get_constraintdef(oid) from pg_constraint
+ where conrelid in ('public.vereine'::regclass,'public.organisationen'::regclass,'public.posts'::regclass)
+   and (pg_get_constraintdef(oid) ilike '%profile_id%' or pg_get_constraintdef(oid) ilike '%author_id%');
+-- V3: organisationen, die keine Gewerbe sind — erwartet nur typ = gewerbe
+select typ, count(*) from public.organisationen group by typ;
+-- V4: Rolle passt nicht zum Ziel — erwartet 0 Zeilen
+select 'verein' t, v.id, p.id, p.role, v.typ from public.vereine v join public.profiles p on p.id = v.profile_id where p.role::text <> v.typ
+union all
+select 'gewerbe', o.id, p.id, p.role, o.typ::text from public.organisationen o join public.profiles p on p.id = o.profile_id where p.role::text <> 'gewerbe';
+-- V5: einladungen-Spalten — erwartet verein_id, org_id, organisation_name, angenommen_am
+select column_name from information_schema.columns where table_schema='public' and table_name='einladungen'
+ and column_name in ('verein_id','org_id','organisation_name','angenommen_am','mitglied_rolle');
+-- V6: rollen_log-Aktionen — erwartet Teilmenge von eingeladen, rolle_gesetzt, rolle_transfer, widerrufen
+select aktion, count(*) from public.rollen_log group by aktion;
 ```
 
-Expected: `mitglieder` = Summe der beiden anderen Werte.
+- [ ] **Step 1b: Mensch spielt 065 im Supabase-SQL-Editor ein**
+
+Den gesamten Inhalt von `supabase/migrations/065_mitgliedschaften.sql` **zwischen `begin;` und `commit;`** ausführen. So wird bei einem Fehler mittendrin alles zurückgerollt.
+
+- [ ] **Step 1c: Nachprüfung**
+
+```sql
+-- N1: Backfill vollständig (beide = 0)
+select count(*) from public.vereine v where profile_id is not null and not exists (select 1 from public.mitgliedschaften m where m.verein_id = v.id);
+select count(*) from public.organisationen o where profile_id is not null and not exists (select 1 from public.mitgliedschaften m where m.organisation_id = o.id);
+-- N2: V2 erneut — kein UNIQUE mehr auf vereine.profile_id, alle drei FKs "ON DELETE SET NULL"
+-- N3: Vereins-/Gewerbebeiträge ohne org_id (Restmenge bewerten; erscheinen nicht mehr im Vereins-Dashboard)
+select channel, count(*) from public.posts where org_id is null and channel::text in ('verein','gewerbe') group by 1;
+-- N4: Rolle passt zur Mitgliedschaft — erwartet 0 Zeilen
+select p.id, p.role from public.profiles p join public.mitgliedschaften m on m.profile_id = p.id
+ left join public.vereine v on v.id = m.verein_id
+ where p.role::text <> coalesce(v.typ, 'gewerbe');
+-- N5: Funktionsrechte — true nur bei service_role und nur für Funktionen ohne "_"-Präfix
+select p.proname, r.rolname, has_function_privilege(r.rolname, p.oid, 'execute')
+  from pg_proc p cross join (values ('anon'),('authenticated'),('service_role')) r(rolname)
+ where p.pronamespace = 'public'::regnamespace
+   and p.proname in ('_vereinsziel','_mitglieder_recht','_rollen_log','_weiterer_verwalter','_mitglied_eintragen',
+     '_vereinszeile_anlegen','_pfad_anderweitig_genutzt','mitglied_hinzufuegen','mitglied_entfernen','mitglied_rolle_aendern',
+     'verein_anlegen','einladung_einloesen','verein_dateipfade','verein_loeschen','konto_dateipfade','konto_loeschen')
+ order by 1,2;
+-- N6: rollen_log-Check enthält die neuen Aktionen
+select pg_get_constraintdef(oid) from pg_constraint where conrelid='public.rollen_log'::regclass and contype='c';
+-- N7: Grants auf die neue Tabelle (authenticated: SELECT; service_role: SELECT/INSERT/UPDATE/DELETE)
+select grantee, privilege_type from information_schema.role_table_grants where table_name='mitgliedschaften';
+```
 
 - [ ] **Step 2: Typen erzeugen**
 
