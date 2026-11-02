@@ -59,6 +59,8 @@ const ALLGEMEINER_FEHLER = 'Die Aktion ist fehlgeschlagen. Bitte versuchen Sie e
 
 /** Übersetzt Fehler der SQL-Funktionen (Codes siehe Migration 065) in HTTP-Antworten. */
 export function rpcFehler(error: { code?: string; message: string }): { status: number; meldung: string } {
+  // Grant-Fehler von Postgres sind keine eigenen Meldungen der SQL-Funktionen.
+  if (/^permission denied/i.test(error.message)) return { status: 500, meldung: ALLGEMEINER_FEHLER }
   switch (error.code) {
     case '42501': return { status: 403, meldung: error.message }
     case 'P0001': return { status: 409, meldung: error.message }
@@ -132,13 +134,15 @@ export async function bestimmeZiel(
   let name: string
   let typ: ZielTyp
   if (verein_id) {
-    const { data } = await service.from('vereine').select('gemeinde_id, verein_name, typ').eq('id', verein_id).maybeSingle()
+    const { data, error } = await service.from('vereine').select('gemeinde_id, verein_name, typ').eq('id', verein_id).maybeSingle()
+    if (error) throw new Error(`Ziel konnte nicht geladen werden: ${error.message}`)
     if (!data) return { ok: false, status: 404, fehler: 'Verein nicht gefunden.' }
     gemeinde_id = data.gemeinde_id
     name = data.verein_name
     typ = data.typ === 'organisation' ? 'organisation' : 'verein'
   } else {
-    const { data } = await service.from('organisationen').select('gemeinde_id, name').eq('id', organisation_id!).maybeSingle()
+    const { data, error } = await service.from('organisationen').select('gemeinde_id, name').eq('id', organisation_id!).maybeSingle()
+    if (error) throw new Error(`Ziel konnte nicht geladen werden: ${error.message}`)
     if (!data) return { ok: false, status: 404, fehler: 'Gewerbe nicht gefunden.' }
     gemeinde_id = data.gemeinde_id
     name = data.name
@@ -146,7 +150,7 @@ export async function bestimmeZiel(
   }
 
   if (profile.role === 'verwaltung' && gemeinde_id !== profile.gemeinde_id) {
-    return { ok: false, status: 404, fehler: 'Verein nicht gefunden.' }
+    return { ok: false, status: 404, fehler: typ === 'gewerbe' ? 'Gewerbe nicht gefunden.' : 'Verein nicht gefunden.' }
   }
 
   return { ok: true, ziel: { verein_id, organisation_id, gemeinde_id, name, typ, recht } }
@@ -178,6 +182,9 @@ export async function ladeTeam(service: Service, ziel: Ziel, ichId: string): Pro
 
   if (mitglieder.error) throw new Error(`Mitglieder konnten nicht geladen werden: ${mitglieder.error.message}`)
   if (einladungen.error) throw new Error(`Einladungen konnten nicht geladen werden: ${einladungen.error.message}`)
+
+  if (beitraege.error) throw new Error(`Beiträge konnten nicht gezählt werden: ${beitraege.error.message}`)
+  if (abonnenten.error) throw new Error(`Abonnenten konnten nicht gezählt werden: ${abonnenten.error.message}`)
 
   type Zeile = {
     profile_id: string

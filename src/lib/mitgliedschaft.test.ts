@@ -9,6 +9,12 @@ describe('rpcFehler', () => {
     expect(rpcFehler({ code: '22023', message: 'Bitte einen Namen angeben.' })).toEqual({ status: 400, meldung: 'Bitte einen Namen angeben.' })
   })
 
+  it('behandelt Postgres-Grant-Fehler als allgemeinen Fehler', () => {
+    expect(rpcFehler({ code: '42501', message: 'permission denied for function verein_loeschen' })).toEqual({
+      status: 500, meldung: 'Die Aktion ist fehlgeschlagen. Bitte versuchen Sie es erneut.',
+    })
+  })
+
   it('verrät bei unbekannten Fehlern keine Interna', () => {
     expect(rpcFehler({ code: '23505', message: 'duplicate key value violates …' })).toEqual({
       status: 500, meldung: 'Die Aktion ist fehlgeschlagen. Bitte versuchen Sie es erneut.',
