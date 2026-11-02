@@ -1,12 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { Building2, Users, PenLine, ChevronDown, ChevronUp, Pencil, Trash2, Loader2, X } from 'lucide-react'
+import { Building2, Users, UserCog, PenLine, ChevronDown, ChevronUp, Pencil, Trash2, Loader2, X } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
 import { toast } from 'sonner'
 import { PageHeader, Card, Button } from '@/components/ui'
 import { GewerbeProfilForm, GewerbePostForm, AbonnentenStats } from '@/features/gewerbe'
+import MitgliederSection from '@/components/dashboard/MitgliederSection'
 import { RichTextEditor, renderRichText } from '@/lib/richText'
 import { createClient } from '@/lib/supabase/client'
 import { compressImage } from '@/lib/compressImage'
@@ -19,13 +20,15 @@ interface Props {
   abonnentenStats: { gesamt: number; letzter7Tage: number; letzter30Tage: number } | null
   posts: Post[]
   naechsterMontag: string | null
+  mitgliedRolle: 'verwalter' | 'autor' | null
+  autorNamen: Record<string, string>
 }
 
-export default function GewerbeDashboardClient({ profile, betrieb: initialBetrieb, branchen, abonnentenStats, posts: initialPosts, naechsterMontag: initialNaechsterMontag }: Props) {
+export default function GewerbeDashboardClient({ profile, betrieb: initialBetrieb, branchen, abonnentenStats, posts: initialPosts, naechsterMontag: initialNaechsterMontag, mitgliedRolle, autorNamen }: Props) {
   const [betrieb, setBetrieb] = useState(initialBetrieb)
   const [posts, setPosts] = useState(initialPosts)
   const [naechsterMontag, setNaechsterMontag] = useState(initialNaechsterMontag)
-  const [tab, setTab] = useState<'posts' | 'profil'>('posts')
+  const [tab, setTab] = useState<'posts' | 'profil' | 'team'>('posts')
   const [profilOpen, setProfilOpen] = useState(!initialBetrieb)
 
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -179,18 +182,23 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
             )}
 
             {/* Tab-Navigation */}
-            <div className="flex gap-2">
-              <TabButton active={tab === 'posts'} icon={<PenLine className="w-3.5 h-3.5" />} onClick={() => setTab('posts')}>
+            <div role="tablist" aria-label="Bereiche" className="flex gap-2">
+              <TabButton id="tab-posts" panel="panel-posts" active={tab === 'posts'} icon={<PenLine aria-hidden="true" className="w-3.5 h-3.5" />} onClick={() => setTab('posts')}>
                 Beiträge
               </TabButton>
-              <TabButton active={tab === 'profil'} icon={<Building2 className="w-3.5 h-3.5" />} onClick={() => setTab('profil')}>
-                Profil
+              {mitgliedRolle === 'verwalter' && (
+                <TabButton id="tab-profil" panel="panel-profil" active={tab === 'profil'} icon={<Building2 aria-hidden="true" className="w-3.5 h-3.5" />} onClick={() => setTab('profil')}>
+                  Profil
+                </TabButton>
+              )}
+              <TabButton id="tab-team" panel="panel-team" active={tab === 'team'} icon={<UserCog aria-hidden="true" className="w-3.5 h-3.5" />} onClick={() => setTab('team')}>
+                Team
               </TabButton>
             </div>
 
             {/* Posts Tab */}
             {tab === 'posts' && (
-              <div className="space-y-4">
+              <div role="tabpanel" id="panel-posts" aria-labelledby="tab-posts" className="space-y-4">
                 <Card>
                   <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3">
                     Neuer Beitrag
@@ -278,7 +286,7 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
 
                 {posts.length > 0 && (
                   <div className="space-y-3">
-                    <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Ihre Beiträge</p>
+                    <p className="text-xs font-black text-gray-600 uppercase tracking-widest">Ihre Beiträge</p>
                     {posts.map(post => (
                       <Card key={post.id} padding="none">
                         {post.bild_url && (
@@ -302,8 +310,9 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
                               </button>
                             </div>
                           </div>
-                          <p className="text-xs text-gray-400 mt-2">
+                          <p className="text-xs text-gray-600 mt-2">
                             {post.published_at ? formatDistanceToNow(new Date(post.published_at), { addSuffix: true, locale: de }) : ''}
+                            {' · von '}{(post.author_id && autorNamen[post.author_id]) || 'ehemaligem Mitglied'}
                           </p>
                         </div>
                       </Card>
@@ -314,24 +323,35 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
             )}
 
             {/* Profil Tab */}
-            {tab === 'profil' && (
-              <Card>
-                <button
-                  onClick={() => setProfilOpen(o => !o)}
-                  className="w-full flex items-center justify-between mb-4"
-                >
-                  <p className="text-xs font-black text-gray-500 uppercase tracking-widest">
-                    Profil bearbeiten
-                  </p>
-                  {profilOpen
-                    ? <ChevronUp className="w-4 h-4 text-gray-400" />
-                    : <ChevronDown className="w-4 h-4 text-gray-400" />
-                  }
-                </button>
-                {profilOpen && (
-                  <GewerbeProfilForm betrieb={betrieb} branchen={branchen} onUpdated={setBetrieb} />
-                )}
-              </Card>
+            {tab === 'profil' && mitgliedRolle === 'verwalter' && (
+              <div role="tabpanel" id="panel-profil" aria-labelledby="tab-profil">
+                <Card>
+                  <button
+                    type="button"
+                    aria-expanded={profilOpen}
+                    onClick={() => setProfilOpen(o => !o)}
+                    className="w-full flex items-center justify-between mb-4"
+                  >
+                    <p className="text-xs font-black text-gray-500 uppercase tracking-widest">
+                      Profil bearbeiten
+                    </p>
+                    {profilOpen
+                      ? <ChevronUp aria-hidden="true" className="w-4 h-4 text-gray-600" />
+                      : <ChevronDown aria-hidden="true" className="w-4 h-4 text-gray-600" />
+                    }
+                  </button>
+                  {profilOpen && (
+                    <GewerbeProfilForm betrieb={betrieb} branchen={branchen} onUpdated={setBetrieb} />
+                  )}
+                </Card>
+              </div>
+            )}
+
+            {/* Team Tab */}
+            {tab === 'team' && (
+              <div role="tabpanel" id="panel-team" aria-labelledby="tab-team">
+                <Card><MitgliederSection /></Card>
+              </div>
             )}
           </>
         )}
@@ -340,7 +360,9 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
   )
 }
 
-function TabButton({ active, icon, onClick, children }: {
+function TabButton({ id, panel, active, icon, onClick, children }: {
+  id: string
+  panel: string
   active: boolean
   icon: React.ReactNode
   onClick: () => void
@@ -348,9 +370,14 @@ function TabButton({ active, icon, onClick, children }: {
 }) {
   return (
     <button
+      type="button"
+      role="tab"
+      id={id}
+      aria-selected={active}
+      aria-controls={panel}
       onClick={onClick}
       className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wide transition-colors ${
-        active ? 'bg-orange-500 text-white' : 'bg-white text-gray-500 shadow-[0_2px_8px_rgba(15,45,107,0.08)]'
+        active ? 'bg-orange-500 text-white' : 'bg-white text-gray-600 shadow-[0_2px_8px_rgba(15,45,107,0.08)]'
       }`}
     >
       {icon}

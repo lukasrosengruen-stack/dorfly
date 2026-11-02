@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { meinVereinsziel, kurzname } from '@/lib/mitgliedschaft'
 import GewerbeDashboardClient from './GewerbeDashboardClient'
 
 export default async function GewerbeDashboardPage() {
@@ -16,12 +17,13 @@ export default async function GewerbeDashboardPage() {
   if (!profile || profile.role !== 'gewerbe') redirect('/feed')
 
   // Betrieb laden (falls vorhanden)
-  const { data: betrieb } = await supabase
-    .from('organisationen')
-    .select('*')
-    .eq('profile_id', user.id)
-    .eq('typ', 'gewerbe')
-    .single()
+  const service = await createServiceClient()
+  const mitgliedschaft = await meinVereinsziel(service, user.id, 'gewerbe')
+
+  const { data: betrieb } = mitgliedschaft
+    ? await service.from('organisationen').select('*').eq('id', mitgliedschaft.id).eq('typ', 'gewerbe').single()
+    : { data: null }
+  const mitgliedRolle = mitgliedschaft?.rolle ?? null
 
   const { data: branchen } = await supabase
     .from('gewerbe_branchen')
@@ -29,7 +31,7 @@ export default async function GewerbeDashboardPage() {
     .order('reihenfolge')
 
   if (!betrieb) {
-    return <GewerbeDashboardClient profile={profile} betrieb={null} branchen={branchen ?? []} abonnentenStats={null} posts={[]} naechsterMontag={null} />
+    return <GewerbeDashboardClient profile={profile} betrieb={null} branchen={branchen ?? []} abonnentenStats={null} posts={[]} naechsterMontag={null} mitgliedRolle={null} autorNamen={{}} />
   }
 
   // Abonnenten-Statistik
@@ -53,10 +55,10 @@ export default async function GewerbeDashboardPage() {
   const monday = new Date(jetzt)
   monday.setDate(jetzt.getDate() + diffToMonday)
   monday.setHours(0, 0, 0, 0)
-  const { count: postsThisWeek } = await supabase
+  const { count: postsThisWeek } = await service
     .from('posts')
     .select('id', { count: 'exact', head: true })
-    .eq('author_id', user.id)
+    .eq('org_id', betrieb.id)
     .eq('channel', 'gewerbe')
     .gte('published_at', monday.toISOString())
 
@@ -68,13 +70,19 @@ export default async function GewerbeDashboardPage() {
   }
 
   // Letzte Posts
-  const { data: posts } = await supabase
+  const { data: posts } = await service
     .from('posts')
     .select('*')
-    .eq('author_id', user.id)
+    .eq('org_id', betrieb.id)
     .eq('channel', 'gewerbe')
     .order('published_at', { ascending: false })
     .limit(10)
+
+  const autorIds = [...new Set((posts ?? []).map(p => p.author_id).filter((id): id is string => !!id))]
+  const { data: autoren } = autorIds.length
+    ? await service.from('profiles').select('id, vorname, nachname, display_name').in('id', autorIds)
+    : { data: [] }
+  const autorNamen = Object.fromEntries((autoren ?? []).map(a => [a.id, kurzname(a) ?? '']))
 
   return (
     <GewerbeDashboardClient
@@ -84,6 +92,8 @@ export default async function GewerbeDashboardPage() {
       abonnentenStats={{ gesamt: gesamt ?? 0, letzter7Tage: letzter7Tage ?? 0, letzter30Tage: letzter30Tage ?? 0 }}
       posts={posts ?? []}
       naechsterMontag={naechsterMontag}
+      mitgliedRolle={mitgliedRolle}
+      autorNamen={autorNamen}
     />
   )
 }
