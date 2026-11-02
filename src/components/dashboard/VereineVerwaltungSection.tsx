@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { clsx } from 'clsx'
 import MitgliederSection from './MitgliederSection'
@@ -11,6 +11,7 @@ const TYP_LABEL: Record<ZielTyp, string> = { verein: 'Verein', organisation: 'Or
 export default function VereineVerwaltungSection({ eintraege: start }: { eintraege: VereinsEintrag[] }) {
   const [eintraege, setEintraege] = useState(start)
   const [offen, setOffen] = useState<string | null>(null)
+  const titelRef = useRef<HTMLHeadingElement>(null)
 
   // Zähler aktualisieren, wenn im aufgeklappten Eintrag Mitglieder geändert werden
   const aktualisiere = useCallback((d: TeamDaten) => {
@@ -26,7 +27,7 @@ export default function VereineVerwaltungSection({ eintraege: start }: { eintrae
 
   return (
     <section aria-labelledby="vereine-verwaltung-titel" className="bg-white rounded-2xl shadow-sm p-6">
-      <h2 id="vereine-verwaltung-titel" className="font-bold text-gray-900 mb-1">Vereine & Gewerbe</h2>
+      <h2 id="vereine-verwaltung-titel" ref={titelRef} tabIndex={-1} className="font-bold text-gray-900 mb-1 focus:outline-none">Vereine & Gewerbe</h2>
       <p className="text-sm text-gray-600 mb-4">
         Mitglieder hinzufügen oder entfernen, Verantwortliche wechseln, Einträge löschen.
       </p>
@@ -65,6 +66,7 @@ export default function VereineVerwaltungSection({ eintraege: start }: { eintrae
                     onGeloescht={() => {
                       setEintraege(liste => liste.filter(x => x.id !== e.id))
                       setOffen(null)
+                      setTimeout(() => titelRef.current?.focus(), 0)
                     }}
                   />
                 </div>

@@ -43,8 +43,16 @@ export default function MitgliederSection({ ziel, onGeladen, onGeloescht }: Prop
 
   const [daten, setDaten] = useState<TeamDaten | null>(null)
   const [ladeFehler, setLadeFehler] = useState<string | null>(null)
-  const [bestaetigeEntfernen, setBestaetigeEntfernen] = useState<string | null>(null)
+  // Schluessel der offenen Inline-Bestaetigung: `entfernen:<profile_id>` oder `verlassen`
+  const [bestaetigung, setBestaetigung] = useState<string | null>(null)
   const [beschaeftigt, setBeschaeftigt] = useState(false)
+  const [aktionsFehler, setAktionsFehler] = useState<string | null>(null)
+  // Gewaehlte, noch nicht uebernommene Rollen je Mitglied
+  const [rollenWahl, setRollenWahl] = useState<Record<string, MitgliedRolle>>({})
+
+  const abbrechenRef = useRef<HTMLButtonElement>(null)
+  const ausloeser = useRef<Record<string, HTMLButtonElement | null>>({})
+  const mitgliederTitelRef = useRef<HTMLHeadingElement>(null)
 
   // onGeladen in einer Ref: Aufrufer duerfen Inline-Funktionen uebergeben, ohne dass
   // laden() sich aendert und einen Refetch-Loop ausloest.
@@ -66,6 +74,20 @@ export default function MitgliederSection({ ziel, onGeladen, onGeloescht }: Prop
 
   useEffect(() => { void laden() }, [laden])
 
+  // Beim Wechsel in die Inline-Bestaetigung landet der Fokus auf "Abbrechen"
+  useEffect(() => {
+    if (bestaetigung) abbrechenRef.current?.focus()
+  }, [bestaetigung])
+
+  function fokusAuf(el: HTMLElement | null | undefined) {
+    setTimeout(() => el?.focus(), 0)
+  }
+
+  function abbrechen(key: string) {
+    setBestaetigung(null)
+    fokusAuf(ausloeser.current[key])
+  }
+
   const form = useForm<HinzufuegenWerte>({
     resolver: zodResolver(hinzufuegenSchema),
     defaultValues: { email: '', rolle: 'autor' },
@@ -73,26 +95,49 @@ export default function MitgliederSection({ ziel, onGeladen, onGeloescht }: Prop
   const loeschForm = useForm<LoeschenWerte>({ resolver: zodResolver(loeschenSchema), defaultValues: { bestaetigung: '' } })
   const eingetippt = loeschForm.watch('bestaetigung')
 
-  async function aktion(fn: () => Promise<unknown>, erfolg: string) {
+  async function aktion(
+    fn: () => Promise<unknown>,
+    erfolg: string,
+    opts: { neuLaden?: boolean; fokusZiel?: () => HTMLElement | null | undefined } = {},
+  ) {
+    const { neuLaden = true, fokusZiel } = opts
+    if (beschaeftigt) return false
     setBeschaeftigt(true)
+    setAktionsFehler(null)
     try {
       await fn()
       toast.success(erfolg)
-      await laden()
+      if (neuLaden) await laden()
       return true
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Die Aktion ist fehlgeschlagen.')
+      const msg = e instanceof Error ? e.message : 'Die Aktion ist fehlgeschlagen.'
+      setAktionsFehler(msg)
+      toast.error(msg)
       return false
     } finally {
       setBeschaeftigt(false)
-      setBestaetigeEntfernen(null)
+      setBestaetigung(null)
+      if (fokusZiel) fokusAuf(fokusZiel())
     }
   }
 
-  if (ladeFehler) return <p role="alert" className="text-sm text-red-700">{ladeFehler}</p>
+  const erneutLaden = (
+    <button type="button" onClick={() => void laden()} className="text-sm font-medium text-primary-700 underline">
+      Erneut laden
+    </button>
+  )
+
   if (!daten) {
+    if (ladeFehler) {
+      return (
+        <div className="space-y-2">
+          <p role="alert" className="text-sm text-red-700">{ladeFehler}</p>
+          {erneutLaden}
+        </div>
+      )
+    }
     return (
-      <p className="flex items-center gap-2 text-sm text-gray-500">
+      <p role="status" className="flex items-center gap-2 text-sm text-gray-600">
         <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" /> Team wird geladen …
       </p>
     )
@@ -138,57 +183,101 @@ export default function MitgliederSection({ ziel, onGeladen, onGeloescht }: Prop
 
   return (
     <div className="space-y-6">
+      {ladeFehler && (
+        <div className="space-y-2">
+          <p role="alert" className="text-sm text-red-700">{ladeFehler}</p>
+          {erneutLaden}
+        </div>
+      )}
+      {aktionsFehler && <p role="alert" className="text-sm text-red-700">{aktionsFehler}</p>}
+
       {/* Mitglieder */}
       <div>
-        <h3 className="text-sm font-bold text-gray-900 mb-2">Mitglieder</h3>
+        <h3 ref={mitgliederTitelRef} tabIndex={-1} className="text-sm font-bold text-gray-900 mb-2 focus:outline-none">Mitglieder</h3>
         {daten.mitglieder.length === 0 && (
           <p className="text-sm text-gray-600">Noch keine Mitglieder. Fügen Sie unten eine Person als Verwalter hinzu.</p>
         )}
         <ul className="divide-y divide-gray-100">
-          {daten.mitglieder.map(m => (
-            <li key={m.profile_id} className="py-3 flex flex-wrap items-center gap-3">
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-gray-900 truncate">{m.name}{m.ich && ' (Sie)'}</p>
-                {m.email && <p className="text-xs text-gray-600 truncate">{m.email}</p>}
-              </div>
+          {daten.mitglieder.map(m => {
+            const wahl = rollenWahl[m.profile_id]
+            const selectId = `${idPrefix}-rolle-${m.profile_id}`
+            return (
+              <li key={m.profile_id} className="py-3 flex flex-wrap items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-gray-900 truncate">{m.name}{m.ich && ' (Sie)'}</p>
+                  {m.email && <p className="text-xs text-gray-600 truncate">{m.email}</p>}
+                </div>
 
-              {darfVerwalten ? (
-                <>
-                  <label htmlFor={`${idPrefix}-rolle-${m.profile_id}`} className="sr-only">Rolle von {m.name}</label>
-                  <select
-                    id={`${idPrefix}-rolle-${m.profile_id}`}
-                    value={m.rolle}
-                    disabled={beschaeftigt}
-                    onChange={e => aktion(
-                      () => senden('PATCH', '/api/mitglieder', { profile_id: m.profile_id, rolle: e.target.value }),
-                      'Rolle geändert.',
+                {darfVerwalten ? (
+                  <>
+                    <label htmlFor={selectId} className="sr-only">Rolle von {m.name}</label>
+                    <select
+                      id={selectId}
+                      value={wahl ?? m.rolle}
+                      onChange={e => {
+                        if (beschaeftigt) return
+                        const neu = e.target.value as MitgliedRolle
+                        setRollenWahl(w => {
+                          const rest = { ...w }
+                          if (neu === m.rolle) delete rest[m.profile_id]
+                          else rest[m.profile_id] = neu
+                          return rest
+                        })
+                      }}
+                      className="text-sm border border-gray-300 rounded-lg px-2 py-1.5"
+                    >
+                      <option value="verwalter">Verwalter</option>
+                      <option value="autor">Autor</option>
+                    </select>
+                    {wahl && wahl !== m.rolle && (
+                      <button type="button" aria-disabled={beschaeftigt}
+                        aria-label={`Rolle von ${m.name} auf ${ROLLEN_LABEL[wahl]} ändern`}
+                        onClick={async () => {
+                          const ok = await aktion(
+                            () => senden('PATCH', '/api/mitglieder', { profile_id: m.profile_id, rolle: wahl }),
+                            'Rolle geändert.',
+                            { fokusZiel: () => document.getElementById(selectId) },
+                          )
+                          if (ok) {
+                            setRollenWahl(w => {
+                              const rest = { ...w }
+                              delete rest[m.profile_id]
+                              return rest
+                            })
+                          }
+                        }}
+                        className="text-sm font-bold text-primary-700 underline">Übernehmen</button>
                     )}
-                    className="text-sm border border-gray-300 rounded-lg px-2 py-1.5"
-                  >
-                    <option value="verwalter">Verwalter</option>
-                    <option value="autor">Autor</option>
-                  </select>
-                </>
-              ) : (
-                <span className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-1 rounded-full">{ROLLEN_LABEL[m.rolle]}</span>
-              )}
-
-              {darfVerwalten && !m.ich && (
-                bestaetigeEntfernen === m.profile_id ? (
-                  <span className="flex items-center gap-2 text-sm">
-                    <span className="text-gray-700">Wirklich entfernen?</span>
-                    <button type="button" disabled={beschaeftigt}
-                      onClick={() => aktion(() => senden('DELETE', '/api/mitglieder', { profile_id: m.profile_id }), `${m.name} wurde entfernt.`)}
-                      className="font-bold text-red-700">Ja</button>
-                    <button type="button" onClick={() => setBestaetigeEntfernen(null)} className="text-gray-700">Abbrechen</button>
-                  </span>
+                  </>
                 ) : (
-                  <button type="button" onClick={() => setBestaetigeEntfernen(m.profile_id)}
-                    className="text-sm font-medium text-red-700">Entfernen</button>
-                )
-              )}
-            </li>
-          ))}
+                  <span className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-1 rounded-full">{ROLLEN_LABEL[m.rolle]}</span>
+                )}
+
+                {darfVerwalten && !m.ich && (
+                  bestaetigung === `entfernen:${m.profile_id}` ? (
+                    <span className="flex items-center gap-2 text-sm">
+                      <span className="text-gray-700">Wirklich entfernen?</span>
+                      <button type="button" disabled={beschaeftigt}
+                        aria-label={`${m.name} wirklich entfernen`}
+                        onClick={() => aktion(
+                          () => senden('DELETE', '/api/mitglieder', { profile_id: m.profile_id }),
+                          `${m.name} wurde entfernt.`,
+                          { fokusZiel: () => mitgliederTitelRef.current },
+                        )}
+                        className="font-bold text-red-700">Ja</button>
+                      <button type="button" ref={abbrechenRef} onClick={() => abbrechen(`entfernen:${m.profile_id}`)}
+                        className="text-gray-700">Abbrechen</button>
+                    </span>
+                  ) : (
+                    <button type="button" aria-label={`${m.name} entfernen`}
+                      ref={el => { ausloeser.current[`entfernen:${m.profile_id}`] = el }}
+                      onClick={() => setBestaetigung(`entfernen:${m.profile_id}`)}
+                      className="text-sm font-medium text-red-700">Entfernen</button>
+                  )
+                )}
+              </li>
+            )
+          })}
         </ul>
       </div>
 
@@ -202,7 +291,8 @@ export default function MitgliederSection({ ziel, onGeladen, onGeloescht }: Prop
                 <span className="flex-1 min-w-0 truncate text-gray-900">{e.email}</span>
                 <span className="text-xs text-gray-600">{ROLLEN_LABEL[e.mitglied_rolle]}</span>
                 {darfVerwalten && (
-                  <button type="button" disabled={beschaeftigt}
+                  <button type="button" aria-disabled={beschaeftigt}
+                    aria-label={`Einladung an ${e.email} zurückziehen`}
                     onClick={() => aktion(() => senden('DELETE', '/api/mitglieder/einladung', { ...zielBody, einladung_id: e.id }), 'Einladung zurückgezogen.')}
                     className="font-medium text-red-700">Zurückziehen</button>
                 )}
@@ -252,16 +342,31 @@ export default function MitgliederSection({ ziel, onGeladen, onGeloescht }: Prop
       {/* Verlassen */}
       {ich && (
         <div>
-          <button type="button" disabled={beschaeftigt || ichLetzterVerwalter}
-            aria-describedby={ichLetzterVerwalter ? `${idPrefix}-verlassen-hinweis` : undefined}
-            onClick={async () => {
-              if (await aktion(() => senden('DELETE', '/api/mitglieder', { profile_id: ich.profile_id }), 'Sie haben das Team verlassen.')) {
-                window.location.href = '/feed'
-              }
-            }}
-            className="text-sm font-medium text-red-700 disabled:text-gray-500">
-            {TYP_LABEL[daten.ziel.typ]} verlassen
-          </button>
+          {bestaetigung === 'verlassen' ? (
+            <span className="flex items-center gap-2 text-sm">
+              <span className="text-gray-700">Wirklich verlassen?</span>
+              <button type="button" disabled={beschaeftigt}
+                onClick={async () => {
+                  const ok = await aktion(
+                    () => senden('DELETE', '/api/mitglieder', { profile_id: ich.profile_id }),
+                    'Sie haben das Team verlassen.',
+                    { neuLaden: false, fokusZiel: () => ausloeser.current['verlassen'] },
+                  )
+                  if (ok) window.location.href = '/feed'
+                }}
+                className="font-bold text-red-700">Ja</button>
+              <button type="button" ref={abbrechenRef} onClick={() => abbrechen('verlassen')}
+                className="text-gray-700">Abbrechen</button>
+            </span>
+          ) : (
+            <button type="button" disabled={ichLetzterVerwalter}
+              ref={el => { ausloeser.current['verlassen'] = el }}
+              aria-describedby={ichLetzterVerwalter ? `${idPrefix}-verlassen-hinweis` : undefined}
+              onClick={() => setBestaetigung('verlassen')}
+              className="text-sm font-medium text-red-700 disabled:text-gray-500">
+              {TYP_LABEL[daten.ziel.typ]} verlassen
+            </button>
+          )}
           {ichLetzterVerwalter && (
             <p id={`${idPrefix}-verlassen-hinweis`} className="text-xs text-gray-600 mt-1">
               Lege zuerst eine andere Person als Verwalter fest.
@@ -285,10 +390,11 @@ export default function MitgliederSection({ ziel, onGeladen, onGeloescht }: Prop
             </label>
             <input id={`${idPrefix}-bestaetigung`} type="text" autoComplete="off" {...loeschForm.register('bestaetigung')}
               aria-invalid={!!loeschForm.formState.errors.bestaetigung}
+              aria-describedby={loeschForm.formState.errors.bestaetigung ? `${idPrefix}-bestaetigung-fehler` : undefined}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
           </div>
           {loeschForm.formState.errors.bestaetigung && (
-            <p role="alert" className="text-sm text-red-700">{loeschForm.formState.errors.bestaetigung.message}</p>
+            <p id={`${idPrefix}-bestaetigung-fehler`} role="alert" className="text-sm text-red-700">{loeschForm.formState.errors.bestaetigung.message}</p>
           )}
           <button type="submit" disabled={beschaeftigt || eingetippt.trim() !== daten.ziel.name.trim()}
             className="bg-red-600 text-white font-bold px-4 py-2 rounded-lg text-sm disabled:opacity-40">

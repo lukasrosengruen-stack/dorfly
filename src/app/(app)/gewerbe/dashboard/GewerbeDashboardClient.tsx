@@ -215,8 +215,8 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
                   <Card>
                     <div className="flex items-center justify-between mb-3">
                       <p className="text-xs font-black text-gray-500 uppercase tracking-widest">Beitrag bearbeiten</p>
-                      <button type="button" onClick={closeEdit}>
-                        <X className="w-4 h-4 text-gray-400" />
+                      <button type="button" onClick={closeEdit} aria-label="Bearbeiten schließen">
+                        <X aria-hidden="true" className="w-4 h-4 text-gray-400" />
                       </button>
                     </div>
                     <div className="space-y-3">
@@ -298,15 +298,15 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
                               {renderRichText(post.inhalt)}
                             </p>
                             <div className="flex gap-1 shrink-0">
-                              <button onClick={() => openEdit(post)}
+                              <button type="button" onClick={() => openEdit(post)} aria-label={post.titel ? `Beitrag „${post.titel}“ bearbeiten` : "Beitrag bearbeiten"}
                                 className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
-                                <Pencil className="w-3.5 h-3.5 text-gray-500" />
+                                <Pencil aria-hidden="true" className="w-3.5 h-3.5 text-gray-500" />
                               </button>
-                              <button onClick={() => deletePost(post.id)} disabled={deleting === post.id}
+                              <button type="button" onClick={() => deletePost(post.id)} disabled={deleting === post.id} aria-label={post.titel ? `Beitrag „${post.titel}“ löschen` : "Beitrag löschen"}
                                 className="p-1.5 rounded-lg bg-gray-100 hover:bg-red-100 transition-colors disabled:opacity-50">
                                 {deleting === post.id
-                                  ? <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
-                                  : <Trash2 className="w-3.5 h-3.5 text-gray-500" />}
+                                  ? <Loader2 aria-hidden="true" className="w-3.5 h-3.5 animate-spin text-gray-400" />
+                                  : <Trash2 aria-hidden="true" className="w-3.5 h-3.5 text-gray-500" />}
                               </button>
                             </div>
                           </div>
@@ -350,7 +350,10 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
             {/* Team Tab */}
             {tab === 'team' && (
               <div role="tabpanel" id="panel-team" aria-labelledby="tab-team">
-                <Card><MitgliederSection /></Card>
+                <Card>
+                  <h2 className="sr-only">Team</h2>
+                  <MitgliederSection />
+                </Card>
               </div>
             )}
           </>
@@ -377,7 +380,7 @@ function TabButton({ id, panel, active, icon, onClick, children }: {
       aria-controls={panel}
       onClick={onClick}
       className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wide transition-colors ${
-        active ? 'bg-orange-500 text-white' : 'bg-white text-gray-600 shadow-[0_2px_8px_rgba(15,45,107,0.08)]'
+        active ? 'bg-orange-700 text-white' : 'bg-white text-gray-600 shadow-[0_2px_8px_rgba(15,45,107,0.08)]'
       }`}
     >
       {icon}

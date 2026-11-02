@@ -285,7 +285,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
             {vereinProfil && istVerwalter && (
               <button onClick={() => setShowProfilForm(v => !v)}
                 className="flex items-center gap-2 bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl text-sm">
-                <Pencil className="w-4 h-4" /> Profil
+                <Pencil aria-hidden="true" className="w-4 h-4" /> Profil
               </button>
             )}
             <button onClick={openNew} disabled={!vereinProfil}
@@ -341,7 +341,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
               <h2 className="font-bold text-gray-900">
                 {isEditing ? 'Beitrag bearbeiten' : 'Neuen Beitrag einreichen'}
               </h2>
-              <button onClick={closeForm}><X className="w-5 h-5 text-gray-400" /></button>
+              <button type="button" onClick={closeForm} aria-label="Formular schließen"><X aria-hidden="true" className="w-5 h-5 text-gray-400" /></button>
             </div>
             <div className="space-y-3">
               <div className="flex gap-2 flex-wrap">
@@ -407,7 +407,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
                           className="flex-1 border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
                         <button type="button" onClick={() => removeWeitererTermin(i)} aria-label={`Termin ${i + 2} entfernen`}
                           className="p-2 rounded-lg bg-gray-100 hover:bg-red-100 transition-colors shrink-0">
-                          <Trash2 className="w-3.5 h-3.5 text-gray-500 hover:text-red-500" />
+                          <Trash2 aria-hidden="true" className="w-3.5 h-3.5 text-gray-500 hover:text-red-500" />
                         </button>
                       </div>
                     ))}
@@ -538,15 +538,15 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
                     {meta.label}
                   </span>
                   {canEdit && (
-                    <button onClick={() => openEdit(post)}
+                    <button type="button" onClick={() => openEdit(post)} aria-label={`Beitrag „${post.titel}“ bearbeiten`}
                       className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
-                      <Pencil className="w-3.5 h-3.5 text-gray-500" />
+                      <Pencil aria-hidden="true" className="w-3.5 h-3.5 text-gray-500" />
                     </button>
                   )}
-                  <button onClick={() => deletePost(post.id, post.titel)}
+                  <button type="button" onClick={() => deletePost(post.id, post.titel)} aria-label={`Beitrag „${post.titel}“ löschen`}
                     disabled={deleting === post.id}
                     className="p-1.5 rounded-lg bg-gray-100 hover:bg-red-100 transition-colors disabled:opacity-50">
-                    {deleting === post.id ? <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" /> : <Trash2 className="w-3.5 h-3.5 text-gray-500 hover:text-red-500" />}
+                    {deleting === post.id ? <Loader2 aria-hidden="true" className="w-3.5 h-3.5 animate-spin text-gray-400" /> : <Trash2 aria-hidden="true" className="w-3.5 h-3.5 text-gray-500 hover:text-red-500" />}
                   </button>
                 </div>
               </div>
