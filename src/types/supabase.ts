@@ -165,6 +165,7 @@ export type Database = {
           gemeinde_id: string
           hinweis: string | null
           id: string
+          mitglied_rolle: string | null
           org_id: string | null
           organisation_name: string | null
           rolle: string
@@ -181,6 +182,7 @@ export type Database = {
           gemeinde_id: string
           hinweis?: string | null
           id?: string
+          mitglied_rolle?: string | null
           org_id?: string | null
           organisation_name?: string | null
           rolle: string
@@ -197,6 +199,7 @@ export type Database = {
           gemeinde_id?: string
           hinweis?: string | null
           id?: string
+          mitglied_rolle?: string | null
           org_id?: string | null
           organisation_name?: string | null
           rolle?: string
@@ -605,6 +608,76 @@ export type Database = {
           },
         ]
       }
+      mitgliedschaften: {
+        Row: {
+          created_at: string
+          hinzugefuegt_von: string | null
+          organisation_id: string | null
+          profile_id: string
+          rolle: string
+          verein_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          hinzugefuegt_von?: string | null
+          organisation_id?: string | null
+          profile_id: string
+          rolle: string
+          verein_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          hinzugefuegt_von?: string | null
+          organisation_id?: string | null
+          profile_id?: string
+          rolle?: string
+          verein_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mitgliedschaften_hinzugefuegt_von_fkey"
+            columns: ["hinzugefuegt_von"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mitgliedschaften_hinzugefuegt_von_fkey"
+            columns: ["hinzugefuegt_von"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mitgliedschaften_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisationen"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mitgliedschaften_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mitgliedschaften_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mitgliedschaften_verein_id_fkey"
+            columns: ["verein_id"]
+            isOneToOne: false
+            referencedRelation: "vereine"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       newsletter_subscribers: {
         Row: {
           confirmation_token: string
@@ -653,7 +726,7 @@ export type Database = {
           name: string
           oeffnungszeiten: string | null
           plan: string
-          profile_id: string
+          profile_id: string | null
           typ: Database["public"]["Enums"]["org_type"]
           verified: boolean | null
           website: string | null
@@ -669,7 +742,7 @@ export type Database = {
           name: string
           oeffnungszeiten?: string | null
           plan?: string
-          profile_id: string
+          profile_id?: string | null
           typ: Database["public"]["Enums"]["org_type"]
           verified?: boolean | null
           website?: string | null
@@ -685,7 +758,7 @@ export type Database = {
           name?: string
           oeffnungszeiten?: string | null
           plan?: string
-          profile_id?: string
+          profile_id?: string | null
           typ?: Database["public"]["Enums"]["org_type"]
           verified?: boolean | null
           website?: string | null
@@ -1340,7 +1413,7 @@ export type Database = {
           id: string
           kategorie_id: string | null
           logo_url: string | null
-          profile_id: string
+          profile_id: string | null
           typ: string
           verein_name: string
           verified: boolean
@@ -1353,7 +1426,7 @@ export type Database = {
           id?: string
           kategorie_id?: string | null
           logo_url?: string | null
-          profile_id: string
+          profile_id?: string | null
           typ: string
           verein_name: string
           verified?: boolean
@@ -1366,7 +1439,7 @@ export type Database = {
           id?: string
           kategorie_id?: string | null
           logo_url?: string | null
-          profile_id?: string
+          profile_id?: string | null
           typ?: string
           verein_name?: string
           verified?: boolean
@@ -1390,14 +1463,14 @@ export type Database = {
           {
             foreignKeyName: "vereine_profile_id_fkey"
             columns: ["profile_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "vereine_profile_id_fkey"
             columns: ["profile_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "profiles_public"
             referencedColumns: ["id"]
           },
@@ -1505,6 +1578,30 @@ export type Database = {
       }
     }
     Functions: {
+      _mitglied_eintragen: {
+        Args: {
+          p_akteur: string
+          p_jede_rolle: boolean
+          p_organisation_id: string
+          p_profile_id: string
+          p_rolle: string
+          p_verein_id: string
+        }
+        Returns: undefined
+      }
+      _mitglieder_recht: {
+        Args: {
+          p_akteur: string
+          p_gemeinde_id: string
+          p_organisation_id: string
+          p_verein_id: string
+        }
+        Returns: string
+      }
+      _pfad_anderweitig_genutzt: {
+        Args: { p_org_id: string; p_pfad: string; p_user_id: string }
+        Returns: boolean
+      }
       _postgis_deprecate: {
         Args: { newname: string; oldname: string; version: string }
         Returns: undefined
@@ -1522,6 +1619,17 @@ export type Database = {
       _postgis_stats: {
         Args: { ""?: string; att_name: string; tbl: unknown }
         Returns: string
+      }
+      _rollen_log: {
+        Args: {
+          p_akteur: string
+          p_aktion: string
+          p_alte: string
+          p_gemeinde_id: string
+          p_neue: string
+          p_profile_id: string
+        }
+        Returns: undefined
       }
       _st_3dintersects: {
         Args: { geom1: unknown; geom2: unknown }
@@ -1594,6 +1702,23 @@ export type Database = {
         Returns: unknown
       }
       _st_within: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      _vereinszeile_anlegen: {
+        Args: {
+          p_gemeinde_id: string
+          p_name: string
+          p_profile_id: string
+          p_typ: string
+        }
+        Returns: string
+      }
+      _vereinsziel: {
+        Args: { p_organisation_id: string; p_verein_id: string }
+        Returns: Record<string, unknown>
+      }
+      _weiterer_verwalter: {
+        Args: { p_ohne: string; p_organisation_id: string; p_verein_id: string }
+        Returns: boolean
+      }
       addauth: { Args: { "": string }; Returns: boolean }
       addgeometrycolumn:
         | {
@@ -1664,6 +1789,10 @@ export type Database = {
           }
         | { Args: { schema_name: string; table_name: string }; Returns: string }
         | { Args: { table_name: string }; Returns: string }
+      einladung_einloesen: {
+        Args: { p_einladung_id: string; p_profile_id: string }
+        Returns: undefined
+      }
       einladungen_ablauf_aktualisieren: { Args: never; Returns: undefined }
       enablelongtransactions: { Args: never; Returns: string }
       equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
@@ -1772,6 +1901,28 @@ export type Database = {
       konto_dateipfade: { Args: { p_user_id: string }; Returns: string[] }
       konto_loeschen: { Args: { p_user_id: string }; Returns: undefined }
       longtransactionsenabled: { Args: never; Returns: boolean }
+      mitglied_entfernen: {
+        Args: { p_ausgefuehrt_von: string; p_profile_id: string }
+        Returns: undefined
+      }
+      mitglied_hinzufuegen: {
+        Args: {
+          p_ausgefuehrt_von: string
+          p_organisation_id?: string
+          p_profile_id: string
+          p_rolle: string
+          p_verein_id?: string
+        }
+        Returns: undefined
+      }
+      mitglied_rolle_aendern: {
+        Args: {
+          p_ausgefuehrt_von: string
+          p_profile_id: string
+          p_rolle: string
+        }
+        Returns: undefined
+      }
       populate_geometry_columns:
         | { Args: { tbl_oid: unknown; use_typmod?: boolean }; Returns: number }
         | { Args: { use_typmod?: boolean }; Returns: string }
@@ -2426,6 +2577,13 @@ export type Database = {
         Args: { p_umfrage_id: string }
         Returns: number
       }
+      umfrage_teilnehmer_anzahlen: {
+        Args: never
+        Returns: {
+          anzahl: number
+          umfrage_id: string
+        }[]
+      }
       unlockrows: { Args: { "": string }; Returns: number }
       updategeometrysrid: {
         Args: {
@@ -2436,6 +2594,31 @@ export type Database = {
           table_name: string
         }
         Returns: string
+      }
+      verein_anlegen: {
+        Args: {
+          p_ausgefuehrt_von: string
+          p_name: string
+          p_profile_id: string
+          p_typ: string
+        }
+        Returns: string
+      }
+      verein_dateipfade: {
+        Args: { p_organisation_id?: string; p_verein_id?: string }
+        Returns: string[]
+      }
+      verein_loeschen: {
+        Args: {
+          p_ausgefuehrt_von: string
+          p_organisation_id?: string
+          p_verein_id?: string
+        }
+        Returns: {
+          mitglied_email: string
+          mitglied_id: string
+          mitglied_name: string
+        }[]
       }
     }
     Enums: {
@@ -2480,12 +2663,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2509,11 +2692,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2534,11 +2717,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2559,11 +2742,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2576,11 +2759,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
