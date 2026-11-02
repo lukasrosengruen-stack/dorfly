@@ -618,6 +618,58 @@ begin
 end;
 $$;
 
+-- ─── Zeigt noch eine Zeile, die NICHT mitgelöscht wird, auf diesen Pfad? ────
+-- Bild-URLs setzt der Client frei; ohne diese Prüfung ließe sich eine fremde Datei
+-- (Gemeindewappen, Logo eines anderen Vereins) in einen Beitrag schreiben und beim
+-- Löschen mitreißen. p_org_id = Verein/Gewerbe, dessen Beiträge und Logo mitgelöscht
+-- werden (oder null); p_user_id = Konto, dessen eigene Inhalte mitgelöscht werden
+-- (oder null).
+create or replace function public._pfad_anderweitig_genutzt(
+  p_pfad text,
+  p_org_id uuid,
+  p_user_id uuid
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select
+    exists (
+      select 1 from public.posts p
+       where p.org_id is distinct from p_org_id
+         and not (p_user_id is not null and p.author_id = p_user_id
+                  and not (p.org_id is not null and p.channel::text in ('verein', 'gewerbe')))
+         and (split_part(p.bild_url, '/storage/v1/object/public/dorfly-media/', 2) = p_pfad
+              or exists (select 1 from unnest(p.bilder_urls) x
+                          where split_part(x, '/storage/v1/object/public/dorfly-media/', 2) = p_pfad))
+    )
+    or exists (select 1 from public.vereine v
+                where v.id is distinct from p_org_id
+                  and split_part(v.logo_url, '/storage/v1/object/public/dorfly-media/', 2) = p_pfad)
+    or exists (select 1 from public.organisationen o
+                where o.id is distinct from p_org_id
+                  and split_part(o.logo_url, '/storage/v1/object/public/dorfly-media/', 2) = p_pfad)
+    or exists (select 1 from public.profiles pr
+                where pr.id is distinct from p_user_id
+                  and split_part(pr.avatar_url, '/storage/v1/object/public/dorfly-media/', 2) = p_pfad)
+    or exists (select 1 from public.gemeinden g
+                where split_part(g.logo_url, '/storage/v1/object/public/dorfly-media/', 2) = p_pfad)
+    or exists (select 1 from public.maengel m
+                where m.melder_id is distinct from p_user_id
+                  and split_part(m.foto_url, '/storage/v1/object/public/dorfly-media/', 2) = p_pfad)
+    or exists (select 1 from public.umfragen u
+                where u.author_id is distinct from p_user_id
+                  and exists (select 1 from unnest(u.bilder_urls) x
+                               where split_part(x, '/storage/v1/object/public/dorfly-media/', 2) = p_pfad))
+    or exists (select 1 from public.umfrage_fragen f
+                join public.umfragen u on u.id = f.umfrage_id
+                where u.author_id is distinct from p_user_id
+                  and exists (select 1 from unnest(f.bilder_urls) x
+                               where split_part(x, '/storage/v1/object/public/dorfly-media/', 2) = p_pfad))
+$$;
+
 -- ─── Storage-Pfade eines Vereins/Gewerbes (nur lesend) ───────────────────────
 -- Die API-Route löscht die Dateien VOR verein_loeschen (Muster wie Kontolöschung).
 create or replace function public.verein_dateipfade(
@@ -650,15 +702,24 @@ as $$
     from storage.objects o
     join ordner on starts_with(o.name, ordner.praefix)
     where o.bucket_id = 'dorfly-media'
+  ),
+  kandidaten as (
+    select pfad from aus_urls where pfad is not null
+    union
+    select pfad from aus_ordnern
   )
-  select pfad from aus_urls where pfad is not null
-  union
-  select pfad from aus_ordnern
+  select k.pfad
+    from kandidaten k
+   where (starts_with(k.pfad, 'posts/')
+          or starts_with(k.pfad, 'vereine/neu/')
+          or (p_verein_id is not null and starts_with(k.pfad, 'vereine/' || p_verein_id || '/'))
+          or (p_organisation_id is not null and starts_with(k.pfad, 'gewerbe/' || p_organisation_id || '/')))
+     and not public._pfad_anderweitig_genutzt(k.pfad, coalesce(p_verein_id, p_organisation_id), null)
 $$;
 
 -- ─── Verein/Gewerbe löschen (Verwalter oder Verwaltung) ──────────────────────
 -- Liefert die übrigen Mitglieder (ohne die löschende Person) für die Benachrichtigung.
--- Sperrreihenfolge wie überall: Ziel (_vereinsziel) -> Profile -> Mitgliedschaften (Cascade).
+-- Sperrreihenfolge (wie konto_loeschen): Ziel (_vereinsziel) -> Posts -> Profile -> Mitgliedschaften (Cascade).
 create or replace function public.verein_loeschen(
   p_ausgefuehrt_von uuid,
   p_verein_id uuid default null,
@@ -686,6 +747,10 @@ begin
      where (m.verein_id = p_verein_id or m.organisation_id = p_organisation_id)
        and m.profile_id is distinct from p_ausgefuehrt_von;
 
+  -- posts.org_id hat keinen Fremdschlüssel (033) — ausdrücklich löschen.
+  -- post_termine hängt per Cascade dran.
+  delete from public.posts where org_id = v_ziel;
+
   perform public._rollen_log(z.o_gemeinde_id, 'verein_geloescht', m.profile_id, z.o_rolle, 'buerger', p_ausgefuehrt_von)
      from public.mitgliedschaften m
     where m.verein_id = p_verein_id or m.organisation_id = p_organisation_id;
@@ -700,10 +765,6 @@ begin
      set status = 'widerrufen'
    where status = 'offen'
      and (verein_id = p_verein_id or org_id = p_organisation_id);
-
-  -- posts.org_id hat keinen Fremdschlüssel (033) — ausdrücklich löschen.
-  -- post_termine hängt per Cascade dran.
-  delete from public.posts where org_id = v_ziel;
 
   -- Cascade: Abonnements, Mitgliedschaften
   if p_verein_id is not null then
@@ -723,6 +784,7 @@ revoke all on function public._rollen_log(uuid, text, uuid, text, text, uuid) fr
 revoke all on function public._weiterer_verwalter(uuid, uuid, uuid) from public, anon, authenticated, service_role;
 revoke all on function public._mitglied_eintragen(uuid, uuid, uuid, text, uuid, boolean) from public, anon, authenticated, service_role;
 revoke all on function public._vereinszeile_anlegen(text, uuid, text, uuid) from public, anon, authenticated, service_role;
+revoke all on function public._pfad_anderweitig_genutzt(text, uuid, uuid) from public, anon, authenticated, service_role;
 
 revoke all on function public.mitglied_hinzufuegen(uuid, text, uuid, uuid, uuid) from public, anon, authenticated;
 revoke all on function public.mitglied_entfernen(uuid, uuid) from public, anon, authenticated;

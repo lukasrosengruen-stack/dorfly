@@ -508,13 +508,16 @@ describe('verein_loeschen / verein_dateipfade', () => {
       await nutzer(RAT, 'rat@example.de', 'gewerbe')
       verein = (await db.query<{ id: string }>(
         `insert into public.vereine (profile_id, gemeinde_id, logo_url) values ($1, $2, $3) returning id`,
-        [ANNA, G1, `${URL}vereine/logo.jpg`])).rows[0].id
+        [ANNA, G1, null])).rows[0].id
       anderer = (await db.query<{ id: string }>(
         `insert into public.vereine (profile_id, gemeinde_id) values ($1, $2) returning id`, [DORA, G1])).rows[0].id
       gewerbe = (await db.query<{ id: string }>(
         `insert into public.organisationen (profile_id, gemeinde_id, logo_url) values ($1, $2, $3) returning id`,
-        [RAT, G1, `${URL}gewerbe/logo.jpg`])).rows[0].id
+        [RAT, G1, null])).rows[0].id
     })
+    await db.query('update public.vereine set logo_url = $1 where id = $2', [`${URL}vereine/${verein}/logo.jpg`, verein])
+    await db.query('update public.vereine set logo_url = $1 where id = $2', [`${URL}vereine/${anderer}/logo.jpg`, anderer])
+    await db.query('update public.organisationen set logo_url = $1 where id = $2', [`${URL}gewerbe/${gewerbe}/logo.jpg`, gewerbe])
     await nutzer(BERT, 'bert@example.de')
     await nutzer(CARL, 'carl@example.de')
     await db.query('select public.mitglied_hinzufuegen($1, $2, $3, $4)', [BERT, 'autor', ANNA, verein])
@@ -537,7 +540,7 @@ describe('verein_loeschen / verein_dateipfade', () => {
   it('liefert Logo, Beitragsbilder und den Vereinsordner — nichts vom anderen Verein', async () => {
     const res = await db.query<{ pfad: string }>('select public.verein_dateipfade($1) as pfad', [verein])
     expect(res.rows.map(r => r.pfad).sort()).toEqual(
-      ['posts/a.jpg', 'posts/b.jpg', `vereine/${verein}/alt.jpg`, 'vereine/logo.jpg'].sort(),
+      ['posts/a.jpg', 'posts/b.jpg', `vereine/${verein}/alt.jpg`, `vereine/${verein}/logo.jpg`].sort(),
     )
   })
 
@@ -546,7 +549,7 @@ describe('verein_loeschen / verein_dateipfade', () => {
       [RAT, gewerbe, `${URL}posts/g.jpg`])
     const res = await db.query<{ pfad: string }>('select public.verein_dateipfade(null, $1) as pfad', [gewerbe])
     expect(res.rows.map(r => r.pfad).sort()).toEqual(
-      ['gewerbe/logo.jpg', `gewerbe/${gewerbe}/shop.jpg`, 'posts/g.jpg'].sort(),
+      [`gewerbe/${gewerbe}/logo.jpg`, `gewerbe/${gewerbe}/shop.jpg`, 'posts/g.jpg'].sort(),
     )
   })
 
@@ -588,6 +591,50 @@ describe('verein_loeschen / verein_dateipfade', () => {
   it('erlaubt der Verwaltung das Löschen', async () => {
     await db.query('select * from public.verein_loeschen($1, $2)', [VERWALTUNG, verein])
     expect(await wert<number>('select count(*)::int from public.vereine where id = $1', [verein])).toBe(0)
+  })
+
+  it('liefert keine fremden Dateien, die der Verein nur verlinkt hat', async () => {
+    await db.query(`update public.gemeinden set logo_url = $1 where id = $2`, [`${URL}gemeinden/${G1}/wappen.png`, G1])
+    await db.query(
+      `insert into public.posts (author_id, org_id, channel, bild_url, bilder_urls) values ($1, $2, 'verein', $3, $4)`,
+      [BERT, verein, `${URL}gemeinden/${G1}/wappen.png`, [`${URL}vereine/${anderer}/logo.jpg`]])
+    const res = await db.query<{ pfad: string }>('select public.verein_dateipfade($1) as pfad', [verein])
+    const pfade = res.rows.map(r => r.pfad)
+    expect(pfade).not.toContain(`gemeinden/${G1}/wappen.png`)
+    expect(pfade).not.toContain(`vereine/${anderer}/logo.jpg`)
+  })
+
+  it('liefert kein Bild, das auch ein Beitrag eines anderen Vereins nutzt', async () => {
+    await db.query(
+      `insert into public.posts (author_id, org_id, channel, bild_url) values ($1, $2, 'verein', $3), ($4, $5, 'verein', $3)`,
+      [BERT, verein, `${URL}posts/geteilt.jpg`, DORA, anderer])
+    const res = await db.query<{ pfad: string }>('select public.verein_dateipfade($1) as pfad', [verein])
+    expect(res.rows.map(r => r.pfad)).not.toContain('posts/geteilt.jpg')
+  })
+
+  it('liefert keine Pfade außerhalb der erlaubten Präfixe', async () => {
+    await db.query(
+      `insert into public.posts (author_id, org_id, channel, bild_url) values ($1, $2, 'verein', $3)`,
+      [BERT, verein, `${URL}maengel/x.jpg`])
+    const res = await db.query<{ pfad: string }>('select public.verein_dateipfade($1) as pfad', [verein])
+    expect(res.rows.map(r => r.pfad)).not.toContain('maengel/x.jpg')
+  })
+
+  it('verweigert Verwaltern eines anderen Vereins und der Verwaltung einer anderen Gemeinde', async () => {
+    await expect(db.query('select * from public.verein_loeschen($1, $2)', [DORA, verein])).rejects.toThrow(/Keine Berechtigung/)
+    await expect(db.query('select * from public.verein_loeschen($1, $2)', [VERWALTUNG_G2, verein])).rejects.toThrow(/Keine Berechtigung/)
+    expect(await wert<number>('select count(*)::int from public.vereine where id = $1', [verein])).toBe(1)
+  })
+
+  it('verlangt genau eine Ziel-ID', async () => {
+    await expect(db.query('select * from public.verein_loeschen($1)', [ANNA])).rejects.toThrow(/genau einen Verein/)
+    await expect(db.query('select * from public.verein_loeschen($1, $2, $3)', [ANNA, verein, gewerbe])).rejects.toThrow(/genau einen Verein/)
+  })
+
+  it('_pfad_anderweitig_genutzt ist für niemanden ausführbar', async () => {
+    for (const r of ['anon', 'authenticated', 'service_role']) {
+      expect(await wert<boolean>(`has_function_privilege('${r}', 'public._pfad_anderweitig_genutzt(text, uuid, uuid)', 'execute')`)).toBe(false)
+    }
   })
 
   it('nur service_role darf verein_dateipfade und verein_loeschen ausführen', async () => {

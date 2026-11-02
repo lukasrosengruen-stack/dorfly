@@ -41,7 +41,7 @@ export const BASIS_SCHEMA = `
   create type public.org_type as enum ('verein', 'gewerbe', 'institution');
   create type public.post_channel as enum ('gemeinde', 'verein', 'gewerbe', 'gemeinderat');
 
-  create table public.gemeinden (id uuid primary key default gen_random_uuid());
+  create table public.gemeinden (id uuid primary key default gen_random_uuid(), logo_url text);
 
   create table public.profiles (
     id uuid primary key references auth.users(id) on delete cascade,
