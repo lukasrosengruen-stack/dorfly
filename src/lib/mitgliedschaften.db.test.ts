@@ -108,3 +108,122 @@ describe('065 — Vorbedingung', () => {
     })).rejects.toThrow(/mehreren Vereinen/)
   })
 })
+
+describe('mitglied_hinzufuegen / _entfernen / _rolle_aendern', () => {
+  let verein: string
+
+  async function hinzufuegen(profil: string, rolleText: string, akteur: string, ziel = verein) {
+    await db.query('select public.mitglied_hinzufuegen($1, $2, $3, $4)', [profil, rolleText, akteur, ziel])
+  }
+  async function entfernen(profil: string, akteur: string) {
+    await db.query('select public.mitglied_entfernen($1, $2)', [profil, akteur])
+  }
+  async function rolleAendern(profil: string, neu: string, akteur: string) {
+    await db.query('select public.mitglied_rolle_aendern($1, $2, $3)', [profil, neu, akteur])
+  }
+
+  beforeEach(async () => {
+    await neueDb(async () => {
+      await nutzer(ANNA, 'anna@example.de', 'verein')
+      verein = (await db.query<{ id: string }>(
+        `insert into public.vereine (profile_id, gemeinde_id) values ($1, $2) returning id`, [ANNA, G1])).rows[0].id
+    })
+    await nutzer(BERT, 'bert@example.de')
+    await nutzer(CARL, 'carl@example.de')
+    await nutzer(RAT, 'rat@example.de', 'gemeinderat')
+    await nutzer(FREMD, 'fremd@example.de', 'buerger', G2)
+  })
+
+  it('Verwalterin fügt einen Bürger als Autor hinzu und setzt seine Rolle', async () => {
+    await hinzufuegen(BERT, 'autor', ANNA)
+    expect(await rolle(BERT)).toBe('verein')
+    expect(await wert<string>('select rolle from public.mitgliedschaften where profile_id = $1', [BERT])).toBe('autor')
+    expect(await wert<string>(`select aktion from public.rollen_log where ziel_profile_id = $1`, [BERT])).toBe('mitglied_hinzugefuegt')
+  })
+
+  it('setzt bei Organisationen die Rolle organisation', async () => {
+    await db.query(`update public.vereine set typ = 'organisation' where id = $1`, [verein])
+    await hinzufuegen(BERT, 'autor', ANNA)
+    expect(await rolle(BERT)).toBe('organisation')
+  })
+
+  it('lehnt Personen mit anderer Rolle ab', async () => {
+    await expect(hinzufuegen(RAT, 'autor', ANNA)).rejects.toThrow(/bereits einem Verein zugeordnet oder hat eine andere Rolle/)
+    expect(await rolle(RAT)).toBe('gemeinderat')
+  })
+
+  it('lehnt Mitglieder eines anderen Vereins ab', async () => {
+    await nutzer(DORA, 'dora@example.de', 'gewerbe')
+    const gewerbe = (await db.query<{ id: string }>(
+      `insert into public.organisationen (profile_id, gemeinde_id) values ($1, $2) returning id`, [DORA, G1])).rows[0].id
+    await db.query(`insert into public.mitgliedschaften (profile_id, organisation_id, rolle) values ($1, $2, 'verwalter')`, [DORA, gewerbe])
+    await expect(hinzufuegen(DORA, 'autor', ANNA)).rejects.toThrow(/bereits einem Verein zugeordnet/)
+  })
+
+  it('lehnt Personen aus einer anderen Gemeinde ab', async () => {
+    await expect(hinzufuegen(FREMD, 'autor', ANNA)).rejects.toThrow(/nicht zu dieser Gemeinde/)
+  })
+
+  it('verweigert Autoren, Fremden und der Verwaltung einer anderen Gemeinde das Hinzufügen', async () => {
+    await hinzufuegen(BERT, 'autor', ANNA)
+    await expect(hinzufuegen(CARL, 'autor', BERT)).rejects.toThrow(/Keine Berechtigung/)
+    await expect(hinzufuegen(CARL, 'autor', RAT)).rejects.toThrow(/Keine Berechtigung/)
+    await expect(hinzufuegen(CARL, 'autor', VERWALTUNG_G2)).rejects.toThrow(/Keine Berechtigung/)
+  })
+
+  it('erlaubt der Verwaltung der Gemeinde das Hinzufügen', async () => {
+    await hinzufuegen(BERT, 'verwalter', VERWALTUNG)
+    expect(await rolle(BERT)).toBe('verein')
+  })
+
+  it('entfernt ein Mitglied und setzt es auf buerger zurück', async () => {
+    await hinzufuegen(BERT, 'autor', ANNA)
+    await entfernen(BERT, ANNA)
+    expect(await rolle(BERT)).toBe('buerger')
+    expect(await wert<number>('select count(*)::int from public.mitgliedschaften where profile_id = $1', [BERT])).toBe(0)
+  })
+
+  it('lässt jedes Mitglied selbst austreten', async () => {
+    await hinzufuegen(BERT, 'autor', ANNA)
+    await entfernen(BERT, BERT)
+    expect(await rolle(BERT)).toBe('buerger')
+  })
+
+  it('schützt den letzten Verwalter vor Verwaltern, aber nicht vor der Verwaltung', async () => {
+    await expect(entfernen(ANNA, ANNA)).rejects.toThrow(/letzte Verwalter/)
+    await expect(rolleAendern(ANNA, 'autor', ANNA)).rejects.toThrow(/letzte Verwalter/)
+    await entfernen(ANNA, VERWALTUNG)
+    expect(await rolle(ANNA)).toBe('buerger')
+    expect(await wert<number>('select count(*)::int from public.vereine')).toBe(1)
+  })
+
+  it('erlaubt die Übergabe: neue Verwalterin hinzufügen, dann austreten', async () => {
+    await hinzufuegen(BERT, 'verwalter', ANNA)
+    await entfernen(ANNA, ANNA)
+    expect(await wert<string>('select rolle from public.mitgliedschaften where profile_id = $1', [BERT])).toBe('verwalter')
+  })
+
+  it('ändert die Mitgliedsrolle', async () => {
+    await hinzufuegen(BERT, 'autor', ANNA)
+    await rolleAendern(BERT, 'verwalter', ANNA)
+    expect(await wert<string>('select rolle from public.mitgliedschaften where profile_id = $1', [BERT])).toBe('verwalter')
+    await expect(rolleAendern(ANNA, 'autor', BERT)).resolves.toBeUndefined()
+  })
+})
+
+describe('Rechte auf die Funktionen', () => {
+  beforeEach(async () => { await neueDb() })
+
+  it('nur service_role darf ausführen', async () => {
+    for (const fn of [
+      'mitglied_hinzufuegen(uuid, text, uuid, uuid, uuid)',
+      'mitglied_entfernen(uuid, uuid)',
+      'mitglied_rolle_aendern(uuid, text, uuid)',
+    ]) {
+      for (const r of ['anon', 'authenticated']) {
+        expect(await wert<boolean>(`has_function_privilege('${r}', 'public.${fn}', 'execute')`)).toBe(false)
+      }
+      expect(await wert<boolean>(`has_function_privilege('service_role', 'public.${fn}', 'execute')`)).toBe(true)
+    }
+  })
+})
