@@ -373,7 +373,7 @@ describe('einladung_einloesen', () => {
     await nutzer(BERT, 'bert@example.de', 'verein')
     const id = await einladung({
       gemeinde_id: G1, email: 'bert@example.de', rolle: 'verein', verein_id: verein,
-      mitglied_rolle: 'verwalter', status: 'angenommen', eingeladen_von: ANNA,
+      mitglied_rolle: 'verwalter', status: 'angenommen', angenommen_am: new Date().toISOString(), eingeladen_von: ANNA,
     })
     await db.query('select public.einladung_einloesen($1, $2)', [BERT, id])
     expect(await wert<string>('select rolle from public.mitgliedschaften where profile_id = $1', [BERT])).toBe('verwalter')
@@ -383,7 +383,7 @@ describe('einladung_einloesen', () => {
     await nutzer(BERT, 'bert@example.de', 'organisation')
     const id = await einladung({
       gemeinde_id: G1, email: 'bert@example.de', rolle: 'organisation', organisation_name: 'Tafel',
-      status: 'angenommen', eingeladen_von: VERWALTUNG,
+      status: 'angenommen', angenommen_am: new Date().toISOString(), eingeladen_von: VERWALTUNG,
     })
     await db.query('select public.einladung_einloesen($1, $2)', [BERT, id])
     expect(await wert<string>(`select typ from public.vereine where verein_name = 'Tafel'`)).toBe('organisation')
@@ -394,15 +394,103 @@ describe('einladung_einloesen', () => {
     await nutzer(BERT, 'bert@example.de', 'verein')
     const id = await einladung({
       gemeinde_id: G1, email: 'jemand@example.de', rolle: 'verein', verein_id: verein,
-      status: 'angenommen', eingeladen_von: ANNA,
+      status: 'angenommen', angenommen_am: new Date().toISOString(), eingeladen_von: ANNA,
     })
     await expect(db.query('select public.einladung_einloesen($1, $2)', [BERT, id])).rejects.toThrow(/andere E-Mail/)
   })
 
   it('ignoriert Einladungen ohne Vereinsrolle', async () => {
     await nutzer(BERT, 'bert@example.de')
-    const id = await einladung({ gemeinde_id: G1, email: 'bert@example.de', rolle: 'buerger', status: 'angenommen', eingeladen_von: ANNA })
+    const id = await einladung({ gemeinde_id: G1, email: 'bert@example.de', rolle: 'buerger', status: 'angenommen', angenommen_am: new Date().toISOString(), eingeladen_von: ANNA })
     await db.query('select public.einladung_einloesen($1, $2)', [BERT, id])
     expect(await wert<number>('select count(*)::int from public.mitgliedschaften where profile_id = $1', [BERT])).toBe(0)
+  })
+})
+
+describe('einladung_einloesen — Härtung', () => {
+  let verein: string
+  let gewerbe: string
+
+  beforeEach(async () => {
+    await neueDb(async () => {
+      await nutzer(ANNA, 'anna@example.de', 'verein')
+      await nutzer(DORA, 'dora@example.de', 'gewerbe')
+      verein = (await db.query<{ id: string }>(
+        `insert into public.vereine (profile_id, gemeinde_id, verein_name) values ($1, $2, 'TSV') returning id`, [ANNA, G1])).rows[0].id
+      gewerbe = (await db.query<{ id: string }>(
+        `insert into public.organisationen (profile_id, gemeinde_id, name, typ) values ($1, $2, 'Bäcker', 'gewerbe') returning id`, [DORA, G1])).rows[0].id
+    })
+    await nutzer(BERT, 'bert@example.de', 'verein')
+    await nutzer(CARL, 'carl@example.de')
+  })
+
+  async function einladung(werte: Record<string, unknown>) {
+    const spalten = Object.keys(werte)
+    const res = await db.query<{ id: string }>(
+      `insert into public.einladungen (${spalten.join(', ')}) values (${spalten.map((_, i) => `$${i + 1}`).join(', ')}) returning id`,
+      Object.values(werte),
+    )
+    return res.rows[0].id
+  }
+
+  const basis = () => ({
+    gemeinde_id: G1, email: 'bert@example.de', rolle: 'verein', verein_id: verein,
+    status: 'angenommen', angenommen_am: new Date().toISOString(), eingeladen_von: ANNA,
+  })
+
+  async function mitgliedschaften() {
+    return wert<number>('select count(*)::int from public.mitgliedschaften where profile_id = $1', [BERT])
+  }
+
+  it('lehnt eine offene Einladung ab', async () => {
+    const id = await einladung({ ...basis(), status: 'offen', angenommen_am: null })
+    await expect(db.query('select public.einladung_einloesen($1, $2)', [BERT, id])).rejects.toThrow(/nicht angenommen/)
+    expect(await mitgliedschaften()).toBe(0)
+  })
+
+  it('lehnt eine vor zwei Stunden angenommene Einladung ab', async () => {
+    const id = await einladung({ ...basis(), angenommen_am: new Date(Date.now() - 2 * 3600_000).toISOString() })
+    await expect(db.query('select public.einladung_einloesen($1, $2)', [BERT, id])).rejects.toThrow(/nicht angenommen/)
+    expect(await mitgliedschaften()).toBe(0)
+  })
+
+  it('lehnt ab, wenn die einladende Person kein Recht mehr hat', async () => {
+    const id = await einladung({ ...basis(), eingeladen_von: CARL })
+    await expect(db.query('select public.einladung_einloesen($1, $2)', [BERT, id])).rejects.toThrow(/nicht mehr berechtigt/)
+    expect(await mitgliedschaften()).toBe(0)
+  })
+
+  it('lehnt Rolle verein mit org_id eines Gewerbes ab', async () => {
+    const id = await einladung({ ...basis(), verein_id: null, org_id: gewerbe, eingeladen_von: VERWALTUNG })
+    await expect(db.query('select public.einladung_einloesen($1, $2)', [BERT, id])).rejects.toThrow()
+    expect(await mitgliedschaften()).toBe(0)
+  })
+})
+
+describe('verein_anlegen — Härtung', () => {
+  beforeEach(async () => {
+    await neueDb()
+    await nutzer(BERT, 'bert@example.de', 'verein')
+    await nutzer(CARL, 'carl@example.de', 'verein')
+    await nutzer(RAT, 'verwaltung2@g1.de', 'verwaltung')
+  })
+
+  const anlegen = (profil: string, akteur: string | null, name = 'Musikverein') =>
+    wert<string>('public.verein_anlegen($1, $2, $3, $4)', [profil, 'verein', name, akteur])
+
+  it('lehnt einen leeren Namen ab', async () => {
+    await expect(anlegen(BERT, BERT, '   ')).rejects.toThrow(/Namen angeben/)
+  })
+
+  it('lehnt fehlenden Akteur ab', async () => {
+    await expect(anlegen(BERT, null)).rejects.toThrow(/Keine Berechtigung/)
+  })
+
+  it('lehnt ab, wenn ein Vereinskonto für ein anderes anlegt', async () => {
+    await expect(anlegen(BERT, CARL)).rejects.toThrow(/Keine Berechtigung/)
+  })
+
+  it('lehnt Verwaltungskonten als Mitglied ab', async () => {
+    await expect(anlegen(RAT, VERWALTUNG)).rejects.toThrow(/Konten der Verwaltung/)
   })
 })

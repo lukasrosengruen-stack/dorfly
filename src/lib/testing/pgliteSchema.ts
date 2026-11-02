@@ -153,6 +153,7 @@ export const BASIS_SCHEMA = `
     org_id uuid,
     status text not null default 'offen'
       check (status in ('offen', 'angenommen', 'abgelaufen', 'widerrufen')),
+    angenommen_am timestamptz,
     eingeladen_von uuid not null references public.profiles(id)
   );
   create table public.rollen_log (

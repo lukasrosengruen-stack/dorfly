@@ -528,6 +528,9 @@ begin
   if v_gemeinde is null then
     raise exception 'Diese Person ist keiner Gemeinde zugeordnet.' using errcode = 'P0001';
   end if;
+  if v_rolle in ('verwaltung', 'super_admin') then
+    raise exception 'Konten der Verwaltung können keinem Verein zugeordnet werden.' using errcode = 'P0001';
+  end if;
 
   select p.role::text, p.gemeinde_id into v_akteur_rolle, v_akteur_gemeinde
     from public.profiles p where p.id = p_ausgefuehrt_von;
@@ -572,6 +575,7 @@ set search_path = ''
 as $$
 declare
   e record;
+  z record;
   v_email text;
   v_id uuid;
 begin
@@ -584,7 +588,11 @@ begin
   if lower(coalesce(v_email, '')) <> lower(e.email) then
     raise exception 'Diese Einladung ist für eine andere E-Mail-Adresse ausgestellt.' using errcode = '42501';
   end if;
-  if e.status <> 'angenommen' then
+  -- profilAnlegen setzt angenommen_am unmittelbar vorher; das Zeitfenster verhindert,
+  -- dass eine alte, schon angenommene Einladung später erneut eingelöst wird.
+  if e.status <> 'angenommen'
+     or e.angenommen_am is null
+     or e.angenommen_am <= now() - interval '1 hour' then
     raise exception 'Die Einladung wurde nicht angenommen.' using errcode = 'P0001';
   end if;
 
@@ -593,6 +601,10 @@ begin
   end if;
 
   if e.verein_id is not null or e.org_id is not null then
+    select * into z from public._vereinsziel(e.verein_id, e.org_id);
+    if public._mitglieder_recht(e.eingeladen_von, e.verein_id, e.org_id, z.o_gemeinde_id) is null then
+      raise exception 'Die einladende Person ist nicht mehr berechtigt.' using errcode = '42501';
+    end if;
     perform public._mitglied_eintragen(
       p_profile_id, e.verein_id, e.org_id, coalesce(e.mitglied_rolle, 'autor'), e.eingeladen_von, false);
   elsif coalesce(btrim(e.organisation_name), '') <> '' then
