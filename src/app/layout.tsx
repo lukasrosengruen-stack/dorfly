@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Plus_Jakarta_Sans, DM_Sans } from 'next/font/google'
+import localFont from 'next/font/local'
 import { Toaster } from 'sonner'
 import NavigationTracker from '@/components/NavigationTracker'
 import HardwareBackHandler from '@/components/HardwareBackHandler'
@@ -7,15 +7,18 @@ import { getGemeinde } from '@/lib/gemeinde'
 import { buildThemeStyle } from '@/lib/buildThemeStyle'
 import './globals.css'
 
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
+// Lokal statt next/font/google: Der Build lud die Schriften sonst bei jedem Lauf
+// von fonts.gstatic.com und scheiterte, wenn Google kurz nicht erreichbar war.
+// Variable Schriften aus den Fontsource-Paketen (latin, enthält Umlaute).
+const jakarta = localFont({
+  src: '../../node_modules/@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2',
+  weight: '200 800',
   variable: '--font-jakarta',
 })
 
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800'],
+const dmSans = localFont({
+  src: '../../node_modules/@fontsource-variable/dm-sans/files/dm-sans-latin-wght-normal.woff2',
+  weight: '100 1000',
   variable: '--font-dm',
 })
 
