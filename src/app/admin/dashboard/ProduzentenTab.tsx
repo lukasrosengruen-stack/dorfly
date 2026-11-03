@@ -9,7 +9,8 @@ type Props = {
 
 export default function ProduzentenTab({ rolle, accounts }: Props) {
   const active = accounts.filter(a => a.is_active).length
-  const hasSubscribers = rolle === 'verein' || rolle === 'gewerbe'
+  // Seit 068 eine Zeile pro Verein/Organisation/Betrieb — alle drei haben Abonnenten
+  const hasSubscribers = rolle === 'verein' || rolle === 'organisation' || rolle === 'gewerbe'
 
   return (
     <div>
