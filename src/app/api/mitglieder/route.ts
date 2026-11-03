@@ -42,8 +42,10 @@ export const POST = withAuth(async (req: NextRequest, { profile }) => {
     { email: v.data.email, rolle: v.data.rolle, ziel: ziel.ziel, akteurId: profile.id, gemeinde },
     {
       profilPerEmail: async email => {
-        const { data } = await service.from('profiles').select('id, gemeinde_id, display_name').ilike('email', escapeIlike(email)).maybeSingle()
-        return data
+        const { data, error } = await service.from('profiles').select('id, gemeinde_id, display_name').ilike('email', escapeIlike(email)).limit(2)
+        if (error) throw new Error(`Profil-Lookup fehlgeschlagen: ${error.message}`)
+        if (data.length > 1) return 'mehrdeutig'
+        return data[0] ?? null
       },
       mitgliedHinzufuegen: async args => {
         const { error } = await service.rpc('mitglied_hinzufuegen', args)

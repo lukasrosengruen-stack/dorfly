@@ -34,6 +34,17 @@ describe('mitgliedPerEmailHinzufuegen', () => {
     expect(d.einladungAnlegen).not.toHaveBeenCalled()
   })
 
+  it('lehnt mehrdeutige Adressen ab, ohne Einladung und Mail', async () => {
+    const d = deps({ profilPerEmail: vi.fn(async () => 'mehrdeutig' as const) })
+    expect(await mitgliedPerEmailHinzufuegen(eingabe, d)).toEqual({
+      ok: false, status: 409, fehler: 'Diese E-Mail-Adresse kann nicht hinzugefügt werden.',
+    })
+    expect(d.mitgliedHinzufuegen).not.toHaveBeenCalled()
+    expect(d.einladungAnlegen).not.toHaveBeenCalled()
+    expect(d.sendeZuweisung).not.toHaveBeenCalled()
+    expect(d.sendeEinladung).not.toHaveBeenCalled()
+  })
+
   it('gibt die Ablehnung der Datenbank weiter und schickt keine Mail', async () => {
     const d = deps({
       profilPerEmail: vi.fn(async () => ({ id: 'rat', gemeinde_id: 'g1', display_name: null })),

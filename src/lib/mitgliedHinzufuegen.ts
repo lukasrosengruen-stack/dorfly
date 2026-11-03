@@ -9,7 +9,8 @@
 import { rpcFehler, type MitgliedRolle, type Ziel } from './mitgliedschaft'
 
 export interface HinzufuegenDeps {
-  profilPerEmail(email: string): Promise<{ id: string; gemeinde_id: string | null; display_name: string | null } | null>
+  /** 'mehrdeutig': mehrere Konten passen auf die Adresse (Groß-/Kleinschreibung). */
+  profilPerEmail(email: string): Promise<{ id: string; gemeinde_id: string | null; display_name: string | null } | 'mehrdeutig' | null>
   mitgliedHinzufuegen(args: {
     p_profile_id: string
     p_rolle: MitgliedRolle
@@ -73,6 +74,10 @@ export async function mitgliedPerEmailHinzufuegen(
   const absender = absenderFuer(ziel)
 
   const profil = await deps.profilPerEmail(email)
+
+  if (profil === 'mehrdeutig') {
+    return { ok: false, status: 409, fehler: 'Diese E-Mail-Adresse kann nicht hinzugefügt werden.' }
+  }
 
   if (profil) {
     if (profil.gemeinde_id !== ziel.gemeinde_id) {

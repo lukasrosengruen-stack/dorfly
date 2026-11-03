@@ -4601,3 +4601,11 @@ Expected: keine Treffer.
 2. Mensch spielt `066_mitgliedschaften_abschluss.sql` im SQL-Editor ein — **direkt nach dem Deploy**, damit das Zeitfenster ohne Mitgliedschaften für neue Vereine/Wechsel klein bleibt (066 räumt Rollen-Abweichungen auf und holt Nachzügler nach).
 3. Prüfen: `select count(*) from public.vereine v where not exists (select 1 from public.mitgliedschaften m where m.verein_id = v.id);` — Ergebnis = Anzahl Vereine, die bewusst ohne Verwalter sind (in „Vereine & Gewerbe“ als „Kein Verwalter“ sichtbar).
 4. Nach 066 zusätzlich prüfen: die N4-Abfrage (Rolle passt zur Mitgliedschaft) — erwartet 0 Zeilen — und `select count(*) from public.vereine v where profile_id is not null and not exists (select 1 from public.mitgliedschaften m where m.verein_id = v.id);` — erwartet 0 (jeder Verein mit Inhaber hat jetzt einen Verwalter; Abweichungen sind Vereine, deren Inhaber die Rolle nicht mehr hat).
+5. Zusätzlich nach 066 prüfen (erwartet 0 Zeilen; bei Treffern die Person über „Vereine & Gewerbe“ als Mitglied hinzufügen):
+   ```sql
+   select 'verein', v.id, v.profile_id from public.vereine v
+    where v.profile_id is not null and not exists (select 1 from public.mitgliedschaften m where m.profile_id = v.profile_id)
+   union all
+   select 'gewerbe', o.id, o.profile_id from public.organisationen o
+    where o.profile_id is not null and not exists (select 1 from public.mitgliedschaften m where m.profile_id = o.profile_id);
+   ```
