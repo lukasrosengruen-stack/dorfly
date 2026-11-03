@@ -83,6 +83,8 @@ export default async function GewerbeDashboardPage() {
     ? await service.from('profiles').select('id, vorname, nachname, display_name').in('id', autorIds)
     : { data: [] }
   const autorNamen = Object.fromEntries((autoren ?? []).map(a => [a.id, kurzname(a) ?? '']))
+  // Eigener Name auch ohne bisherige Beiträge — neu angelegte erscheinen sofort mit „von …“
+  autorNamen[user.id] = kurzname(profile) ?? ''
 
   return (
     <GewerbeDashboardClient

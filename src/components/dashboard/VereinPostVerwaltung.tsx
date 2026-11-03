@@ -37,6 +37,8 @@ interface Props {
   vereinName: string | null
   role?: 'verein' | 'organisation'
   mitgliedRolle?: 'verwalter' | 'autor' | null
+  /** „Vorname N.“ der angemeldeten Person — für neu angelegte Beiträge ohne Neuladen. */
+  eigenerName?: string | null
   vereinProfil?: Verein | null
   kategorien?: VereinKategorie[]
   abonnentenStats?: { gesamt: number; letzter7Tage: number; letzter30Tage: number } | null
@@ -70,7 +72,7 @@ const emptyForm: FormState = {
   geplant: false, scheduled_date: '', scheduled_time: '',
 }
 
-export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, profileId, vereinName, role, mitgliedRolle: mitgliedRolleProp = null, vereinProfil: initialVereinProfil, kategorien = [], abonnentenStats }: Props) {
+export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, profileId, vereinName, role, mitgliedRolle: mitgliedRolleProp = null, eigenerName = null, vereinProfil: initialVereinProfil, kategorien = [], abonnentenStats }: Props) {
   const [vereinProfil, setVereinProfil] = useState(initialVereinProfil ?? null)
   // Nach der Selbstanlage ist die Person Verwalter, ohne dass die Seite neu geladen wird.
   const [mitgliedRolle, setMitgliedRolle] = useState(mitgliedRolleProp)
@@ -225,7 +227,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
       let json: Record<string, unknown>
       try { json = JSON.parse(text) } catch { throw new Error(`HTTP ${res.status}: ${text.slice(0, 200)}`) }
       if (!res.ok) throw new Error(json.error as string ?? 'Fehler')
-      setPosts(prev => [json.post as Post, ...prev])
+      setPosts(prev => [{ ...(json.post as Post), autor_name: eigenerName }, ...prev])
       closeForm()
     } catch (e: unknown) { toast.error('Fehler: ' + (e instanceof Error ? e.message : JSON.stringify(e))) }
     finally { setLoading(false) }

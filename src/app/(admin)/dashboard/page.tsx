@@ -438,6 +438,7 @@ export default async function DashboardPage() {
         vereinName={vereinProfil?.verein_name ?? null}
         role={profile.role as 'verein' | 'organisation'}
         mitgliedRolle={mitgliedschaft?.rolle ?? null}
+        eigenerName={kurzname(profile)}
         vereinProfil={vereinProfil}
         kategorien={kategorienResult.data ?? []}
         abonnentenStats={abonnentenStats}
