@@ -44,9 +44,9 @@ export default async function GewerbeDashboardPage() {
     { count: letzter7Tage },
     { count: letzter30Tage },
   ] = await Promise.all([
-    supabase.from('gewerbe_abonnements').select('id', { count: 'exact', head: true }).eq('gewerbe_id', betrieb.id),
-    supabase.from('gewerbe_abonnements').select('id', { count: 'exact', head: true }).eq('gewerbe_id', betrieb.id).gte('created_at', vor7Tagen),
-    supabase.from('gewerbe_abonnements').select('id', { count: 'exact', head: true }).eq('gewerbe_id', betrieb.id).gte('created_at', vor30Tagen),
+    service.from('gewerbe_abonnements').select('id', { count: 'exact', head: true }).eq('gewerbe_id', betrieb.id),
+    service.from('gewerbe_abonnements').select('id', { count: 'exact', head: true }).eq('gewerbe_id', betrieb.id).gte('created_at', vor7Tagen),
+    service.from('gewerbe_abonnements').select('id', { count: 'exact', head: true }).eq('gewerbe_id', betrieb.id).gte('created_at', vor30Tagen),
   ])
 
   // Wochenlimit prüfen
