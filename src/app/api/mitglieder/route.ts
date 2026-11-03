@@ -50,22 +50,27 @@ export const POST = withAuth(async (req: NextRequest, { profile }) => {
       },
       einladungAnlegen: async daten => {
         // Nur offene Einladungen in DIESEN Verein/dieses Gewerbe widerrufen
-        await service
+        const { error: widerrufFehler } = await service
           .from('einladungen')
           .update({ status: 'widerrufen' })
           .eq('email', daten.email)
           .eq('gemeinde_id', daten.gemeinde_id)
           .eq('status', 'offen')
           .eq(daten.verein_id ? 'verein_id' : 'org_id', (daten.verein_id ?? daten.org_id)!)
+        if (widerrufFehler) console.error('[mitglieder] Alte Einladungen widerrufen fehlgeschlagen:', widerrufFehler)
         const { data, error } = await service.from('einladungen').insert(daten).select('token').single()
-        if (error || !data) return { fehler: error?.message ?? 'unbekannt' }
-        await service.from('rollen_log').insert({
+        if (error || !data) {
+          console.error('[mitglieder] Einladung anlegen fehlgeschlagen:', error)
+          return { fehler: 'Die Aktion ist fehlgeschlagen. Bitte versuchen Sie es erneut.' }
+        }
+        const { error: logFehler } = await service.from('rollen_log').insert({
           gemeinde_id: daten.gemeinde_id,
           aktion: 'eingeladen',
           ziel_email: daten.email,
           neue_rolle: daten.rolle,
           ausgefuehrt_von: profile.id,
         })
+        if (logFehler) console.error('[mitglieder] rollen_log (eingeladen) fehlgeschlagen:', logFehler)
         return { token: data.token }
       },
       sendeZuweisung: p => sendeRollenzuweisungEmail(p),

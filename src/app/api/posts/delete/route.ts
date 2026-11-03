@@ -12,7 +12,7 @@ export const DELETE = withAuth(
     const isGemeinderat = profile.role === 'gemeinderat'
     const service = await createServiceClient()
     const { error } = await (isGemeinderat
-      ? service.from('posts').delete().eq('id', v.data.id).eq('gemeinde_id', profile.gemeinde_id!).eq('author_id', profile.id)
+      ? service.from('posts').delete().eq('id', v.data.id).eq('gemeinde_id', profile.gemeinde_id!).eq('author_id', profile.id).eq('channel', 'gemeinderat')
       : service.from('posts').delete().eq('id', v.data.id).eq('gemeinde_id', profile.gemeinde_id!))
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })

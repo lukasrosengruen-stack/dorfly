@@ -31,7 +31,10 @@ export const PATCH = withAuth(
       .select()
       .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[gewerbe/profil] DB-Fehler:', error)
+      return apiError('Die Aktion ist fehlgeschlagen. Bitte versuchen Sie es erneut.', 500)
+    }
 
     return NextResponse.json({ betrieb: updated })
   },

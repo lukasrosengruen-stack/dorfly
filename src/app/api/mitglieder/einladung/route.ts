@@ -25,16 +25,20 @@ export const DELETE = withAuth(async (req: NextRequest, { profile }) => {
     .select('email')
     .maybeSingle()
 
-  if (error) return apiError('Die Einladung konnte nicht zurückgezogen werden.')
+  if (error) {
+    console.error('[mitglieder/einladung] Widerrufen fehlgeschlagen:', error)
+    return apiError('Die Einladung konnte nicht zurückgezogen werden.')
+  }
   if (!data) return apiError('Einladung nicht gefunden', 404)
 
-  await service.from('rollen_log').insert({
+  const { error: logFehler } = await service.from('rollen_log').insert({
     gemeinde_id: ziel.ziel.gemeinde_id,
     aktion: 'widerrufen',
     ziel_email: data.email,
     einladung_id: v.data.einladung_id,
     ausgefuehrt_von: profile.id,
   })
+  if (logFehler) console.error('[mitglieder/einladung] rollen_log (widerrufen) fehlgeschlagen:', logFehler)
 
   return NextResponse.json({ ok: true })
 }, { roles: ['verein', 'organisation', 'gewerbe', 'verwaltung', 'super_admin'] })

@@ -1,4 +1,4 @@
-import { withAuth } from '@/lib/api'
+import { withAuth, apiError } from '@/lib/api'
 import { validate, vereinPostSchema, vereinPostUpdateSchema, vereinPostDeleteSchema } from '@/lib/validations'
 import { createServiceClient } from '@/lib/supabase/server'
 import { meinVereinsziel } from '@/lib/mitgliedschaft'
@@ -48,7 +48,10 @@ export const POST = withAuth(
       .select('id, titel, inhalt, status, created_at, tag, bild_url, publish_at')
       .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[verein/post] DB-Fehler:', error)
+      return apiError('Die Aktion ist fehlgeschlagen. Bitte versuchen Sie es erneut.', 500)
+    }
 
     if (tag === 'veranstaltung' && weitereTermine && weitereTermine.length > 0) {
       await service.from('post_termine').insert(
@@ -104,8 +107,12 @@ export const PATCH = withAuth(
         veranstaltung_ort: veranstaltungOrt ?? null,
       })
       .eq('id', postId)
+      .eq('org_id', m.id)
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[verein/post] DB-Fehler:', error)
+      return apiError('Die Aktion ist fehlgeschlagen. Bitte versuchen Sie es erneut.', 500)
+    }
 
     await service.from('post_termine').delete().eq('post_id', postId)
     if (tag === 'veranstaltung' && weitereTermine && weitereTermine.length > 0) {
@@ -136,7 +143,10 @@ export const DELETE = withAuth(
       .eq('org_id', m.id)
       .eq('channel', 'verein')
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[verein/post] DB-Fehler:', error)
+      return apiError('Die Aktion ist fehlgeschlagen. Bitte versuchen Sie es erneut.', 500)
+    }
 
     return NextResponse.json({ ok: true })
   },

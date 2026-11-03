@@ -1,4 +1,4 @@
-import { withAuth } from '@/lib/api'
+import { withAuth, apiError } from '@/lib/api'
 import { validate, gewerbePostSchema, gewerbePostUpdateSchema, gewerbePostDeleteSchema } from '@/lib/validations'
 import { createServiceClient } from '@/lib/supabase/server'
 import { meinVereinsziel } from '@/lib/mitgliedschaft'
@@ -75,7 +75,10 @@ export const POST = withAuth(
       .select()
       .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[gewerbe/post] DB-Fehler:', error)
+      return apiError('Die Aktion ist fehlgeschlagen. Bitte versuchen Sie es erneut.', 500)
+    }
 
     return NextResponse.json({ post })
   },
@@ -115,10 +118,14 @@ export const PATCH = withAuth(
         ...(ablaufdatum !== undefined ? { publish_at: ablaufdatum } : {}),
       })
       .eq('id', postId)
+      .eq('org_id', m.id)
       .select()
       .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[gewerbe/post] DB-Fehler:', error)
+      return apiError('Die Aktion ist fehlgeschlagen. Bitte versuchen Sie es erneut.', 500)
+    }
 
     return NextResponse.json({ post })
   },
@@ -144,7 +151,10 @@ export const DELETE = withAuth(
       .eq('org_id', m.id)
       .eq('channel', 'gewerbe')
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[gewerbe/post] DB-Fehler:', error)
+      return apiError('Die Aktion ist fehlgeschlagen. Bitte versuchen Sie es erneut.', 500)
+    }
 
     return NextResponse.json({ ok: true })
   },

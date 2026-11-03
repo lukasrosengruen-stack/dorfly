@@ -1,4 +1,4 @@
-import { withAuth } from '@/lib/api'
+import { withAuth, apiError } from '@/lib/api'
 import { validate, vereinAbonnierenSchema } from '@/lib/validations'
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
@@ -16,7 +16,8 @@ export const POST = withAuth(async (req, { profile }) => {
 
   if (error) {
     if (error.code === '23505') return NextResponse.json({ ok: true, already: true })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('[verein/abonnieren] DB-Fehler:', error)
+    return apiError('Die Aktion ist fehlgeschlagen. Bitte versuchen Sie es erneut.', 500)
   }
 
   return NextResponse.json({ ok: true })
@@ -35,7 +36,10 @@ export const DELETE = withAuth(async (req, { profile }) => {
     .eq('user_id', profile.id)
     .eq('verein_id', v.data.vereinId)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('[verein/abonnieren] DB-Fehler:', error)
+    return apiError('Die Aktion ist fehlgeschlagen. Bitte versuchen Sie es erneut.', 500)
+  }
 
   return NextResponse.json({ ok: true })
 })

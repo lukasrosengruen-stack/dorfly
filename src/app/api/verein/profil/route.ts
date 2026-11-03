@@ -42,7 +42,10 @@ export const POST = withAuth(
       .select()
       .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[verein/profil] DB-Fehler:', error)
+      return apiError('Die Aktion ist fehlgeschlagen. Bitte versuchen Sie es erneut.', 500)
+    }
     return NextResponse.json({ verein })
   },
   { roles: ['verein', 'organisation'] },
@@ -71,7 +74,10 @@ export const PATCH = withAuth(
       .select()
       .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[verein/profil] DB-Fehler:', error)
+      return apiError('Die Aktion ist fehlgeschlagen. Bitte versuchen Sie es erneut.', 500)
+    }
     return NextResponse.json({ verein })
   },
   { roles: ['verein', 'organisation'] },

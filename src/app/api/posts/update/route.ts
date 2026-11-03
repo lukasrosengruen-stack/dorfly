@@ -23,7 +23,7 @@ export const PATCH = withAuth(
     // (mit tag weiterhin 'sammlung') normal editiert werden.
     if (tag === 'sammlung') {
       const { data: existing, error: fetchError } = await (isGemeinderat
-        ? service.from('posts').select('tag').eq('id', id).eq('gemeinde_id', profile.gemeinde_id!).eq('author_id', profile.id)
+        ? service.from('posts').select('tag').eq('id', id).eq('gemeinde_id', profile.gemeinde_id!).eq('author_id', profile.id).eq('channel', 'gemeinderat')
         : service.from('posts').select('tag').eq('id', id).eq('gemeinde_id', profile.gemeinde_id!)
       ).single()
 
@@ -36,7 +36,7 @@ export const PATCH = withAuth(
     }
 
     const { error } = await (isGemeinderat
-      ? service.from('posts').update(updateFields).eq('id', id).eq('gemeinde_id', profile.gemeinde_id!).eq('author_id', profile.id)
+      ? service.from('posts').update(updateFields).eq('id', id).eq('gemeinde_id', profile.gemeinde_id!).eq('author_id', profile.id).eq('channel', 'gemeinderat')
       : service.from('posts').update(updateFields).eq('id', id).eq('gemeinde_id', profile.gemeinde_id!))
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })

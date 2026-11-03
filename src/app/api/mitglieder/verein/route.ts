@@ -17,6 +17,8 @@ export const DELETE = withAuth(async (req: NextRequest, { profile }) => {
   const ziel = await bestimmeZiel(service, profile, v.data)
   if (!ziel.ok) return apiError(ziel.fehler, ziel.status)
 
+  if (ziel.ziel.recht === 'autor') return apiError('Nur Verwalter können den Verein löschen.', 403)
+
   if (v.data.bestaetigung.trim() !== ziel.ziel.name.trim()) {
     return apiError('Der eingegebene Name stimmt nicht überein.', 400)
   }
