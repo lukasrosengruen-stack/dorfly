@@ -169,4 +169,7 @@ export const BASIS_SCHEMA = `
     ausgefuehrt_von uuid not null,
     erstellt_am timestamptz not null default now()
   );
+
+  grant select, insert, update, delete on public.vereine to authenticated;
+  grant select, insert, update, delete on public.organisationen to authenticated;
 `

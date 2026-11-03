@@ -646,3 +646,38 @@ describe('verein_loeschen / verein_dateipfade', () => {
     }
   })
 })
+
+describe('066 — Abschluss', () => {
+  const M066 = migration('066_mitgliedschaften_abschluss.sql')
+
+  it('übernimmt Nachzügler, aber keine bewusst entfernten Personen', async () => {
+    let altVerein = ''
+    let neuVerein = ''
+    await neueDb(async () => {
+      await nutzer(ANNA, 'anna@example.de', 'verein')
+      altVerein = (await db.query<{ id: string }>(
+        `insert into public.vereine (profile_id, gemeinde_id) values ($1, $2) returning id`, [ANNA, G1])).rows[0].id
+    })
+    // Anna wurde von der Verwaltung entfernt (Rolle buerger, profile_id bleibt stehen)
+    await db.query('select public.mitglied_entfernen($1, $2)', [ANNA, VERWALTUNG])
+    // Alter Code hat zwischen 065 und Deploy einen Verein angelegt
+    await nutzer(BERT, 'bert@example.de', 'verein')
+    neuVerein = (await db.query<{ id: string }>(
+      `insert into public.vereine (profile_id, gemeinde_id) values ($1, $2) returning id`, [BERT, G1])).rows[0].id
+
+    await db.exec(M066)
+
+    expect(await wert<string>('select verein_id from public.mitgliedschaften where profile_id = $1', [BERT])).toBe(neuVerein)
+    expect(await wert<number>('select count(*)::int from public.mitgliedschaften where verein_id = $1', [altVerein])).toBe(0)
+  })
+
+  it('entzieht authenticated die Schreibrechte auf vereine und organisationen', async () => {
+    await neueDb()
+    await db.exec(M066)
+    for (const t of ['vereine', 'organisationen']) {
+      for (const recht of ['insert', 'update', 'delete']) {
+        expect(await wert<boolean>(`has_table_privilege('authenticated', 'public.${t}', '${recht}')`)).toBe(false)
+      }
+    }
+  })
+})
