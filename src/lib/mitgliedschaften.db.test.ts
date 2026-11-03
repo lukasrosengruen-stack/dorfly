@@ -671,6 +671,42 @@ describe('066 — Abschluss', () => {
     expect(await wert<number>('select count(*)::int from public.mitgliedschaften where verein_id = $1', [altVerein])).toBe(0)
   })
 
+  it('entfernt Mitglieder, deren Rolle alter Code zwischen 065 und Deploy zurückgesetzt hat', async () => {
+    let vereinId = ''
+    await neueDb(async () => {
+      await nutzer(ANNA, 'anna@example.de', 'verein')
+      vereinId = (await db.query<{ id: string }>(
+        `insert into public.vereine (profile_id, gemeinde_id) values ($1, $2) returning id`, [ANNA, G1])).rows[0].id
+    })
+    expect(await wert<number>('select count(*)::int from public.mitgliedschaften where profile_id = $1', [ANNA])).toBe(1)
+    // Alter Code setzt die Rolle zurück, ohne die Mitgliedschaft zu kennen
+    await db.query(`update public.profiles set role = 'buerger' where id = $1`, [ANNA])
+
+    await db.exec(M066)
+
+    expect(await wert<number>('select count(*)::int from public.mitgliedschaften where profile_id = $1', [ANNA])).toBe(0)
+    expect(await wert<number>('select count(*)::int from public.mitgliedschaften where verein_id = $1', [vereinId])).toBe(0)
+  })
+
+  it('macht nach einer Übertragung durch alten Code die neue Person zum Verwalter', async () => {
+    let vereinId = ''
+    await neueDb(async () => {
+      await nutzer(ANNA, 'anna@example.de', 'verein')
+      vereinId = (await db.query<{ id: string }>(
+        `insert into public.vereine (profile_id, gemeinde_id) values ($1, $2) returning id`, [ANNA, G1])).rows[0].id
+    })
+    // Alter Code überträgt den Verein: neuer Inhaber bekommt die Rolle, der alte wird buerger
+    await nutzer(BERT, 'bert@example.de', 'verein')
+    await db.query(`update public.vereine set profile_id = $1 where id = $2`, [BERT, vereinId])
+    await db.query(`update public.profiles set role = 'buerger' where id = $1`, [ANNA])
+
+    await db.exec(M066)
+
+    expect(await wert<number>('select count(*)::int from public.mitgliedschaften where profile_id = $1', [ANNA])).toBe(0)
+    expect(await wert<string>('select verein_id from public.mitgliedschaften where profile_id = $1', [BERT])).toBe(vereinId)
+    expect(await wert<string>('select rolle::text from public.mitgliedschaften where profile_id = $1', [BERT])).toBe('verwalter')
+  })
+
   it('entzieht authenticated die Schreibrechte auf vereine und organisationen', async () => {
     await neueDb()
     await db.exec(M066)

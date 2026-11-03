@@ -6,6 +6,16 @@
 -- 2. Alle Schreibwege laufen jetzt über API-Routen mit service_role. Direkte
 --    Schreibrechte für authenticated entfallen (vorher per RLS auf profile_id).
 
+-- 0. Aufräumen: Alter Code hat zwischen 065 und Deploy Rollen zurückgesetzt oder
+--    Vereine übertragen, ohne die Mitgliedschaften zu kennen. Mitglieder, deren
+--    Profilrolle nicht mehr zum Ziel passt (Verein/Organisation: vereine.typ,
+--    Gewerbe: 'gewerbe'), verlieren die Mitgliedschaft. Danach holen die Inserts
+--    unten die aktuellen Inhaber nach.
+delete from public.mitgliedschaften m
+ using public.profiles p
+ where p.id = m.profile_id
+   and p.role::text <> coalesce((select v.typ from public.vereine v where v.id = m.verein_id), 'gewerbe');
+
 insert into public.mitgliedschaften (profile_id, verein_id, rolle)
 select v.profile_id, v.id, 'verwalter'
   from public.vereine v

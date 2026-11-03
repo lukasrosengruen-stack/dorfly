@@ -4598,5 +4598,6 @@ Expected: keine Treffer.
 - [ ] **Step 4: Ausrollen**
 
 1. Deploy des Codes (065 ist bereits eingespielt, Task 8).
-2. Mensch spielt `066_mitgliedschaften_abschluss.sql` im SQL-Editor ein.
+2. Mensch spielt `066_mitgliedschaften_abschluss.sql` im SQL-Editor ein — **direkt nach dem Deploy**, damit das Zeitfenster ohne Mitgliedschaften für neue Vereine/Wechsel klein bleibt (066 räumt Rollen-Abweichungen auf und holt Nachzügler nach).
 3. Prüfen: `select count(*) from public.vereine v where not exists (select 1 from public.mitgliedschaften m where m.verein_id = v.id);` — Ergebnis = Anzahl Vereine, die bewusst ohne Verwalter sind (in „Vereine & Gewerbe“ als „Kein Verwalter“ sichtbar).
+4. Nach 066 zusätzlich prüfen: die N4-Abfrage (Rolle passt zur Mitgliedschaft) — erwartet 0 Zeilen — und `select count(*) from public.vereine v where profile_id is not null and not exists (select 1 from public.mitgliedschaften m where m.verein_id = v.id);` — erwartet 0 (jeder Verein mit Inhaber hat jetzt einen Verwalter; Abweichungen sind Vereine, deren Inhaber die Rolle nicht mehr hat).
