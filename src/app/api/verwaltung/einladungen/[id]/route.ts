@@ -78,6 +78,10 @@ export const POST = withAuth(
       rolle: einladung.rolle,
       organisationName: einladung.organisation_name,
       hinweis: einladung.hinweis,
+      // Team-Einladung als Autor: sonst stünde in der Willkommensmail „Verwalter“
+      mitgliedRolle: einladung.mitglied_rolle === 'autor' || einladung.mitglied_rolle === 'verwalter'
+        ? einladung.mitglied_rolle
+        : null,
       token: einladung.token,
     })
 
