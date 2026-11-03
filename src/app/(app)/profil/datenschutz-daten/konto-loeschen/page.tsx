@@ -53,7 +53,7 @@ export default function KontoLoeschenPage() {
 
           <div className="space-y-2">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Was wird gelöscht</p>
-            {['Profildaten und persönliche Angaben', 'Erstellte Beiträge', 'Abonnements (Vereine & Gewerbe)'].map(item => (
+            {['Profildaten und persönliche Angaben', 'Erstellte Beiträge (Beiträge für Vereine oder Betriebe bleiben ohne Bezug zu Ihnen bestehen)', 'Abonnements (Vereine & Gewerbe)'].map(item => (
               <div key={item} className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-gray-400 shrink-0" />
                 <span className="text-sm text-gray-600">{item}</span>

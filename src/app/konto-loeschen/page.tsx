@@ -131,9 +131,14 @@ export default function KontoLoeschenPage() {
             'Ihre Kennung für Push-Benachrichtigungen bei unserem Dienstleister OneSignal.',
           ]} />
           <P>
-            Haben Sie ein Konto für einen Verein, ein Gewerbe oder die Verwaltung? Dann löschen wir
-            zusätzlich Ihre Beiträge, Ihre Umfragen und Ihr Vereins- oder Gewerbeprofil, jeweils mit
-            allen Bildern.
+            Haben Sie ein Konto für die Verwaltung? Dann löschen wir zusätzlich Ihre Beiträge und Ihre
+            Umfragen mit allen Bildern.
+          </P>
+          <P>
+            Sind Sie Mitglied eines Vereins, einer Organisation oder eines Gewerbebetriebs? Dann endet
+            Ihre Mitgliedschaft. Der Verein bzw. Betrieb und seine Beiträge gehören nicht Ihnen
+            persönlich und bleiben bestehen — ohne Bezug zu Ihrer Person. Wollen Sie den ganzen Verein
+            löschen, tun Sie das vorher im Dashboard unter „Team“.
           </P>
           <P>
             Ihre Antworten in Umfragen werden nicht gelöscht, sondern anonymisiert.
@@ -143,6 +148,7 @@ export default function KontoLoeschenPage() {
         <Section id="was-bleibt" title="Was bleibt">
           <List items={[
             'Ihre Antworten in Umfragen bleiben ohne Bezug zu Ihrer Person im Ergebnis erhalten.',
+            'Beiträge, die Sie für einen Verein, eine Organisation oder einen Betrieb geschrieben haben. Sie erscheinen ohne Ihren Namen.',
             <>
               <strong>Sicherungskopien:</strong> Sicherungskopien unserer Datenbank werden spätestens
               nach 30 Tagen automatisch überschrieben. Bis dahin können Ihre Daten dort noch enthalten sein.

@@ -345,8 +345,10 @@ export default function DatenschutzPage() {
             Passwort), das Profil einschließlich Profilbild, Mängelberichte mit Fotos und Standort,
             Fragen an Bürgermeister und Gemeinderat einschließlich der Antworten, Abonnements,
             Einstellungen zum Abfallkalender, Meldungen von Inhalten sowie die Push-Kennung bei
-            OneSignal. Bei Konten von Vereinen, Gewerbebetrieben und der Verwaltung werden zusätzlich
-            Beiträge, Umfragen und das Vereins- oder Gewerbeprofil mit allen Bildern gelöscht.
+            OneSignal. Bei Konten der Verwaltung werden zusätzlich Beiträge und Umfragen mit allen
+            Bildern gelöscht. Bei Mitgliedern von Vereinen, Organisationen und Gewerbebetrieben endet
+            die Mitgliedschaft; der Verein bzw. Betrieb und seine Beiträge bleiben ohne Bezug zur
+            Person erhalten, da sie dem Verein bzw. Betrieb zugeordnet sind.
           </P>
           <P>
             Umfrage-Antworten werden nicht gelöscht, sondern anonymisiert. Die Verknüpfung mit dem
