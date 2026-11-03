@@ -48,3 +48,6 @@ next-env.d.ts
 src/types/supabase.ts.tmp
 
 .vercel
+
+# Supabase-CLI-Cache (Projekt-Verknuepfung, Versionen) — lokal, nicht ins Repo
+supabase/.temp/
