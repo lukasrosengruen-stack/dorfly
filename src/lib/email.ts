@@ -120,6 +120,7 @@ export async function sendeRollenzuweisungEmail(params: {
   neueRolle: string
   organisationName?: string | null
   absender?: string | null
+  mitgliedRolle?: 'verwalter' | 'autor' | null
 }) {
   const neueRolleLabel = ROLLEN_LABEL[params.neueRolle] ?? params.neueRolle
 
@@ -137,6 +138,11 @@ export async function sendeRollenzuweisungEmail(params: {
         <tr>
           <td style="padding:4px 12px 4px 0;color:#666;white-space:nowrap">Für:</td>
           <td style="padding:4px 0"><strong>${escapeHtml(params.organisationName)}</strong></td>
+        </tr>` : ''}
+        ${params.mitgliedRolle ? `
+        <tr>
+          <td style="padding:4px 12px 4px 0;color:#666;white-space:nowrap">Als:</td>
+          <td style="padding:4px 0"><strong>${params.mitgliedRolle === 'verwalter' ? 'Verwalter' : 'Autor'}</strong></td>
         </tr>` : ''}
       </table>
       <p>Sie können sich jetzt unter <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard">Ihr Dashboard</a> anmelden.</p>

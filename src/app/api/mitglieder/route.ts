@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import {
   validate, mitgliedHinzufuegenSchema, mitgliedRolleAendernSchema, mitgliedEntfernenSchema,
 } from '@/lib/validations'
+import { escapeIlike } from '@/lib/dashboardSuche'
 import { bestimmeZiel, ladeTeam, rpcFehler } from '@/lib/mitgliedschaft'
 import { absenderFuer, mitgliedPerEmailHinzufuegen } from '@/lib/mitgliedHinzufuegen'
 import { sendeEinladungsEmail, sendeRollenentzugEmail, sendeRollenzuweisungEmail } from '@/lib/email'
@@ -41,7 +42,7 @@ export const POST = withAuth(async (req: NextRequest, { profile }) => {
     { email: v.data.email, rolle: v.data.rolle, ziel: ziel.ziel, akteurId: profile.id, gemeinde },
     {
       profilPerEmail: async email => {
-        const { data } = await service.from('profiles').select('id, gemeinde_id, display_name').eq('email', email).maybeSingle()
+        const { data } = await service.from('profiles').select('id, gemeinde_id, display_name').ilike('email', escapeIlike(email)).maybeSingle()
         return data
       },
       mitgliedHinzufuegen: async args => {

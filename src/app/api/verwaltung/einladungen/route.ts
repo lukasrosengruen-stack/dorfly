@@ -33,13 +33,16 @@ export const POST = withAuth(
     const ergebnisse: { email: string; ok: boolean; fehler?: string }[] = []
 
     for (const einladung of v.data.einladungen) {
-      // Bestehende offene Einladung für diese E-Mail+Gemeinde widerrufen
+      // Bestehende offene Einladung für diese E-Mail+Gemeinde widerrufen – nicht die
+      // Team-Einladungen eines Vereins (verein_id/org_id gesetzt).
       await supabase
         .from('einladungen')
         .update({ status: 'widerrufen' })
         .eq('email', einladung.email.toLowerCase())
         .eq('gemeinde_id', gemeindeId)
         .eq('status', 'offen')
+        .is('verein_id', null)
+        .is('org_id', null)
 
       const { data: neu, error } = await supabase
         .from('einladungen')
@@ -49,8 +52,6 @@ export const POST = withAuth(
           rolle: einladung.rolle,
           organisation_name: einladung.organisation_name ?? null,
           hinweis: einladung.hinweis ?? null,
-          verein_id: einladung.verein_id ?? null,
-          org_id: einladung.org_id ?? null,
           eingeladen_von: profile.id,
         })
         .select('token')

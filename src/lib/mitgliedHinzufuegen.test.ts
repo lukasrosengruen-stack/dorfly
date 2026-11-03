@@ -29,7 +29,7 @@ describe('mitgliedPerEmailHinzufuegen', () => {
       p_profile_id: 'bert', p_rolle: 'autor', p_ausgefuehrt_von: 'anna', p_verein_id: 'v1', p_organisation_id: undefined,
     })
     expect(d.sendeZuweisung).toHaveBeenCalledWith(expect.objectContaining({
-      to: 'bert@example.de', neueRolle: 'verein', organisationName: 'TSV', absender: 'der Verein „TSV“',
+      to: 'bert@example.de', neueRolle: 'verein', organisationName: 'TSV', absender: 'der Verein „TSV“', mitgliedRolle: 'autor',
     }))
     expect(d.einladungAnlegen).not.toHaveBeenCalled()
   })

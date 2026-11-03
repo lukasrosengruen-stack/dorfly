@@ -29,7 +29,12 @@ export const PATCH = withAuth(
       .single()
 
     if (!zielProfil) return apiError('Nutzer gehört nicht zu dieser Gemeinde', 404)
-    if (zielProfil.role === neueRolle) return apiError('Nutzer hat diese Rolle bereits', 400)
+    const mitgliedschaft = await meineMitgliedschaft(supabase, zielProfil.id)
+    const vereinsRolle = ['verein', 'organisation', 'gewerbe'].includes(neueRolle)
+    const orgName: string | null = organisation_name ?? null
+    // Reparaturfall: Rolle ohne Mitgliedschaft (verwaist) – mit Namen legt verein_anlegen den Verein an.
+    const reparatur = vereinsRolle && !!orgName && !mitgliedschaft
+    if (zielProfil.role === neueRolle && !reparatur) return apiError('Nutzer hat diese Rolle bereits', 400)
 
     const { data: gemeinde } = await supabase
       .from('gemeinden')
@@ -39,9 +44,6 @@ export const PATCH = withAuth(
 
     const alteRolle = zielProfil.role
     const gemeindeName = gemeinde?.name ?? ''
-    const orgName: string | null = organisation_name ?? null
-    const vereinsRolle = ['verein', 'organisation', 'gewerbe'].includes(neueRolle)
-    const mitgliedschaft = await meineMitgliedschaft(supabase, zielProfil.id)
 
     if (mitgliedschaft) {
       // Mitglieder wechseln nicht still die Rolle: erst aus dem Verein entfernen.

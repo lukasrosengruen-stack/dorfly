@@ -29,7 +29,7 @@ export interface HinzufuegenDeps {
     eingeladen_von: string
   }): Promise<{ token: string } | { fehler: string }>
   sendeZuweisung(p: {
-    to: string; name: string | null; gemeindeName: string; neueRolle: string; organisationName: string; absender: string | null
+    to: string; name: string | null; gemeindeName: string; neueRolle: string; organisationName: string; absender: string | null; mitgliedRolle: MitgliedRolle
   }): Promise<unknown>
   sendeEinladung(p: {
     to: string; gemeindeName: string; gemeindeSlug: string; rolle: string; organisationName: string; token: string; absender: string | null
@@ -91,7 +91,7 @@ export async function mitgliedPerEmailHinzufuegen(
     }
     await mailOhneAbbruch(() => deps.sendeZuweisung({
       to: email, name: profil.display_name, gemeindeName: gemeinde.name,
-      neueRolle: ziel.typ, organisationName: ziel.name, absender,
+      neueRolle: ziel.typ, organisationName: ziel.name, absender, mitgliedRolle: rolle,
     }), 'Zuweisung')
     return { ok: true, art: 'hinzugefuegt' }
   }

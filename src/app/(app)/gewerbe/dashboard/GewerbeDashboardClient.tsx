@@ -24,8 +24,10 @@ interface Props {
   autorNamen: Record<string, string>
 }
 
-export default function GewerbeDashboardClient({ profile, betrieb: initialBetrieb, branchen, abonnentenStats, posts: initialPosts, naechsterMontag: initialNaechsterMontag, mitgliedRolle, autorNamen }: Props) {
+export default function GewerbeDashboardClient({ profile, betrieb: initialBetrieb, branchen, abonnentenStats, posts: initialPosts, naechsterMontag: initialNaechsterMontag, mitgliedRolle: mitgliedRolleProp, autorNamen }: Props) {
   const [betrieb, setBetrieb] = useState(initialBetrieb)
+  // Nach der Selbstanlage ist die Person Verwalter, ohne dass die Seite neu geladen wird.
+  const [mitgliedRolle, setMitgliedRolle] = useState(mitgliedRolleProp)
   const [posts, setPosts] = useState(initialPosts)
   const [naechsterMontag, setNaechsterMontag] = useState(initialNaechsterMontag)
   const [tab, setTab] = useState<'posts' | 'profil' | 'team'>('posts')
@@ -163,7 +165,7 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
                 created_at: new Date().toISOString(),
               }}
               branchen={branchen}
-              onUpdated={updated => setBetrieb(updated)}
+              onUpdated={updated => { setBetrieb(updated); setMitgliedRolle('verwalter') }}
             />
           </Card>
         )}

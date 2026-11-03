@@ -70,8 +70,10 @@ const emptyForm: FormState = {
   geplant: false, scheduled_date: '', scheduled_time: '',
 }
 
-export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, profileId, vereinName, role, mitgliedRolle = null, vereinProfil: initialVereinProfil, kategorien = [], abonnentenStats }: Props) {
+export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, profileId, vereinName, role, mitgliedRolle: mitgliedRolleProp = null, vereinProfil: initialVereinProfil, kategorien = [], abonnentenStats }: Props) {
   const [vereinProfil, setVereinProfil] = useState(initialVereinProfil ?? null)
+  // Nach der Selbstanlage ist die Person Verwalter, ohne dass die Seite neu geladen wird.
+  const [mitgliedRolle, setMitgliedRolle] = useState(mitgliedRolleProp)
   const [showProfilForm, setShowProfilForm] = useState(false)
   const [posts, setPosts] = useState(initialPosts)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -307,7 +309,7 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
             <VereinProfilForm
               verein={emptyVereinProfil}
               kategorien={kategorien}
-              onUpdated={updated => setVereinProfil(updated)}
+              onUpdated={updated => { setVereinProfil(updated); setMitgliedRolle('verwalter') }}
             />
           </div>
         )}

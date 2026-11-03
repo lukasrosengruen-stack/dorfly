@@ -136,6 +136,20 @@ export async function profilAnlegen(userId: string, daten: RegistrierungsDaten =
         console.error('[profilAnlegen] Einladung nicht eingeloest:', {
           userId, einladungId, fehler: einloeseFehler.message,
         })
+        // Eine Vereinsrolle ohne Mitgliedschaft wäre verwaist: bei Einladungen in einen
+        // bestehenden Verein (verein_id/org_id) zurück auf buerger. Bei organisation_name
+        // behält die Person die Rolle und kann den Verein selbst anlegen.
+        if (einladungDetails.verein_id || einladungDetails.org_id) {
+          const { error: resetFehler } = await serviceClient
+            .from('profiles')
+            .update({ role: 'buerger' })
+            .eq('id', userId)
+          if (resetFehler) {
+            console.error('[profilAnlegen] Rolle konnte nicht zurueckgesetzt werden:', {
+              userId, einladungId, fehler: resetFehler.message,
+            })
+          }
+        }
       }
     }
 

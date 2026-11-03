@@ -357,8 +357,6 @@ export const einladungenSendenSchema = z.object({
         rolle: einladungRolleMitVerwaltung,
         organisation_name: z.string().max(200).optional(),
         hinweis: z.string().max(500).optional(),
-        verein_id: uuid.optional(),
-        org_id: uuid.optional(),
       }),
     )
     .min(1)
