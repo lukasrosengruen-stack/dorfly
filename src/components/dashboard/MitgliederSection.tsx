@@ -8,6 +8,8 @@ import { toast } from 'sonner'
 import { Loader2, UserPlus } from 'lucide-react'
 import type { MitgliedRolle, TeamDaten, ZielTyp } from '@/lib/mitgliedschaft'
 
+type FokusZiel = () => HTMLElement | null | undefined
+
 interface Props {
   /** Nur für die Verwaltung. Mitglieder lassen das weg — es gilt ihr eigener Verein. */
   ziel?: { verein_id?: string; organisation_id?: string }
@@ -53,6 +55,9 @@ export default function MitgliederSection({ ziel, onGeladen, onGeloescht }: Prop
   const abbrechenRef = useRef<HTMLButtonElement>(null)
   const ausloeser = useRef<Record<string, HTMLButtonElement | null>>({})
   const mitgliederTitelRef = useRef<HTMLHeadingElement>(null)
+  const einladungenTitelRef = useRef<HTMLHeadingElement>(null)
+  // Fokus-Ziel, das nach dem naechsten Render (Ziel wieder gemountet) angesteuert wird
+  const fokusAnfrage = useRef<FokusZiel | null>(null)
 
   // onGeladen in einer Ref: Aufrufer duerfen Inline-Funktionen uebergeben, ohne dass
   // laden() sich aendert und einen Refetch-Loop ausloest.
@@ -79,13 +84,16 @@ export default function MitgliederSection({ ziel, onGeladen, onGeloescht }: Prop
     if (bestaetigung) abbrechenRef.current?.focus()
   }, [bestaetigung])
 
-  function fokusAuf(el: HTMLElement | null | undefined) {
-    setTimeout(() => el?.focus(), 0)
-  }
+  // Nach jedem Render: ausstehenden Fokus setzen (Ref erst jetzt aufloesen, Ziel ist dann gemountet)
+  useEffect(() => {
+    const get = fokusAnfrage.current
+    fokusAnfrage.current = null
+    get?.()?.focus()
+  })
 
   function abbrechen(key: string) {
+    fokusAnfrage.current = () => ausloeser.current[key]
     setBestaetigung(null)
-    fokusAuf(ausloeser.current[key])
   }
 
   const form = useForm<HinzufuegenWerte>({
@@ -98,9 +106,9 @@ export default function MitgliederSection({ ziel, onGeladen, onGeloescht }: Prop
   async function aktion(
     fn: () => Promise<unknown>,
     erfolg: string,
-    opts: { neuLaden?: boolean; fokusZiel?: () => HTMLElement | null | undefined } = {},
+    opts: { neuLaden?: boolean; fokusErfolg?: FokusZiel; fokusFehler?: FokusZiel } = {},
   ) {
-    const { neuLaden = true, fokusZiel } = opts
+    const { neuLaden = true, fokusErfolg, fokusFehler } = opts
     if (beschaeftigt) return false
     setBeschaeftigt(true)
     setAktionsFehler(null)
@@ -108,16 +116,17 @@ export default function MitgliederSection({ ziel, onGeladen, onGeloescht }: Prop
       await fn()
       toast.success(erfolg)
       if (neuLaden) await laden()
+      if (fokusErfolg) fokusAnfrage.current = fokusErfolg
       return true
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Die Aktion ist fehlgeschlagen.'
       setAktionsFehler(msg)
       toast.error(msg)
+      if (fokusFehler) fokusAnfrage.current = fokusFehler
       return false
     } finally {
       setBeschaeftigt(false)
       setBestaetigung(null)
-      if (fokusZiel) fokusAuf(fokusZiel())
     }
   }
 
@@ -193,7 +202,7 @@ export default function MitgliederSection({ ziel, onGeladen, onGeloescht }: Prop
 
       {/* Mitglieder */}
       <div>
-        <h3 ref={mitgliederTitelRef} tabIndex={-1} className="text-sm font-bold text-gray-900 mb-2 focus:outline-none">Mitglieder</h3>
+        <h3 ref={mitgliederTitelRef} tabIndex={-1} className="text-sm font-bold text-gray-900 mb-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600">Mitglieder</h3>
         {daten.mitglieder.length === 0 && (
           <p className="text-sm text-gray-600">Noch keine Mitglieder. Fügen Sie unten eine Person als Verwalter hinzu.</p>
         )}
@@ -236,7 +245,7 @@ export default function MitgliederSection({ ziel, onGeladen, onGeloescht }: Prop
                           const ok = await aktion(
                             () => senden('PATCH', '/api/mitglieder', { profile_id: m.profile_id, rolle: wahl }),
                             'Rolle geändert.',
-                            { fokusZiel: () => document.getElementById(selectId) },
+                            { fokusErfolg: () => document.getElementById(selectId), fokusFehler: () => document.getElementById(selectId) },
                           )
                           if (ok) {
                             setRollenWahl(w => {
@@ -257,12 +266,15 @@ export default function MitgliederSection({ ziel, onGeladen, onGeloescht }: Prop
                   bestaetigung === `entfernen:${m.profile_id}` ? (
                     <span className="flex items-center gap-2 text-sm">
                       <span className="text-gray-700">Wirklich entfernen?</span>
-                      <button type="button" disabled={beschaeftigt}
+                      <button type="button" aria-disabled={beschaeftigt}
                         aria-label={`${m.name} wirklich entfernen`}
                         onClick={() => aktion(
                           () => senden('DELETE', '/api/mitglieder', { profile_id: m.profile_id }),
                           `${m.name} wurde entfernt.`,
-                          { fokusZiel: () => mitgliederTitelRef.current },
+                          {
+                            fokusErfolg: () => mitgliederTitelRef.current,
+                            fokusFehler: () => ausloeser.current[`entfernen:${m.profile_id}`],
+                          },
                         )}
                         className="font-bold text-red-700">Ja</button>
                       <button type="button" ref={abbrechenRef} onClick={() => abbrechen(`entfernen:${m.profile_id}`)}
@@ -284,7 +296,7 @@ export default function MitgliederSection({ ziel, onGeladen, onGeloescht }: Prop
       {/* Offene Einladungen */}
       {daten.einladungen.length > 0 && (
         <div>
-          <h3 className="text-sm font-bold text-gray-900 mb-2">Offene Einladungen</h3>
+          <h3 ref={einladungenTitelRef} tabIndex={-1} className="text-sm font-bold text-gray-900 mb-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600">Offene Einladungen</h3>
           <ul className="divide-y divide-gray-100">
             {daten.einladungen.map(e => (
               <li key={e.id} className="py-2 flex items-center gap-3 text-sm">
@@ -293,7 +305,7 @@ export default function MitgliederSection({ ziel, onGeladen, onGeloescht }: Prop
                 {darfVerwalten && (
                   <button type="button" aria-disabled={beschaeftigt}
                     aria-label={`Einladung an ${e.email} zurückziehen`}
-                    onClick={() => aktion(() => senden('DELETE', '/api/mitglieder/einladung', { ...zielBody, einladung_id: e.id }), 'Einladung zurückgezogen.')}
+                    onClick={() => aktion(() => senden('DELETE', '/api/mitglieder/einladung', { ...zielBody, einladung_id: e.id }), 'Einladung zurückgezogen.', { fokusErfolg: () => einladungenTitelRef.current ?? mitgliederTitelRef.current })}
                     className="font-medium text-red-700">Zurückziehen</button>
                 )}
               </li>
@@ -345,12 +357,12 @@ export default function MitgliederSection({ ziel, onGeladen, onGeloescht }: Prop
           {bestaetigung === 'verlassen' ? (
             <span className="flex items-center gap-2 text-sm">
               <span className="text-gray-700">Wirklich verlassen?</span>
-              <button type="button" disabled={beschaeftigt}
+              <button type="button" aria-disabled={beschaeftigt}
                 onClick={async () => {
                   const ok = await aktion(
                     () => senden('DELETE', '/api/mitglieder', { profile_id: ich.profile_id }),
                     'Sie haben das Team verlassen.',
-                    { neuLaden: false, fokusZiel: () => ausloeser.current['verlassen'] },
+                    { neuLaden: false, fokusFehler: () => ausloeser.current['verlassen'] },
                   )
                   if (ok) window.location.href = '/feed'
                 }}

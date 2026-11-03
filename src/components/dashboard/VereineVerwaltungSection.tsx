@@ -27,7 +27,7 @@ export default function VereineVerwaltungSection({ eintraege: start }: { eintrae
 
   return (
     <section aria-labelledby="vereine-verwaltung-titel" className="bg-white rounded-2xl shadow-sm p-6">
-      <h2 id="vereine-verwaltung-titel" ref={titelRef} tabIndex={-1} className="font-bold text-gray-900 mb-1 focus:outline-none">Vereine & Gewerbe</h2>
+      <h2 id="vereine-verwaltung-titel" ref={titelRef} tabIndex={-1} className="font-bold text-gray-900 mb-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600">Vereine & Gewerbe</h2>
       <p className="text-sm text-gray-600 mb-4">
         Mitglieder hinzufügen oder entfernen, Verantwortliche wechseln, Einträge löschen.
       </p>
