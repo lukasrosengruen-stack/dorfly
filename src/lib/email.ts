@@ -1,5 +1,6 @@
 import { Resend } from 'resend'
 import { kuerzeFrage } from '@/lib/frageBenachrichtigung'
+import { escapeHtml, istVereinsrolle, willkommensMail } from '@/lib/willkommensMail'
 
 const FROM = `Dorfly <noreply@${process.env.RESEND_FROM_DOMAIN ?? 'dorfly.de'}>`
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'
@@ -16,14 +17,6 @@ function resend() {
   return new Resend(process.env.RESEND_API_KEY)
 }
 
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-}
-
 /** „die Gemeindeverwaltung X“ oder ein übergebener Absender wie „der Verein „TSV““. */
 function absenderHtml(gemeindeName: string, absender?: string | null): string {
   return absender ? escapeHtml(absender) : `die Gemeindeverwaltung <strong>${gemeindeName}</strong>`
@@ -37,9 +30,28 @@ export async function sendeEinladungsEmail(params: {
   organisationName?: string | null
   hinweis?: string | null
   absender?: string | null
+  /** Nur für Verein/Organisation/Gewerbe; ohne Angabe wird die Person Verwalter. */
+  mitgliedRolle?: 'verwalter' | 'autor' | null
   token: string
 }) {
   const link = `https://${params.gemeindeSlug}.dorfly.de/login?token=${params.token}`
+
+  // Verein, Organisation, Gewerbe: ausführliche Willkommensmail mit ersten Schritten
+  if (istVereinsrolle(params.rolle)) {
+    const { betreff, html } = willkommensMail({
+      typ: params.rolle,
+      mitgliedRolle: params.mitgliedRolle ?? null,
+      organisationName: params.organisationName ?? null,
+      gemeindeName: params.gemeindeName,
+      gemeindeSlug: params.gemeindeSlug,
+      absender: params.absender ?? null,
+      hinweis: params.hinweis,
+      link,
+      eingeladen: true,
+    })
+    return resend().emails.send({ from: FROM, to: [params.to], subject: betreff, html })
+  }
+
   const rolleLabel = ROLLEN_LABEL[params.rolle] ?? params.rolle
 
   const html = `
@@ -121,7 +133,24 @@ export async function sendeRollenzuweisungEmail(params: {
   organisationName?: string | null
   absender?: string | null
   mitgliedRolle?: 'verwalter' | 'autor' | null
+  /** Für Verein/Organisation/Gewerbe nötig: Link ins Dashboard der Gemeinde. */
+  gemeindeSlug?: string | null
 }) {
+  // Verein, Organisation, Gewerbe: ausführliche Willkommensmail mit ersten Schritten
+  if (istVereinsrolle(params.neueRolle) && params.gemeindeSlug) {
+    const { betreff, html } = willkommensMail({
+      typ: params.neueRolle,
+      mitgliedRolle: params.mitgliedRolle ?? null,
+      organisationName: params.organisationName ?? null,
+      gemeindeName: params.gemeindeName,
+      gemeindeSlug: params.gemeindeSlug,
+      absender: params.absender ?? null,
+      link: `https://${params.gemeindeSlug}.dorfly.de/dashboard`,
+      eingeladen: false,
+    })
+    return resend().emails.send({ from: FROM, to: [params.to], subject: betreff, html })
+  }
+
   const neueRolleLabel = ROLLEN_LABEL[params.neueRolle] ?? params.neueRolle
 
   const html = `

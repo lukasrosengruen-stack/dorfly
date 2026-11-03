@@ -30,10 +30,12 @@ export interface HinzufuegenDeps {
     eingeladen_von: string
   }): Promise<{ token: string } | { fehler: string }>
   sendeZuweisung(p: {
-    to: string; name: string | null; gemeindeName: string; neueRolle: string; organisationName: string; absender: string | null; mitgliedRolle: MitgliedRolle
+    to: string; name: string | null; gemeindeName: string; gemeindeSlug: string; neueRolle: string; organisationName: string
+    absender: string | null; mitgliedRolle: MitgliedRolle
   }): Promise<unknown>
   sendeEinladung(p: {
-    to: string; gemeindeName: string; gemeindeSlug: string; rolle: string; organisationName: string; token: string; absender: string | null
+    to: string; gemeindeName: string; gemeindeSlug: string; rolle: string; organisationName: string; token: string
+    absender: string | null; mitgliedRolle: MitgliedRolle
   }): Promise<unknown>
 }
 
@@ -95,7 +97,7 @@ export async function mitgliedPerEmailHinzufuegen(
       return { ok: false, status: f.status, fehler: f.meldung }
     }
     await mailOhneAbbruch(() => deps.sendeZuweisung({
-      to: email, name: profil.display_name, gemeindeName: gemeinde.name,
+      to: email, name: profil.display_name, gemeindeName: gemeinde.name, gemeindeSlug: gemeinde.slug,
       neueRolle: ziel.typ, organisationName: ziel.name, absender, mitgliedRolle: rolle,
     }), 'Zuweisung')
     return { ok: true, art: 'hinzugefuegt' }
@@ -118,7 +120,7 @@ export async function mitgliedPerEmailHinzufuegen(
 
   await mailOhneAbbruch(() => deps.sendeEinladung({
     to: email, gemeindeName: gemeinde.name, gemeindeSlug: gemeinde.slug,
-    rolle: ziel.typ, organisationName: ziel.name, token: einladung.token, absender,
+    rolle: ziel.typ, organisationName: ziel.name, token: einladung.token, absender, mitgliedRolle: rolle,
   }), 'Einladung')
 
   return { ok: true, art: 'eingeladen' }

@@ -38,7 +38,7 @@ export const PATCH = withAuth(
 
     const { data: gemeinde } = await supabase
       .from('gemeinden')
-      .select('name')
+      .select('name, slug')
       .eq('id', gemeindeId)
       .single()
 
@@ -104,7 +104,11 @@ export const PATCH = withAuth(
     if (neueRolle === 'buerger' && alteRolle !== 'buerger') {
       await sendeRollenentzugEmail({ to: email, name: zielProfil.display_name, gemeindeName, alteRolle })
     } else {
-      await sendeRollenzuweisungEmail({ to: email, name: zielProfil.display_name, gemeindeName, neueRolle, organisationName: orgName })
+      // Bei Verein/Organisation/Gewerbe wird daraus die Willkommensmail (Person ist Verwalter)
+      await sendeRollenzuweisungEmail({
+        to: email, name: zielProfil.display_name, gemeindeName, gemeindeSlug: gemeinde?.slug ?? null,
+        neueRolle, organisationName: orgName, mitgliedRolle: 'verwalter',
+      })
     }
 
     return NextResponse.json({ ok: true })

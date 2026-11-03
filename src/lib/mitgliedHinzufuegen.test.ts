@@ -30,6 +30,7 @@ describe('mitgliedPerEmailHinzufuegen', () => {
     })
     expect(d.sendeZuweisung).toHaveBeenCalledWith(expect.objectContaining({
       to: 'bert@example.de', neueRolle: 'verein', organisationName: 'TSV', absender: 'der Verein „TSV“', mitgliedRolle: 'autor',
+      gemeindeSlug: 'ehningen',
     }))
     expect(d.einladungAnlegen).not.toHaveBeenCalled()
   })
@@ -79,6 +80,7 @@ describe('mitgliedPerEmailHinzufuegen', () => {
     })
     expect(d.sendeEinladung).toHaveBeenCalledWith(expect.objectContaining({
       to: 'bert@example.de', token: 'tok', rolle: 'verein', organisationName: 'TSV', gemeindeSlug: 'ehningen',
+      mitgliedRolle: 'autor',
     }))
   })
 
