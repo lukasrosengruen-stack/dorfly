@@ -95,8 +95,9 @@ describe('willkommensMail', () => {
     expect(html).not.toContain('Antworten Sie')
   })
 
-  it('enthält den Play-Store-Link', () => {
-    expect(willkommensMail({ ...BASIS, typ: 'verein', mitgliedRolle: 'autor' }).html)
-      .toContain('play.google.com/store/apps/details?id=de.dorfly.app')
+  it('enthält App-Store- und Play-Store-Link', () => {
+    const { html } = willkommensMail({ ...BASIS, typ: 'verein', mitgliedRolle: 'autor' })
+    expect(html).toContain('apps.apple.com/de/app/dorfly/id6791239032')
+    expect(html).toContain('play.google.com/store/apps/details?id=de.dorfly.app')
   })
 })

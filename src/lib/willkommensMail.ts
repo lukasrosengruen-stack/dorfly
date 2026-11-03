@@ -22,6 +22,8 @@ export function escapeHtml(text: string): string {
     .replace(/"/g, '&quot;')
 }
 
+// Dieselben Links wie die Badges auf der Landingpage (src/app/homepage/page.tsx)
+const APP_STORE = 'https://apps.apple.com/de/app/dorfly/id6791239032'
 const PLAY_STORE = 'https://play.google.com/store/apps/details?id=de.dorfly.app'
 // Mails kommen von noreply@ — Rückmeldungen an die Adresse der Support-Seite
 const KONTAKT = 'hallo@dorfly.de'
@@ -102,7 +104,7 @@ export function willkommensMail(d: WillkommensDaten): { betreff: string; html: s
       <a href="${d.link}" style="display:inline-block;background:#15803d;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;margin:8px 0">${button}</a>
       ${team}
       <h3 style="color:#1a1a1a;margin-top:24px">Dorfly als App</h3>
-      <p>Für Android gibt es Dorfly im <a href="${PLAY_STORE}">Google Play Store</a>.</p>
+      <p>Dorfly gibt es als App für iPhone im <a href="${APP_STORE}">App Store</a> und für Android im <a href="${PLAY_STORE}">Google Play Store</a>.</p>
       <h3 style="color:#1a1a1a;margin-top:24px">Fragen oder Ideen?</h3>
       <p>Schreiben Sie uns an <a href="mailto:${KONTAKT}">${KONTAKT}</a>. Wir freuen uns über jede Rückmeldung, denn sie hilft uns, Dorfly weiter zu verbessern.</p>
       <p>Viele Grüße<br>Ihr Dorfly-Team</p>
