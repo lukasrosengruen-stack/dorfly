@@ -31,7 +31,7 @@ export default async function GewerbeDashboardPage() {
     .order('reihenfolge')
 
   if (!betrieb) {
-    return <GewerbeDashboardClient profile={profile} betrieb={null} branchen={branchen ?? []} abonnentenStats={null} posts={[]} naechsterMontag={null} mitgliedRolle={null} autorNamen={{}} />
+    return <GewerbeDashboardClient profile={profile} betrieb={null} branchen={branchen ?? []} abonnentenStats={null} posts={[]} mitgliedRolle={null} autorNamen={{}} />
   }
 
   // Abonnenten-Statistik
@@ -48,26 +48,6 @@ export default async function GewerbeDashboardPage() {
     service.from('gewerbe_abonnements').select('id', { count: 'exact', head: true }).eq('gewerbe_id', betrieb.id).gte('created_at', vor7Tagen),
     service.from('gewerbe_abonnements').select('id', { count: 'exact', head: true }).eq('gewerbe_id', betrieb.id).gte('created_at', vor30Tagen),
   ])
-
-  // Wochenlimit prüfen
-  const day = jetzt.getDay()
-  const diffToMonday = day === 0 ? -6 : 1 - day
-  const monday = new Date(jetzt)
-  monday.setDate(jetzt.getDate() + diffToMonday)
-  monday.setHours(0, 0, 0, 0)
-  const { count: postsThisWeek } = await service
-    .from('posts')
-    .select('id', { count: 'exact', head: true })
-    .eq('org_id', betrieb.id)
-    .eq('channel', 'gewerbe')
-    .gte('published_at', monday.toISOString())
-
-  let naechsterMontag: string | null = null
-  if ((postsThisWeek ?? 0) >= 1 && betrieb.plan === 'standard') {
-    const nextMonday = new Date(monday)
-    nextMonday.setDate(monday.getDate() + 7)
-    naechsterMontag = nextMonday.toISOString()
-  }
 
   // Letzte Posts
   const { data: posts } = await service
@@ -93,7 +73,6 @@ export default async function GewerbeDashboardPage() {
       branchen={branchen ?? []}
       abonnentenStats={{ gesamt: gesamt ?? 0, letzter7Tage: letzter7Tage ?? 0, letzter30Tage: letzter30Tage ?? 0 }}
       posts={posts ?? []}
-      naechsterMontag={naechsterMontag}
       mitgliedRolle={mitgliedRolle}
       autorNamen={autorNamen}
     />

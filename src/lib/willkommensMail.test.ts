@@ -37,12 +37,13 @@ describe('willkommensMail', () => {
     expect(html).not.toContain('Ihr Team')
   })
 
-  it('Gewerbe: Betrieb, Lokale Angebote, sofort sichtbar, Wochenlimit', () => {
+  it('Gewerbe: Betrieb, Lokale Angebote, sofort sichtbar, kein Wochenlimit', () => {
     const { html } = willkommensMail({ ...BASIS, typ: 'gewerbe', organisationName: 'Bäckerei Maier', mitgliedRolle: 'verwalter' })
     expect(html).toContain('Betrieb')
     expect(html).toContain('Lokale Angebote')
     expect(html).toContain('erscheinen sofort')
     expect(html).not.toContain('von der Gemeindeverwaltung geprüft')
+    expect(html).not.toContain('pro Woche')
   })
 
   it('ohne Mitgliedsrolle gilt Verwalter (Einladung der Verwaltung für neuen Verein)', () => {

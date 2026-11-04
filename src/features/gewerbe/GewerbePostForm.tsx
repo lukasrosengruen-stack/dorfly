@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Lock } from 'lucide-react'
 import { RichTextEditor } from '@/lib/richText'
 import { Button } from '@/components/ui'
 import { compressImage } from '@/lib/compressImage'
@@ -11,12 +10,10 @@ import type { Post } from '@/types/database'
 
 interface GewerbePostFormProps {
   gewerbeId: string
-  /** ISO-String des nächsten Montags, wenn das Limit erreicht ist. Null wenn noch möglich. */
-  naechsterMontag: string | null
   onCreated: (post: Post) => void
 }
 
-export function GewerbePostForm({ gewerbeId, naechsterMontag, onCreated }: GewerbePostFormProps) {
+export function GewerbePostForm({ gewerbeId, onCreated }: GewerbePostFormProps) {
   const [titel, setTitel] = useState('')
   const [text, setText] = useState('')
   const [bildUrl, setBildUrl] = useState<string | null>(null)
@@ -24,8 +21,6 @@ export function GewerbePostForm({ gewerbeId, naechsterMontag, onCreated }: Gewer
   const [ablaufdatum, setAblaufdatum] = useState('')
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
-
-  const gesperrt = naechsterMontag !== null
 
   async function handleBildChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -79,23 +74,6 @@ export function GewerbePostForm({ gewerbeId, naechsterMontag, onCreated }: Gewer
     } finally {
       setSaving(false)
     }
-  }
-
-  if (gesperrt) {
-    const datum = new Date(naechsterMontag!).toLocaleDateString('de-DE', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-    })
-    return (
-      <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3 text-sm text-gray-500">
-        <Lock className="w-4 h-4 shrink-0 text-gray-400" />
-        <span>
-          Nächster Post möglich ab{' '}
-          <span className="font-bold text-gray-700">{datum}</span>
-        </span>
-      </div>
-    )
   }
 
   return (

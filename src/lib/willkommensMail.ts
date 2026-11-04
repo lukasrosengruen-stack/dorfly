@@ -67,7 +67,7 @@ export function willkommensMail(d: WillkommensDaten): { betreff: string; html: s
     : `Willkommen bei Dorfly ${d.gemeindeName}`
 
   const beitraege = d.typ === 'gewerbe'
-    ? 'Ihre Beiträge erscheinen sofort bei allen, die Ihren Betrieb abonniert haben. Im Standard-Tarif ist ein Beitrag pro Woche möglich.'
+    ? 'Ihre Beiträge erscheinen sofort bei allen, die Ihren Betrieb abonniert haben.'
     : 'Beiträge werden vor der Veröffentlichung kurz von der Gemeindeverwaltung geprüft. Den Stand sehen Sie in Ihrer Beitragsliste.'
 
   const schritte = [

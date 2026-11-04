@@ -19,17 +19,15 @@ interface Props {
   branchen: Gewerbebranche[]
   abonnentenStats: { gesamt: number; letzter7Tage: number; letzter30Tage: number } | null
   posts: Post[]
-  naechsterMontag: string | null
   mitgliedRolle: 'verwalter' | 'autor' | null
   autorNamen: Record<string, string>
 }
 
-export default function GewerbeDashboardClient({ profile, betrieb: initialBetrieb, branchen, abonnentenStats, posts: initialPosts, naechsterMontag: initialNaechsterMontag, mitgliedRolle: mitgliedRolleProp, autorNamen }: Props) {
+export default function GewerbeDashboardClient({ profile, betrieb: initialBetrieb, branchen, abonnentenStats, posts: initialPosts, mitgliedRolle: mitgliedRolleProp, autorNamen }: Props) {
   const [betrieb, setBetrieb] = useState(initialBetrieb)
   // Nach der Selbstanlage ist die Person Verwalter, ohne dass die Seite neu geladen wird.
   const [mitgliedRolle, setMitgliedRolle] = useState(mitgliedRolleProp)
   const [posts, setPosts] = useState(initialPosts)
-  const [naechsterMontag, setNaechsterMontag] = useState(initialNaechsterMontag)
   const [tab, setTab] = useState<'posts' | 'profil' | 'team'>('posts')
   const [profilOpen, setProfilOpen] = useState(!initialBetrieb)
 
@@ -44,14 +42,6 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
 
   function handlePostCreated(post: Post) {
     setPosts(prev => [post, ...prev])
-    if (betrieb?.plan === 'standard') {
-      const nextMonday = new Date()
-      const day = nextMonday.getDay()
-      const diffToMonday = day === 0 ? -6 : 1 - day
-      nextMonday.setDate(nextMonday.getDate() + diffToMonday + 7)
-      nextMonday.setHours(0, 0, 0, 0)
-      setNaechsterMontag(nextMonday.toISOString())
-    }
   }
 
   function openEdit(post: Post) {
@@ -130,7 +120,6 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
       })
       if (!res.ok) throw new Error()
       setPosts(prev => prev.filter(p => p.id !== id))
-      setNaechsterMontag(null)
       if (editingId === id) closeEdit()
       toast.success('Beitrag gelöscht')
     } catch {
@@ -207,7 +196,6 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
                   </p>
                   <GewerbePostForm
                     gewerbeId={betrieb.id}
-                    naechsterMontag={naechsterMontag}
                     onCreated={handlePostCreated}
                   />
                 </Card>

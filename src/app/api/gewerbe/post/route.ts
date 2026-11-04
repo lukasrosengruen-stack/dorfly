@@ -4,22 +4,6 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { meinVereinsziel } from '@/lib/mitgliedschaft'
 import { NextResponse } from 'next/server'
 
-function getWochenstart(): Date {
-  const now = new Date()
-  const day = now.getDay() // 0 = So, 1 = Mo, …
-  const diffToMonday = (day === 0 ? -6 : 1 - day)
-  const monday = new Date(now)
-  monday.setDate(now.getDate() + diffToMonday)
-  monday.setHours(0, 0, 0, 0)
-  return monday
-}
-
-function getNaechstenMontag(): string {
-  const monday = getWochenstart()
-  monday.setDate(monday.getDate() + 7)
-  return monday.toISOString()
-}
-
 export const POST = withAuth(
   async (req, { profile }) => {
     const body = await req.json()
@@ -30,32 +14,14 @@ export const POST = withAuth(
 
     const service = await createServiceClient()
 
-    // Mitgliedschaft + Plan laden
+    // Mitgliedschaft prüfen
     const m = await meinVereinsziel(service, profile.id, 'gewerbe')
     const { data: betrieb } = m && m.id === gewerbeId
-      ? await service.from('organisationen').select('id, plan, gemeinde_id').eq('id', gewerbeId).eq('typ', 'gewerbe').single()
+      ? await service.from('organisationen').select('id, gemeinde_id').eq('id', gewerbeId).eq('typ', 'gewerbe').single()
       : { data: null }
 
     if (!betrieb) {
       return NextResponse.json({ error: 'Gewerbe nicht gefunden' }, { status: 404 })
-    }
-
-    // Wochenlimit gilt für den Betrieb, nicht für die einzelne Person
-    if (betrieb.plan === 'standard') {
-      const wochenstart = getWochenstart().toISOString()
-      const { count } = await service
-        .from('posts')
-        .select('id', { count: 'exact', head: true })
-        .eq('org_id', betrieb.id)
-        .eq('channel', 'gewerbe')
-        .gte('published_at', wochenstart)
-
-      if ((count ?? 0) >= 1) {
-        return NextResponse.json(
-          { error: 'Wochenlimit erreicht', naechsterMontag: getNaechstenMontag() },
-          { status: 429 },
-        )
-      }
     }
 
     const { data: post, error } = await service
