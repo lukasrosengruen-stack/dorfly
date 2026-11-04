@@ -1,5 +1,8 @@
+import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getGemeinde } from '@/lib/gemeinde'
+import { zielFuerFremdeGemeinde } from '@/lib/gemeindeWeiche'
 import BottomNav from '@/components/layout/BottomNav'
 import AppInit from '@/components/AppInit'
 import LoginWall from '@/components/LoginWall'
@@ -11,14 +14,25 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const { data: { user } } = await supabase.auth.getUser()
   const isGuest = !user
 
-  const [profileResult, gemeinde] = await Promise.all([
+  const [profileResult, gemeinde, h] = await Promise.all([
     user
-      ? supabase.from('profiles').select('role').eq('id', user.id).single()
+      ? supabase.from('profiles').select('role, gemeinden(slug)').eq('id', user.id).single()
       : Promise.resolve({ data: null }),
     getGemeinde(),
+    headers(),
   ])
 
   const profile = profileResult.data
+
+  const host = h.get('host') ?? ''
+  const ziel = zielFuerFremdeGemeinde({
+    host,
+    hostSlug: h.get('x-gemeinde-slug'),
+    proto: h.get('x-forwarded-proto') ?? (host.includes('localhost') ? 'http' : 'https'),
+    profilSlug: (profile?.gemeinden as { slug?: string } | null)?.slug,
+    role: profile?.role,
+  })
+  if (ziel) redirect(ziel)
   const features = getFeatures(gemeinde)
   const { short: buergermeisterShortLabel } = getBuergermeisterLabel(gemeinde)
 
