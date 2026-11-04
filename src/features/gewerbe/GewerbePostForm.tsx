@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { toast } from 'sonner'
 import { RichTextEditor } from '@/lib/richText'
 import { Button } from '@/components/ui'
@@ -14,6 +14,7 @@ interface GewerbePostFormProps {
 }
 
 export function GewerbePostForm({ gewerbeId, onCreated }: GewerbePostFormProps) {
+  const feldId = useId()
   const [titel, setTitel] = useState('')
   const [text, setText] = useState('')
   const [bildUrl, setBildUrl] = useState<string | null>(null)
@@ -78,26 +79,38 @@ export function GewerbePostForm({ gewerbeId, onCreated }: GewerbePostFormProps) 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      <input
-        type="text"
-        placeholder="Überschrift"
-        value={titel}
-        onChange={e => setTitel(e.target.value)}
-        className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary-500"
-      />
-      <RichTextEditor
-        value={text}
-        onChange={setText}
-        placeholder="Was möchten Sie Ihrer Gemeinde mitteilen?"
-        rows={4}
-        compact
-      />
+      <div>
+        <label htmlFor={`${feldId}-titel`} className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">
+          Überschrift (optional)
+        </label>
+        <input
+          id={`${feldId}-titel`}
+          type="text"
+          value={titel}
+          onChange={e => setTitel(e.target.value)}
+          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary-500"
+        />
+      </div>
+      <div>
+        <p id={`${feldId}-text`} className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">
+          Text
+        </p>
+        <RichTextEditor
+          value={text}
+          onChange={setText}
+          placeholder="Was möchten Sie Ihrer Gemeinde mitteilen?"
+          rows={4}
+          compact
+          labelledBy={`${feldId}-text`}
+        />
+      </div>
 
       <div className="flex gap-3">
         <div className="flex-1">
-          <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">
+          {/* Kein <label>: das Dateifeld unten hat über „Bild auswählen“ einen eigenen Namen */}
+          <p className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">
             Bild (optional)
-          </label>
+          </p>
           {bildUrl ? (
             <div className="relative">
               <img src={bildUrl} alt="Vorschau" className="w-full h-32 object-cover rounded-xl" />
@@ -120,10 +133,11 @@ export function GewerbePostForm({ gewerbeId, onCreated }: GewerbePostFormProps) 
         </div>
 
         <div className="flex-1">
-          <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">
+          <label htmlFor={`${feldId}-ablauf`} className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">
             Ablaufdatum (optional)
           </label>
           <input
+            id={`${feldId}-ablauf`}
             type="date"
             value={ablaufdatum}
             onChange={e => setAblaufdatum(e.target.value)}

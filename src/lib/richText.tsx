@@ -222,9 +222,11 @@ interface RichTextEditorProps {
   placeholder?: string
   rows?: number
   compact?: boolean
+  /** id eines sichtbaren Labels. Ohne Angabe dient der Platzhalter als zugänglicher Name. */
+  labelledBy?: string
 }
 
-export function RichTextEditor({ value, onChange, placeholder, rows = 4, compact = false }: RichTextEditorProps) {
+export function RichTextEditor({ value, onChange, placeholder, rows = 4, compact = false, labelledBy }: RichTextEditorProps) {
   const divRef = useRef<HTMLDivElement>(null)
   const lastSent = useRef('')
   const [empty, setEmpty] = useState(!value)
@@ -348,6 +350,12 @@ export function RichTextEditor({ value, onChange, placeholder, rows = 4, compact
           ref={divRef}
           contentEditable
           suppressContentEditableWarning
+          // Ohne Rolle und Namen erkennt ein Screenreader hier kein Eingabefeld
+          role="textbox"
+          aria-multiline="true"
+          aria-labelledby={labelledBy}
+          aria-label={labelledBy ? undefined : (placeholder ?? 'Text')}
+          aria-placeholder={placeholder}
           onInput={sync}
           onPaste={handlePaste}
           className={`outline-none ${pad} ${textCls} leading-relaxed`}
