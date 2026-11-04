@@ -57,8 +57,14 @@ export const POST = withAuth(
       .single()
 
     if (error) {
-      console.error('[gewerbe/betrieb] DB-Fehler:', error)
-      return apiError('Die Aktion ist fehlgeschlagen. Bitte versuchen Sie es erneut.', 500)
+      // Der Betrieb existiert schon (verein_anlegen ist durch). Ein Fehler hier darf
+      // nicht wie „fehlgeschlagen“ aussehen, sonst endet der nächste Versuch mit 409.
+      console.error('[gewerbe/betrieb] Zusatzangaben nicht gespeichert:', error)
+      const { data: angelegt } = await service.from('organisationen').select().eq('id', betriebId).single()
+      return NextResponse.json({
+        betrieb: angelegt,
+        warnung: 'Ihr Betrieb wurde angelegt, aber die weiteren Angaben konnten nicht gespeichert werden. Bitte ergänzen Sie sie unter „Profil“.',
+      })
     }
 
     return NextResponse.json({ betrieb })

@@ -43,8 +43,14 @@ export const POST = withAuth(
       .single()
 
     if (error) {
-      console.error('[verein/profil] DB-Fehler:', error)
-      return apiError('Die Aktion ist fehlgeschlagen. Bitte versuchen Sie es erneut.', 500)
+      // Der Verein existiert schon (verein_anlegen ist durch). Ein Fehler hier darf
+      // nicht wie „fehlgeschlagen“ aussehen, sonst endet der nächste Versuch mit 409.
+      console.error('[verein/profil] Zusatzangaben nicht gespeichert:', error)
+      const { data: angelegt } = await service.from('vereine').select().eq('id', vereinId).single()
+      return NextResponse.json({
+        verein: angelegt,
+        warnung: 'Ihr Profil wurde angelegt, aber Logo, Beschreibung und Website konnten nicht gespeichert werden. Bitte ergänzen Sie sie unter „Profil“.',
+      })
     }
     return NextResponse.json({ verein })
   },

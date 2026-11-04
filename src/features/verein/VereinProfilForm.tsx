@@ -62,9 +62,11 @@ export function VereinProfilForm({ verein, kategorien, onUpdated }: VereinProfil
         },
       )
       if (!res.ok) throw new Error()
-      const { verein: updated } = await res.json()
+      const { verein: updated, warnung } = await res.json()
       onUpdated(updated)
-      toast.success(isNew ? 'Profil angelegt' : 'Profil gespeichert')
+      // warnung: angelegt, aber Zusatzangaben fehlen (siehe /api/verein/profil POST)
+      if (warnung) toast.warning(warnung)
+      else toast.success(isNew ? 'Profil angelegt' : 'Profil gespeichert')
     } catch {
       toast.error('Speichern fehlgeschlagen')
     } finally {

@@ -66,9 +66,11 @@ export function GewerbeProfilForm({ betrieb, branchen, onUpdated }: GewerbeProfi
         },
       )
       if (!res.ok) throw new Error()
-      const { betrieb: updated } = await res.json()
+      const { betrieb: updated, warnung } = await res.json()
       onUpdated(updated)
-      toast.success(isNew ? 'Profil angelegt' : 'Profil gespeichert')
+      // warnung: angelegt, aber Zusatzangaben fehlen (siehe /api/gewerbe/betrieb POST)
+      if (warnung) toast.warning(warnung)
+      else toast.success(isNew ? 'Profil angelegt' : 'Profil gespeichert')
     } catch {
       toast.error('Speichern fehlgeschlagen')
     } finally {
