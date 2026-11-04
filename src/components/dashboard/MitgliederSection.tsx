@@ -96,6 +96,15 @@ export default function MitgliederSection({ ziel, onGeladen, onGeloescht }: Prop
     setBestaetigung(null)
   }
 
+  // Escape in einer Inline-Bestätigung wirkt wie „Abbrechen“
+  function mitEscapeAbbrechen(key: string) {
+    return (e: React.KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      e.preventDefault()
+      abbrechen(key)
+    }
+  }
+
   const form = useForm<HinzufuegenWerte>({
     resolver: zodResolver(hinzufuegenSchema),
     defaultValues: { email: '', rolle: 'autor' },
@@ -264,7 +273,7 @@ export default function MitgliederSection({ ziel, onGeladen, onGeloescht }: Prop
 
                 {darfVerwalten && !m.ich && (
                   bestaetigung === `entfernen:${m.profile_id}` ? (
-                    <span className="flex items-center gap-2 text-sm">
+                    <span className="flex items-center gap-2 text-sm" onKeyDown={mitEscapeAbbrechen(`entfernen:${m.profile_id}`)}>
                       <span className="text-gray-700">Wirklich entfernen?</span>
                       <button type="button" aria-disabled={beschaeftigt}
                         aria-label={`${m.name} wirklich entfernen`}
@@ -355,7 +364,7 @@ export default function MitgliederSection({ ziel, onGeladen, onGeloescht }: Prop
       {ich && (
         <div>
           {bestaetigung === 'verlassen' ? (
-            <span className="flex items-center gap-2 text-sm">
+            <span className="flex items-center gap-2 text-sm" onKeyDown={mitEscapeAbbrechen('verlassen')}>
               <span className="text-gray-700">Wirklich verlassen?</span>
               <button type="button" aria-disabled={beschaeftigt}
                 onClick={async () => {

@@ -184,7 +184,7 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
             )}
 
             {/* Tab-Navigation */}
-            <div role="tablist" aria-label="Bereiche" className="flex gap-2">
+            <div role="tablist" aria-label="Bereiche" className="flex gap-2" onKeyDown={tabsMitPfeiltasten}>
               <TabButton id="tab-posts" panel="panel-posts" active={tab === 'posts'} icon={<PenLine aria-hidden="true" className="w-3.5 h-3.5" />} onClick={() => setTab('posts')}>
                 Beiträge
               </TabButton>
@@ -365,6 +365,24 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
   )
 }
 
+// Tastaturbedienung nach ARIA Authoring Practices: Pfeiltasten wechseln den Tab
+// (und aktivieren ihn), Pos1/Ende springen an den Anfang bzw. das Ende.
+function tabsMitPfeiltasten(e: React.KeyboardEvent<HTMLDivElement>) {
+  const tabs = Array.from(e.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'))
+  const aktuell = tabs.indexOf(document.activeElement as HTMLButtonElement)
+  if (aktuell === -1) return
+  const ziel =
+    e.key === 'ArrowRight' ? (aktuell + 1) % tabs.length :
+    e.key === 'ArrowLeft'  ? (aktuell - 1 + tabs.length) % tabs.length :
+    e.key === 'Home'       ? 0 :
+    e.key === 'End'        ? tabs.length - 1 :
+    null
+  if (ziel === null) return
+  e.preventDefault()
+  tabs[ziel].focus()
+  tabs[ziel].click()
+}
+
 function TabButton({ id, panel, active, icon, onClick, children }: {
   id: string
   panel: string
@@ -380,6 +398,8 @@ function TabButton({ id, panel, active, icon, onClick, children }: {
       id={id}
       aria-selected={active}
       aria-controls={panel}
+      // Nur der aktive Tab ist ein Tab-Stopp; zwischen den Tabs wechseln die Pfeiltasten
+      tabIndex={active ? 0 : -1}
       onClick={onClick}
       className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wide transition-colors ${
         active ? 'bg-orange-700 text-white' : 'bg-white text-gray-600 shadow-[0_2px_8px_rgba(15,45,107,0.08)]'
