@@ -1,8 +1,6 @@
 'use client'
 
-import { useState } from 'react'
 import { Bell, Globe, Users } from 'lucide-react'
-import { toast } from 'sonner'
 import { formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
 import { cn } from '@/lib/cn'
@@ -10,7 +8,7 @@ import { PageHeader } from '@/components/ui'
 import { renderRichText } from '@/lib/richText'
 import type { VereinMitKategorie } from '@/types/database'
 import type { VereinPost } from '@/lib/verein'
-import { useGuestGuard } from '@/hooks/useGuestGuard'
+import { useAbonnement } from '@/hooks/useAbonnement'
 
 interface Props {
   verein: VereinMitKategorie
@@ -19,36 +17,14 @@ interface Props {
   abonnentenAnzahl: number
 }
 
-export default function VereinProfil({ verein, posts, istAbonniert: initialAbonniert, abonnentenAnzahl: initialAnzahl }: Props) {
-  const [abonniert, setAbonniert]   = useState(initialAbonniert)
-  const [anzahl, setAnzahl]         = useState(initialAnzahl)
-  const [loading, setLoading]       = useState(false)
-  const { requireLogin } = useGuestGuard()
+export default function VereinProfil({ verein, posts, istAbonniert, abonnentenAnzahl }: Props) {
+  const { abonniert, toggleAbonnement } = useAbonnement({ art: 'verein', id: verein.id, name: verein.verein_name, istAbonniert })
+  const anzahl = abonnentenAnzahl + Number(abonniert) - Number(istAbonniert)
 
   const isOrg    = verein.typ === 'organisation'
   const bgLight  = isOrg ? 'bg-teal-100'   : 'bg-violet-100'
   const iconText = isOrg ? 'text-teal-500' : 'text-violet-600'
   const badgeBg  = isOrg ? 'bg-teal-500'   : 'bg-violet-600'
-
-  async function toggleAbonnement() {
-    if (requireLogin()) return
-    setLoading(true)
-    try {
-      const res = await fetch('/api/verein/abonnieren', {
-        method: abonniert ? 'DELETE' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vereinId: verein.id }),
-      })
-      if (!res.ok) throw new Error()
-      setAbonniert(a => !a)
-      setAnzahl(n => n + (abonniert ? -1 : 1))
-      toast.success(abonniert ? 'Abonnement gekündigt' : `${verein.verein_name} abonniert`)
-    } catch {
-      toast.error('Fehler beim Aktualisieren')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   return (
     <div>
@@ -97,7 +73,6 @@ export default function VereinProfil({ verein, posts, istAbonniert: initialAbonn
 
           <button
             onClick={toggleAbonnement}
-            disabled={loading}
             className={cn(
               'mt-4 w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-colors',
               abonniert

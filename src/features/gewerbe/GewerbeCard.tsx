@@ -7,7 +7,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
 import { cn } from '@/lib/cn'
 import type { OrganisationMitBranche, Post } from '@/types/database'
-import { useGuestGuard } from '@/hooks/useGuestGuard'
+import { useAbonnement } from '@/hooks/useAbonnement'
 
 interface GewerbeCardProps {
   betrieb: OrganisationMitBranche
@@ -22,12 +22,10 @@ interface GewerbeDetailData {
   abonnentenAnzahl: number
 }
 
-export function GewerbeCard({ betrieb, istAbonniert: initialAbonniert, expanded, onToggleExpand, className }: GewerbeCardProps) {
-  const [abonniert, setAbonniert] = useState(initialAbonniert)
-  const [loading, setLoading]     = useState(false)
+export function GewerbeCard({ betrieb, istAbonniert, expanded, onToggleExpand, className }: GewerbeCardProps) {
+  const { abonniert, toggleAbonnement } = useAbonnement({ art: 'gewerbe', id: betrieb.id, name: betrieb.name, istAbonniert })
   const [detail, setDetail]       = useState<GewerbeDetailData | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
-  const { requireLogin } = useGuestGuard()
 
   useEffect(() => {
     if (!expanded || detail || detailLoading) return
@@ -38,26 +36,6 @@ export function GewerbeCard({ betrieb, istAbonniert: initialAbonniert, expanded,
       .catch(() => toast.error('Details konnten nicht geladen werden'))
       .finally(() => setDetailLoading(false))
   }, [expanded, detail, detailLoading, betrieb.id])
-
-  async function toggleAbonnement(e: React.MouseEvent) {
-    e.stopPropagation()
-    if (requireLogin()) return
-    setLoading(true)
-    try {
-      const res = await fetch('/api/gewerbe/abonnieren', {
-        method: abonniert ? 'DELETE' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gewerbeId: betrieb.id }),
-      })
-      if (!res.ok) throw new Error()
-      setAbonniert(a => !a)
-      toast.success(abonniert ? 'Abonnement gekündigt' : `${betrieb.name} abonniert`)
-    } catch {
-      toast.error('Fehler beim Aktualisieren')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   return (
     <div
@@ -112,8 +90,7 @@ export function GewerbeCard({ betrieb, istAbonniert: initialAbonniert, expanded,
         </button>
 
         <button
-          onClick={toggleAbonnement}
-          disabled={loading}
+          onClick={e => { e.stopPropagation(); toggleAbonnement() }}
           aria-label={abonniert ? `${betrieb.name} nicht mehr abonnieren` : `${betrieb.name} abonnieren`}
           className={cn(
             'shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-colors',

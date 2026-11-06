@@ -1,13 +1,11 @@
 'use client'
 
-import { useState } from 'react'
 import { Globe, MapPin, Clock, Users, Building2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
-import { toast } from 'sonner'
 import { Button, Card, ZurueckButton } from '@/components/ui'
 import type { OrganisationMitBranche, Post } from '@/types/database'
-import { useGuestGuard } from '@/hooks/useGuestGuard'
+import { useAbonnement } from '@/hooks/useAbonnement'
 
 interface Props {
   betrieb: OrganisationMitBranche
@@ -17,32 +15,10 @@ interface Props {
   istEigentümer: boolean
 }
 
-export default function GewerbeProfil({ betrieb, posts, istAbonniert: initialAbonniert, abonnentenAnzahl: initialAnzahl }: Props) {
+export default function GewerbeProfil({ betrieb, posts, istAbonniert, abonnentenAnzahl }: Props) {
   const brancheName = betrieb.gewerbe_branchen?.name
-  const [abonniert, setAbonniert] = useState(initialAbonniert)
-  const [anzahl, setAnzahl] = useState(initialAnzahl)
-  const [loading, setLoading] = useState(false)
-  const { requireLogin } = useGuestGuard()
-
-  async function toggleAbonnement() {
-    if (requireLogin()) return
-    setLoading(true)
-    try {
-      const res = await fetch('/api/gewerbe/abonnieren', {
-        method: abonniert ? 'DELETE' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gewerbeId: betrieb.id }),
-      })
-      if (!res.ok) throw new Error()
-      setAbonniert(a => !a)
-      setAnzahl(n => abonniert ? n - 1 : n + 1)
-      toast.success(abonniert ? 'Abonnement gekündigt' : 'Abonniert')
-    } catch {
-      toast.error('Fehler beim Aktualisieren')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const { abonniert, toggleAbonnement } = useAbonnement({ art: 'gewerbe', id: betrieb.id, name: betrieb.name, istAbonniert })
+  const anzahl = abonnentenAnzahl + Number(abonniert) - Number(istAbonniert)
 
   return (
     <div>
@@ -76,7 +52,6 @@ export default function GewerbeProfil({ betrieb, posts, istAbonniert: initialAbo
 
           <Button
             onClick={toggleAbonnement}
-            loading={loading}
             variant={abonniert ? 'secondary' : 'primary'}
             fullWidth
             className={`mt-4 ${abonniert ? 'bg-white text-primary-600 border-white' : 'bg-orange-500 border-orange-500 hover:bg-orange-600'}`}

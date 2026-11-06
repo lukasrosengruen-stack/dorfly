@@ -9,7 +9,7 @@ import { cn } from '@/lib/cn'
 import { renderRichText } from '@/lib/richText'
 import type { VereinMitKategorie } from '@/types/database'
 import type { VereinPost } from '@/lib/verein'
-import { useGuestGuard } from '@/hooks/useGuestGuard'
+import { useAbonnement } from '@/hooks/useAbonnement'
 
 interface VereinCardProps {
   verein: VereinMitKategorie
@@ -29,12 +29,10 @@ const COLOR = {
   organisation: { bg: 'bg-teal-100',   icon: 'text-teal-500',   badge: 'bg-teal-500'   },
 }
 
-export function VereinCard({ verein, istAbonniert: initialAbonniert, expanded, onToggleExpand, className }: VereinCardProps) {
-  const [abonniert, setAbonniert] = useState(initialAbonniert)
-  const [loading, setLoading]     = useState(false)
+export function VereinCard({ verein, istAbonniert, expanded, onToggleExpand, className }: VereinCardProps) {
+  const { abonniert, toggleAbonnement } = useAbonnement({ art: 'verein', id: verein.id, name: verein.verein_name, istAbonniert })
   const [detail, setDetail]       = useState<VereinDetailData | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
-  const { requireLogin } = useGuestGuard()
 
   const colors = COLOR[verein.typ as 'verein' | 'organisation'] ?? COLOR.verein
 
@@ -47,26 +45,6 @@ export function VereinCard({ verein, istAbonniert: initialAbonniert, expanded, o
       .catch(() => toast.error('Details konnten nicht geladen werden'))
       .finally(() => setDetailLoading(false))
   }, [expanded, detail, detailLoading, verein.id])
-
-  async function toggleAbonnement(e: React.MouseEvent) {
-    e.stopPropagation()
-    if (requireLogin()) return
-    setLoading(true)
-    try {
-      const res = await fetch('/api/verein/abonnieren', {
-        method: abonniert ? 'DELETE' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vereinId: verein.id }),
-      })
-      if (!res.ok) throw new Error()
-      setAbonniert(a => !a)
-      toast.success(abonniert ? 'Abonnement gekündigt' : `${verein.verein_name} abonniert`)
-    } catch {
-      toast.error('Fehler beim Aktualisieren')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   return (
     <div
@@ -123,8 +101,7 @@ export function VereinCard({ verein, istAbonniert: initialAbonniert, expanded, o
         </button>
 
         <button
-          onClick={toggleAbonnement}
-          disabled={loading}
+          onClick={e => { e.stopPropagation(); toggleAbonnement() }}
           aria-label={abonniert ? `${verein.verein_name} nicht mehr abonnieren` : `${verein.verein_name} abonnieren`}
           className={cn(
             'shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-colors',
