@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { abmelden } from '@/lib/abmelden'
+import { oneSignalAbmelden } from '@/lib/oneSignalAbmelden'
 import { LogOut, Settings } from 'lucide-react'
 import type { DashboardData } from './types'
 import { PRODUZENTEN_ROLLEN } from './types'
@@ -21,7 +23,9 @@ export default function AdminDashboardClient({ data }: { data: DashboardData }) 
   const [slideOverOpen, setSlideOverOpen] = useState(false)
 
   async function signOut() {
-    await supabase.auth.signOut()
+    // Derselbe Weg wie im Profil, damit es nur eine Stelle gibt.
+    // Super-Admins haben Push selten aktiviert, der Aufruf ist dann wirkungslos.
+    await abmelden({ oneSignalAbmelden, signOut: () => supabase.auth.signOut() })
     router.push('/login')
   }
 

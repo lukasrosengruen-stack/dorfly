@@ -5,6 +5,8 @@ import { toast } from 'sonner'
 import { useState, useEffect } from 'react'
 import { Profile } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
+import { abmelden } from '@/lib/abmelden'
+import { oneSignalAbmelden } from '@/lib/oneSignalAbmelden'
 import { ZurueckButton } from '@/components/ui'
 import { updateProfil } from '@/app/actions/profil'
 import { useRouter } from 'next/navigation'
@@ -79,7 +81,8 @@ export default function ProfilClient({ profile, email, gemeindeSlug }: { profile
   }
 
   async function signOut() {
-    await supabase.auth.signOut()
+    // Reihenfolge und Fehlerverhalten: siehe src/lib/abmelden.ts
+    await abmelden({ oneSignalAbmelden, signOut: () => supabase.auth.signOut() })
     router.push('/login')
   }
 
