@@ -6,6 +6,8 @@ import { Fragment, useState } from 'react'
 import { AlertTriangle, Loader2, MapPin, MessageSquare, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import AeltereSuche from '@/components/dashboard/AeltereSuche'
+import { entferneOptimistisch } from '@/lib/optimistischeListe'
+import { erstelleOptimistischenAbgleich } from '@/lib/optimistischerToggle'
 
 type Status = 'offen' | 'in_bearbeitung' | 'erledigt'
 
@@ -44,42 +46,48 @@ export default function MaengelSection({ maengel: initialMaengel, gesamt, offene
   offeneVerborgen: number
 }) {
   const [maengel, setMaengel] = useState(initialMaengel)
-  const [updating, setUpdating] = useState<string | null>(null)
-  const [deleting, setDeleting] = useState<string | null>(null)
+  const [statusAbgleiche] = useState(() => new Map<string, ReturnType<typeof erstelleOptimistischenAbgleich<Status>>>())
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [nachrichten, setNachrichten] = useState<Record<string, string>>({})
   const [sending, setSending] = useState<string | null>(null)
 
   async function deleteMangel(id: string) {
     if (!confirm('Meldung wirklich löschen?')) return
-    setDeleting(id)
-    try {
-      const res = await fetch('/api/maengel/delete', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id }),
-      })
-      if (!res.ok) throw new Error()
-      setMaengel(prev => prev.filter(m => m.id !== id))
-    } catch { toast.error('Fehler beim Löschen') }
-    finally { setDeleting(null) }
+    const ok = await entferneOptimistisch({
+      liste: maengel,
+      id,
+      setListe: setMaengel,
+      senden: async () => {
+        const res = await fetch('/api/maengel/delete', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id }),
+        })
+        if (!res.ok) throw new Error()
+      },
+    })
+    if (!ok) toast.error('Fehler beim Löschen')
   }
 
-  async function updateStatus(id: string, status: Status) {
-    setUpdating(id)
-    try {
-      const res = await fetch('/api/maengel/status', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mangelId: id, status }),
+  function updateStatus(mangel: Mangel, status: Status) {
+    let abgleich = statusAbgleiche.get(mangel.id)
+    if (!abgleich) {
+      abgleich = erstelleOptimistischenAbgleich<Status>({
+        start: mangel.status,
+        senden: async ziel => {
+          const res = await fetch('/api/maengel/status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mangelId: mangel.id, status: ziel }),
+          })
+          if (!res.ok) throw new Error()
+        },
+        onAenderung: wert => setMaengel(prev => prev.map(m => m.id === mangel.id ? { ...m, status: wert } : m)),
+        onFehler: () => toast.error('Fehler beim Aktualisieren'),
       })
-      if (!res.ok) throw new Error()
-      setMaengel(prev => prev.map(m => m.id === id ? { ...m, status } : m))
-    } catch {
-      toast.error('Fehler beim Aktualisieren')
-    } finally {
-      setUpdating(null)
+      statusAbgleiche.set(mangel.id, abgleich)
     }
+    abgleich.setzen(status)
   }
 
   async function sendNachricht(id: string, status: Status) {
@@ -124,14 +132,13 @@ export default function MaengelSection({ maengel: initialMaengel, gesamt, offene
   function statusButtons(m: Mangel) {
     return (['offen', 'in_bearbeitung', 'erledigt'] as Status[]).map(s => (
       <button key={s}
-        onClick={() => m.status !== s && updateStatus(m.id, s)}
-        disabled={updating === m.id || m.status === s}
+        onClick={() => updateStatus(m, s)}
+        aria-pressed={m.status === s}
         className={`text-xs px-2 py-0.5 rounded-full font-medium transition-colors ${
           // gray-600 statt gray-500: Auf bg-gray-100 kaeme gray-500 nur auf
           // etwa 4.39:1 und verfehlt die 4.5:1 fuer Text unter 18px knapp.
           m.status === s ? STATUS_AKTIV_CLS[s] : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
         }`}>
-        {updating === m.id ? <Loader2 className="w-3 h-3 animate-spin inline" aria-hidden="true" /> : null}
         {STATUS_LABEL[s]}
       </button>
     ))
@@ -151,12 +158,10 @@ export default function MaengelSection({ maengel: initialMaengel, gesamt, offene
             <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary-500 rounded-full" />
           )}
         </button>
-        <button onClick={() => deleteMangel(m.id)} disabled={deleting === m.id}
+        <button onClick={() => deleteMangel(m.id)}
           aria-label={`Meldung „${m.titel}“ löschen`}
-          className="p-1.5 rounded-lg bg-gray-100 hover:bg-red-100 transition-colors disabled:opacity-50">
-          {deleting === m.id
-            ? <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" aria-hidden="true" />
-            : <Trash2 className="w-3.5 h-3.5 text-gray-500" aria-hidden="true" />}
+          className="p-1.5 rounded-lg bg-gray-100 hover:bg-red-100 transition-colors">
+          <Trash2 className="w-3.5 h-3.5 text-gray-500" aria-hidden="true" />
         </button>
       </>
     )

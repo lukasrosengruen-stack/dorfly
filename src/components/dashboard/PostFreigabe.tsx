@@ -3,7 +3,8 @@
 
 import { toast } from 'sonner'
 import { useState } from 'react'
-import { Check, X, Loader2, CalendarClock, Globe, Lock, MessageSquare } from 'lucide-react'
+import { Check, X, CalendarClock, Globe, Lock, MessageSquare } from 'lucide-react'
+import { entferneOptimistisch } from '@/lib/optimistischeListe'
 
 interface PendingPost {
   id: string
@@ -20,7 +21,6 @@ interface PendingPost {
 
 export default function PostFreigabe({ pendingPosts }: { pendingPosts: PendingPost[] }) {
   const [posts, setPosts] = useState(pendingPosts)
-  const [loading, setLoading] = useState<string | null>(null)
   const [sichtbarkeit, setSichtbarkeit] = useState<Record<string, 'alle' | 'abonnenten'>>({})
   const [rejectingId, setRejectingId] = useState<string | null>(null)
   const [rejectReasons, setRejectReasons] = useState<Record<string, string>>({})
@@ -30,31 +30,32 @@ export default function PostFreigabe({ pendingPosts }: { pendingPosts: PendingPo
     post.channel === 'verein' || post.profiles?.role === 'verein' || post.profiles?.role === 'organisation'
 
   async function handle(postId: string, action: 'publish' | 'reject') {
-    setLoading(postId)
-    try {
-      const post = posts.find(p => p.id === postId)
-      const body: Record<string, unknown> = { postId, action }
-      if (action === 'publish' && post && isVereinPost(post)) {
-        body.sichtbarkeit = sichtbarkeit[postId] ?? 'abonnenten'
-      }
-      if (action === 'reject' && rejectReasons[postId]) {
-        body.rejectionReason = rejectReasons[postId]
-      }
-      const res = await fetch('/api/posts/freigeben', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw new Error(data.error ?? `HTTP ${res.status}`)
-      }
-      setPosts(prev => prev.filter(p => p.id !== postId))
-      setRejectingId(null)
-    } catch (e) {
-      toast.error('Fehler: ' + (e instanceof Error ? e.message : 'Unbekannt'))
-    } finally {
-      setLoading(null)
+    const post = posts.find(p => p.id === postId)
+    const body: Record<string, unknown> = { postId, action }
+    if (action === 'publish' && post && isVereinPost(post)) {
+      body.sichtbarkeit = sichtbarkeit[postId] ?? 'abonnenten'
+    }
+    if (action === 'reject' && rejectReasons[postId]) {
+      body.rejectionReason = rejectReasons[postId]
+    }
+    setRejectingId(null)
+    const ok = await entferneOptimistisch({
+      liste: posts,
+      id: postId,
+      setListe: setPosts,
+      senden: async () => {
+        const res = await fetch('/api/posts/freigeben', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        })
+        if (!res.ok) throw new Error()
+      },
+    })
+    if (!ok) {
+      toast.error(action === 'publish' ? 'Freigabe fehlgeschlagen' : 'Ablehnung fehlgeschlagen')
+      // Die Begründung bleibt erhalten, damit sie nicht neu getippt werden muss
+      if (action === 'reject') setRejectingId(postId)
     }
   }
 
@@ -78,7 +79,6 @@ export default function PostFreigabe({ pendingPosts }: { pendingPosts: PendingPo
       <div className="divide-y divide-gray-50">
         {posts.map(post => {
           const autor = post.profiles?.verein_name ?? post.profiles?.display_name ?? 'Unbekannt'
-          const isLoading = loading === post.id
           const isRejecting = rejectingId === post.id
           return (
             <div key={post.id} className="px-5 py-4">
@@ -148,17 +148,16 @@ export default function PostFreigabe({ pendingPosts }: { pendingPosts: PendingPo
                 <div className="flex gap-2 shrink-0">
                   <button
                     onClick={() => handle(post.id, 'publish')}
-                    disabled={isLoading || isRejecting}
+                    disabled={isRejecting}
                     className="flex items-center gap-1 bg-primary-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg disabled:opacity-50"
                   >
-                    {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                    <Check className="w-3 h-3" aria-hidden="true" />
                     Freigeben
                   </button>
                   {!isRejecting ? (
                     <button
                       onClick={() => startReject(post.id)}
-                      disabled={isLoading}
-                      className="flex items-center gap-1 bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1.5 rounded-lg disabled:opacity-50"
+                      className="flex items-center gap-1 bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1.5 rounded-lg"
                     >
                       <X className="w-3 h-3" />
                       Ablehnen
@@ -166,8 +165,7 @@ export default function PostFreigabe({ pendingPosts }: { pendingPosts: PendingPo
                   ) : (
                     <button
                       onClick={() => setRejectingId(null)}
-                      disabled={isLoading}
-                      className="flex items-center gap-1 bg-gray-100 text-gray-400 text-xs font-bold px-3 py-1.5 rounded-lg disabled:opacity-50"
+                      className="flex items-center gap-1 bg-gray-100 text-gray-400 text-xs font-bold px-3 py-1.5 rounded-lg"
                     >
                       Abbrechen
                     </button>
@@ -191,10 +189,10 @@ export default function PostFreigabe({ pendingPosts }: { pendingPosts: PendingPo
                   />
                   <button
                     onClick={() => handle(post.id, 'reject')}
-                    disabled={isLoading || !rejectReasons[post.id]?.trim()}
+                    disabled={!rejectReasons[post.id]?.trim()}
                     className="mt-2 flex items-center gap-1.5 bg-red-500 text-white text-xs font-bold px-4 py-2 rounded-lg disabled:opacity-50"
                   >
-                    {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
+                    <X className="w-3 h-3" aria-hidden="true" />
                     Ablehnen bestätigen
                   </button>
                 </div>

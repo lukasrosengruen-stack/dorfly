@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { after, NextResponse } from 'next/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { createServiceClient } from '@/lib/supabase/server'
 import { withAuth } from '@/lib/api'
@@ -120,8 +120,9 @@ export const POST = withAuth(
       { status, nachricht: neueNachricht },
     )
 
+    // Erst nach der Antwort versenden, damit die Verwaltung nicht auf E-Mail und Push wartet
     if (aenderung) {
-      await benachrichtigeMelder(service, vorher, status, aenderung)
+      after(() => benachrichtigeMelder(service, vorher, status, aenderung))
     }
 
     return NextResponse.json({ success: true })

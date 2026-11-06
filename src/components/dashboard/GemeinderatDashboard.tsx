@@ -8,6 +8,7 @@ import { de } from 'date-fns/locale'
 import { Scale, MessageCircle, CheckCircle2, Clock, Send, Loader2, Pencil, Trash2, X } from 'lucide-react'
 import { clsx } from 'clsx'
 import PostErstellenButton from './PostErstellenButton'
+import { entferneOptimistisch } from '@/lib/optimistischeListe'
 import { compressAvatar } from '@/lib/compressImage'
 import { createClient } from '@/lib/supabase/client'
 
@@ -71,7 +72,6 @@ export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profil
   const [editPost, setEditPost] = useState<Post | null>(null)
   const [editForm, setEditForm] = useState({ titel: '', inhalt: '', tag: '' })
   const [editLoading, setEditLoading] = useState(false)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [localPosts, setLocalPosts] = useState(posts)
 
   async function saveProfil() {
@@ -140,19 +140,22 @@ export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profil
   }
 
   async function deletePost(postId: string) {
-    setDeletingId(postId)
-    const res = await fetch('/api/posts/delete', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: postId }),
+    if (!confirm('Beitrag wirklich löschen?')) return
+    const ok = await entferneOptimistisch({
+      liste: localPosts,
+      id: postId,
+      setListe: setLocalPosts,
+      senden: async () => {
+        const res = await fetch('/api/posts/delete', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: postId }),
+        })
+        if (!res.ok) throw new Error()
+      },
     })
-    setDeletingId(null)
-    if (res.ok) {
-      setLocalPosts(prev => prev.filter(p => p.id !== postId))
-      toast.success('Beitrag gelöscht')
-    } else {
-      toast.error('Fehler beim Löschen')
-    }
+    if (ok) toast.success('Beitrag gelöscht')
+    else toast.error('Fehler beim Löschen')
   }
 
   async function sendAntwort(frageId: string) {
@@ -418,10 +421,10 @@ export default function GemeinderatDashboard({ posts, fragen, gemeindeId, profil
                   </button>
                   <button
                     onClick={() => deletePost(post.id)}
-                    disabled={deletingId === post.id}
-                    className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
+                    aria-label={`Beitrag „${post.titel}“ löschen`}
+                    className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
                   >
-                    {deletingId === post.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                    <Trash2 className="w-4 h-4" aria-hidden="true" />
                   </button>
                 </div>
                 {post.status === 'rejected' && post.rejection_reason && (

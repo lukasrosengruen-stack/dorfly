@@ -1,27 +1,28 @@
-interface OptimistischerToggleOptionen {
-  start: boolean
-  /** Uebertraegt den Zielzustand an den Server. Ablehnung = fehlgeschlagen. */
-  senden: (ziel: boolean) => Promise<void>
-  /** Neuer Anzeigezustand: sofort beim Tippen und beim Zuruecksetzen nach einem Fehler. */
-  onAenderung: (zustand: boolean) => void
-  /** Der Server hat den zuletzt gewuenschten Zustand gespeichert. */
-  onBestaetigt: (zustand: boolean) => void
+interface OptimistischerAbgleichOptionen<T> {
+  start: T
+  /** Uebertraegt den Zielwert an den Server. Ablehnung = fehlgeschlagen. */
+  senden: (ziel: T) => Promise<void>
+  /** Neuer Anzeigewert: sofort beim Setzen und beim Zuruecksetzen nach einem Fehler. */
+  onAenderung: (wert: T) => void
+  /** Der Server hat den zuletzt gewuenschten Wert gespeichert. */
+  onBestaetigt?: (wert: T) => void
   onFehler: () => void
 }
 
 /**
- * An/Aus-Schalter, der sofort reagiert und im Hintergrund mit dem Server abgleicht.
+ * Wert, der sofort angezeigt und im Hintergrund mit dem Server abgeglichen wird.
  *
- * Es laeuft immer nur eine Anfrage. Tippt jemand waehrenddessen erneut, zaehlt am Ende nur
+ * Es laeuft immer nur eine Anfrage. Wird waehrenddessen erneut gesetzt, zaehlt am Ende nur
  * der letzte Wunsch; so kann eine spaeter eintreffende Antwort den Stand nicht verdrehen.
+ * Werte werden per `===` verglichen, Objekte also ueber ihre Identitaet.
  */
-export function erstelleOptimistischenToggle({
+export function erstelleOptimistischenAbgleich<T>({
   start,
   senden,
   onAenderung,
   onBestaetigt,
   onFehler,
-}: OptimistischerToggleOptionen) {
+}: OptimistischerAbgleichOptionen<T>) {
   let gewuenscht = start
   let bestaetigt = start
   let laeuft = false
@@ -34,7 +35,7 @@ export function erstelleOptimistischenToggle({
         await senden(ziel)
         bestaetigt = ziel
       }
-      onBestaetigt(bestaetigt)
+      onBestaetigt?.(bestaetigt)
     } catch {
       gewuenscht = bestaetigt
       onAenderung(bestaetigt)
@@ -44,9 +45,19 @@ export function erstelleOptimistischenToggle({
     }
   }
 
-  return function toggle() {
-    gewuenscht = !gewuenscht
-    onAenderung(gewuenscht)
-    if (!laeuft) void abgleichen()
+  return {
+    aktuell: () => gewuenscht,
+    setzen(ziel: T) {
+      if (ziel === gewuenscht) return
+      gewuenscht = ziel
+      onAenderung(ziel)
+      if (!laeuft) void abgleichen()
+    },
   }
+}
+
+/** An/Aus-Schalter auf Basis von {@link erstelleOptimistischenAbgleich}. */
+export function erstelleOptimistischenToggle(optionen: OptimistischerAbgleichOptionen<boolean>) {
+  const abgleich = erstelleOptimistischenAbgleich(optionen)
+  return () => abgleich.setzen(!abgleich.aktuell())
 }

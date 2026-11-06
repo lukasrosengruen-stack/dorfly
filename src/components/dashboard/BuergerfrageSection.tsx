@@ -7,6 +7,7 @@ import { MessageCircleQuestion, ChevronDown, ChevronUp, Loader2, CheckCircle2, P
 import Link from 'next/link'
 import { RichTextEditor, renderRichText } from '@/lib/richText'
 import AeltereSuche from '@/components/dashboard/AeltereSuche'
+import { entferneOptimistisch } from '@/lib/optimistischeListe'
 
 interface Frage {
   id: string
@@ -27,7 +28,6 @@ export default function BuergerfrageSection({ fragen: initialFragen, gesamt, off
   const [antworten, setAntworten] = useState<Record<string, string>>({})
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState<string | null>(null)
-  const [deleting, setDeleting] = useState<string | null>(null)
 
   async function antwort_speichern(frageId: string) {
     const text = antworten[frageId]?.trim()
@@ -49,17 +49,20 @@ export default function BuergerfrageSection({ fragen: initialFragen, gesamt, off
 
   async function frage_loeschen(id: string) {
     if (!confirm('Frage wirklich löschen?')) return
-    setDeleting(id)
-    try {
-      const res = await fetch('/api/fragen/delete', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id }),
-      })
-      if (!res.ok) throw new Error()
-      setFragen(prev => prev.filter(f => f.id !== id))
-    } catch { toast.error('Fehler beim Löschen') }
-    finally { setDeleting(null) }
+    const ok = await entferneOptimistisch({
+      liste: fragen,
+      id,
+      setListe: setFragen,
+      senden: async () => {
+        const res = await fetch('/api/fragen/delete', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id }),
+        })
+        if (!res.ok) throw new Error()
+      },
+    })
+    if (!ok) toast.error('Fehler beim Löschen')
   }
 
   const offene = fragen.filter(f => f.status === 'offen')
@@ -110,11 +113,9 @@ export default function BuergerfrageSection({ fragen: initialFragen, gesamt, off
                   className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors shrink-0">
                   <Pencil className="w-3.5 h-3.5 text-gray-500" />
                 </button>
-                <button onClick={() => frage_loeschen(f.id)} disabled={deleting === f.id}
-                  className="p-1.5 rounded-lg bg-gray-100 hover:bg-red-100 transition-colors shrink-0 disabled:opacity-50">
-                  {deleting === f.id
-                    ? <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
-                    : <Trash2 className="w-3.5 h-3.5 text-gray-500" />}
+                <button onClick={() => frage_loeschen(f.id)} aria-label="Frage löschen"
+                  className="p-1.5 rounded-lg bg-gray-100 hover:bg-red-100 transition-colors shrink-0">
+                  <Trash2 className="w-3.5 h-3.5 text-gray-500" aria-hidden="true" />
                 </button>
               </div>
 

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { erstelleOptimistischenToggle } from './optimistischerToggle'
+import { erstelleOptimistischenAbgleich, erstelleOptimistischenToggle } from './optimistischerToggle'
 
 /** Sendefunktion, deren Antworten der Test einzeln ausloest. */
 function steuerbaresSenden() {
@@ -26,6 +26,65 @@ function aufbau(start = false) {
   const toggle = erstelleOptimistischenToggle({ start, senden, onAenderung, onBestaetigt, onFehler })
   return { toggle, senden, offen, onAenderung, onBestaetigt, onFehler }
 }
+
+describe('erstelleOptimistischenAbgleich', () => {
+  function abgleichMitStatus() {
+    const offen: { antworten: (ok: boolean) => void }[] = []
+    const senden = vi.fn<(ziel: string) => Promise<void>>(() =>
+      new Promise((resolve, reject) => {
+        offen.push({ antworten: ok => (ok ? resolve() : reject(new Error('Serverfehler'))) })
+      }),
+    )
+    const onAenderung = vi.fn()
+    const onFehler = vi.fn()
+    const abgleich = erstelleOptimistischenAbgleich({ start: 'offen', senden, onAenderung, onFehler })
+    return { abgleich, senden, offen, onAenderung, onFehler }
+  }
+
+  it('zeigt den neuen Wert sofort und kennt ihn als aktuellen Stand', () => {
+    const { abgleich, onAenderung } = abgleichMitStatus()
+
+    abgleich.setzen('erledigt')
+
+    expect(onAenderung).toHaveBeenCalledWith('erledigt')
+    expect(abgleich.aktuell()).toBe('erledigt')
+  })
+
+  it('ueberspringt Zwischenwerte, die waehrend einer laufenden Anfrage gesetzt werden', async () => {
+    const { abgleich, senden, offen } = abgleichMitStatus()
+
+    abgleich.setzen('in_bearbeitung')
+    abgleich.setzen('offen')
+    abgleich.setzen('erledigt')
+    offen[0].antworten(true)
+    await warteAufMikrotasks()
+    offen[1].antworten(true)
+    await warteAufMikrotasks()
+
+    expect(senden.mock.calls.map(([ziel]) => ziel)).toEqual(['in_bearbeitung', 'erledigt'])
+  })
+
+  it('tut nichts, wenn der Wert schon gewuenscht ist', () => {
+    const { abgleich, senden, onAenderung } = abgleichMitStatus()
+
+    abgleich.setzen('offen')
+
+    expect(senden).not.toHaveBeenCalled()
+    expect(onAenderung).not.toHaveBeenCalled()
+  })
+
+  it('kennt nach einem Fehler wieder den bestaetigten Stand', async () => {
+    const { abgleich, offen, onAenderung, onFehler } = abgleichMitStatus()
+
+    abgleich.setzen('erledigt')
+    offen[0].antworten(false)
+    await warteAufMikrotasks()
+
+    expect(abgleich.aktuell()).toBe('offen')
+    expect(onAenderung).toHaveBeenLastCalledWith('offen')
+    expect(onFehler).toHaveBeenCalledOnce()
+  })
+})
 
 describe('erstelleOptimistischenToggle', () => {
   it('meldet den neuen Zustand sofort, noch bevor der Server antwortet', () => {

@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { Pencil, Trash2, Loader2, X, ImagePlus, Newspaper, CalendarClock, Plus } from 'lucide-react'
 import { RichTextEditor } from '@/lib/richText'
 import { createClient } from '@/lib/supabase/client'
+import { entferneOptimistisch } from '@/lib/optimistischeListe'
 import { clsx } from 'clsx'
 import PostErstellenButton from './PostErstellenButton'
 import AeltereSuche from './AeltereSuche'
@@ -75,7 +76,6 @@ export default function PostVerwaltungSection({ posts: initialPosts, gesamt, ver
   const [posts, setPosts] = useState(initialPosts)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [deleting, setDeleting] = useState<string | null>(null)
   const [bildFile, setBildFile] = useState<File | null>(null)
   const [bildPreview, setBildPreview] = useState<string | null>(null)
   const [form, setForm] = useState<FormState>({ titel: '', inhalt: '', tag: 'nachricht', channel: 'gemeinde', veranstaltung_datum: '', veranstaltung_uhrzeit: '', veranstaltung_ort: '', weitereTermine: [], pinned: false })
@@ -169,17 +169,20 @@ export default function PostVerwaltungSection({ posts: initialPosts, gesamt, ver
 
   async function deletePost(id: string, titel: string) {
     if (!confirm(`"${titel}" wirklich löschen?`)) return
-    setDeleting(id)
-    try {
-      const res = await fetch('/api/posts/delete', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id }),
-      })
-      if (!res.ok) throw new Error()
-      setPosts(prev => prev.filter(p => p.id !== id))
-    } catch { toast.error('Fehler beim Löschen') }
-    finally { setDeleting(null) }
+    const ok = await entferneOptimistisch({
+      liste: posts,
+      id,
+      setListe: setPosts,
+      senden: async () => {
+        const res = await fetch('/api/posts/delete', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id }),
+        })
+        if (!res.ok) throw new Error()
+      },
+    })
+    if (!ok) toast.error('Fehler beim Löschen')
   }
 
   return (
@@ -326,11 +329,9 @@ export default function PostVerwaltungSection({ posts: initialPosts, gesamt, ver
               className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors shrink-0">
               <Pencil className="w-3.5 h-3.5 text-gray-500" />
             </button>
-            <button onClick={() => deletePost(p.id, p.titel)} disabled={deleting === p.id}
-              className="p-1.5 rounded-lg bg-gray-100 hover:bg-red-100 transition-colors shrink-0 disabled:opacity-50">
-              {deleting === p.id
-                ? <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
-                : <Trash2 className="w-3.5 h-3.5 text-gray-500" />}
+            <button onClick={() => deletePost(p.id, p.titel)} aria-label={`Beitrag „${p.titel}“ löschen`}
+              className="p-1.5 rounded-lg bg-gray-100 hover:bg-red-100 transition-colors shrink-0">
+              <Trash2 className="w-3.5 h-3.5 text-gray-500" aria-hidden="true" />
             </button>
           </div>
         ))}

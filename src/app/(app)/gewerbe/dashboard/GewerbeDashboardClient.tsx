@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Building2, Users, UserCog, PenLine, ChevronDown, ChevronUp, Pencil, Trash2, Loader2, X } from 'lucide-react'
+import { Building2, Users, UserCog, PenLine, ChevronDown, ChevronUp, Pencil, Trash2, X } from 'lucide-react'
+import { entferneOptimistisch } from '@/lib/optimistischeListe'
 import { formatDistanceToNow } from 'date-fns'
 import { de } from 'date-fns/locale'
 import { toast } from 'sonner'
@@ -36,7 +37,6 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
   const [editBildrechte, setEditBildrechte] = useState(false)
   const [editUploading, setEditUploading] = useState(false)
   const [editSaving, setEditSaving] = useState(false)
-  const [deleting, setDeleting] = useState<string | null>(null)
 
   const gemeindeName = (profile as { gemeinden?: { name: string } | null }).gemeinden?.name ?? ''
 
@@ -111,22 +111,22 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
 
   async function deletePost(id: string) {
     if (!confirm('Beitrag wirklich löschen?')) return
-    setDeleting(id)
-    try {
-      const res = await fetch('/api/gewerbe/post', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postId: id }),
-      })
-      if (!res.ok) throw new Error()
-      setPosts(prev => prev.filter(p => p.id !== id))
-      if (editingId === id) closeEdit()
-      toast.success('Beitrag gelöscht')
-    } catch {
-      toast.error('Fehler beim Löschen')
-    } finally {
-      setDeleting(null)
-    }
+    if (editingId === id) closeEdit()
+    const ok = await entferneOptimistisch({
+      liste: posts,
+      id,
+      setListe: setPosts,
+      senden: async () => {
+        const res = await fetch('/api/gewerbe/post', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ postId: id }),
+        })
+        if (!res.ok) throw new Error()
+      },
+    })
+    if (ok) toast.success('Beitrag gelöscht')
+    else toast.error('Fehler beim Löschen')
   }
 
   return (
@@ -292,11 +292,9 @@ export default function GewerbeDashboardClient({ profile, betrieb: initialBetrie
                                 className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
                                 <Pencil aria-hidden="true" className="w-3.5 h-3.5 text-gray-500" />
                               </button>
-                              <button type="button" onClick={() => deletePost(post.id)} disabled={deleting === post.id} aria-label={post.titel ? `Beitrag „${post.titel}“ löschen` : "Beitrag löschen"}
-                                className="p-1.5 rounded-lg bg-gray-100 hover:bg-red-100 transition-colors disabled:opacity-50">
-                                {deleting === post.id
-                                  ? <Loader2 aria-hidden="true" className="w-3.5 h-3.5 animate-spin text-gray-400" />
-                                  : <Trash2 aria-hidden="true" className="w-3.5 h-3.5 text-gray-500" />}
+                              <button type="button" onClick={() => deletePost(post.id)} aria-label={post.titel ? `Beitrag „${post.titel}“ löschen` : "Beitrag löschen"}
+                                className="p-1.5 rounded-lg bg-gray-100 hover:bg-red-100 transition-colors">
+                                <Trash2 aria-hidden="true" className="w-3.5 h-3.5 text-gray-500" />
                               </button>
                             </div>
                           </div>

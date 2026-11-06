@@ -3,7 +3,9 @@
 import { useState } from 'react'
 import { Bell, Mail, CheckCircle } from 'lucide-react'
 import { clsx } from 'clsx'
+import { toast } from 'sonner'
 import { ZurueckButton } from '@/components/ui'
+import { erstelleOptimistischenAbgleich } from '@/lib/optimistischerToggle'
 import { ABFALL_TYP_CONFIG } from '@/lib/icsParser'
 import type { AbfallTypSchluessel } from '@/lib/icsParser'
 import { Trash2 } from 'lucide-react'
@@ -24,41 +26,46 @@ export default function AbfallEinstellungenClient({
   initialPush,
   initialEmail,
 }: Props) {
-  const [ausgewaehlt, setAusgewaehlt] = useState<string[]>(initialAusgewaehlt)
-  const [push, setPush] = useState(initialPush)
-  const [email, setEmail] = useState(initialEmail)
-  const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [{ ausgewaehlt, push, email }, setPraeferenzen] = useState({
+    ausgewaehlt: initialAusgewaehlt,
+    push: initialPush,
+    email: initialEmail,
+  })
+  const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
 
-  function toggleTyp(typ: string) {
-    setAusgewaehlt(prev =>
-      prev.includes(typ) ? prev.filter(t => t !== typ) : [...prev, typ],
-    )
-  }
-
-  async function handleSpeichern() {
-    setStatus('saving')
-    try {
+  const [abgleich] = useState(() => erstelleOptimistischenAbgleich({
+    start: { ausgewaehlt: initialAusgewaehlt, push: initialPush, email: initialEmail },
+    senden: async ziel => {
       const res = await fetch('/api/abfallkalender/praeferenzen', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        // keepalive: Die Änderung soll auch ankommen, wenn die App direkt danach geschlossen wird
+        keepalive: true,
         body: JSON.stringify({
-          ausgewaehlteTypen: ausgewaehlt,
-          pushAktiviert: push,
-          emailAktiviert: email,
+          ausgewaehlteTypen: ziel.ausgewaehlt,
+          pushAktiviert: ziel.push,
+          emailAktiviert: ziel.email,
           benachrichtigungUhrzeit: '18:00',
         }),
       })
+      if (!res.ok) throw new Error()
+    },
+    onAenderung: setPraeferenzen,
+    onBestaetigt: () => setStatus('saved'),
+    onFehler: () => {
+      setStatus('idle')
+      toast.error('Speichern fehlgeschlagen. Die Änderung wurde zurückgenommen.')
+    },
+  }))
 
-      if (!res.ok) {
-        setStatus('error')
-        return
-      }
+  function aendern(aenderung: Partial<ReturnType<typeof abgleich.aktuell>>) {
+    setStatus('saving')
+    abgleich.setzen({ ...abgleich.aktuell(), ...aenderung })
+  }
 
-      setStatus('saved')
-      setTimeout(() => setStatus('idle'), 2500)
-    } catch {
-      setStatus('error')
-    }
+  function toggleTyp(typ: string) {
+    const aktuell = abgleich.aktuell().ausgewaehlt
+    aendern({ ausgewaehlt: aktuell.includes(typ) ? aktuell.filter(t => t !== typ) : [...aktuell, typ] })
   }
 
   return (
@@ -182,7 +189,10 @@ export default function AbfallEinstellungenClient({
               <p className="text-xs text-gray-400">Am Vortag der Abfuhr</p>
             </div>
             <button
-              onClick={() => setPush(p => !p)}
+              onClick={() => aendern({ push: !abgleich.aktuell().push })}
+              role="switch"
+              aria-checked={push}
+              aria-label="Push-Benachrichtigung"
               className={clsx(
                 'relative w-11 h-6 rounded-full transition-colors shrink-0 overflow-hidden',
                 push ? 'bg-primary-500' : 'bg-gray-300',
@@ -207,7 +217,10 @@ export default function AbfallEinstellungenClient({
               <p className="text-xs text-gray-400">Am Vortag der Abfuhr (Kontakt-E-Mail)</p>
             </div>
             <button
-              onClick={() => setEmail(e => !e)}
+              onClick={() => aendern({ email: !abgleich.aktuell().email })}
+              role="switch"
+              aria-checked={email}
+              aria-label="E-Mail-Benachrichtigung"
               className={clsx(
                 'relative w-11 h-6 rounded-full transition-colors shrink-0 overflow-hidden',
                 email ? 'bg-primary-500' : 'bg-gray-300',
@@ -229,21 +242,9 @@ export default function AbfallEinstellungenClient({
           )}
         </section>
 
-        {/* Speichern */}
-        <button
-          onClick={handleSpeichern}
-          disabled={status === 'saving'}
-          className={clsx(
-            'w-full py-4 rounded-2xl font-black text-sm uppercase tracking-wide transition-colors',
-            status === 'saved'
-              ? 'bg-green-500 text-white'
-              : status === 'error'
-                ? 'bg-red-500 text-white'
-                : 'bg-primary-500 text-white active:bg-primary-600 disabled:opacity-60',
-          )}
-        >
-          {status === 'saving' ? 'Wird gespeichert…' : status === 'saved' ? 'Gespeichert ✓' : status === 'error' ? 'Fehler – erneut versuchen' : 'Einstellungen speichern'}
-        </button>
+        <p role="status" className="text-xs text-gray-600 text-center">
+          {status === 'saving' ? 'Wird gespeichert …' : status === 'saved' ? 'Gespeichert ✓' : 'Änderungen werden automatisch gespeichert.'}
+        </p>
       </div>
     </div>
   )

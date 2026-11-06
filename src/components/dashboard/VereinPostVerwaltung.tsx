@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { Plus, Clock, CheckCircle2, XCircle, Loader2, X, Pencil, Trash2, CalendarClock } from 'lucide-react'
 import { RichTextEditor } from '@/lib/richText'
 import { createClient } from '@/lib/supabase/client'
+import { entferneOptimistisch } from '@/lib/optimistischeListe'
 import { compressImage } from '@/lib/compressImage'
 import { clsx } from 'clsx'
 import BilderUpload from './BilderUpload'
@@ -82,7 +83,6 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
   const [editingOriginalTag, setEditingOriginalTag] = useState<string | null>(null)
   const [showNewForm, setShowNewForm] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [deleting, setDeleting] = useState<string | null>(null)
   const [bildFiles, setBildFiles] = useState<File[]>([])
   const [bildPreviews, setBildPreviews] = useState<string[]>([])
   const [bildrechteBestaetigt, setBildrechteBestaetigt] = useState(false)
@@ -173,17 +173,20 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
 
   async function deletePost(id: string, titel: string) {
     if (!confirm(`"${titel}" wirklich löschen?`)) return
-    setDeleting(id)
-    try {
-      const res = await fetch('/api/verein/post', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postId: id }),
-      })
-      if (!res.ok) throw new Error()
-      setPosts(prev => prev.filter(p => p.id !== id))
-    } catch { toast.error('Fehler beim Löschen') }
-    finally { setDeleting(null) }
+    const ok = await entferneOptimistisch({
+      liste: posts,
+      id,
+      setListe: setPosts,
+      senden: async () => {
+        const res = await fetch('/api/verein/post', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ postId: id }),
+        })
+        if (!res.ok) throw new Error()
+      },
+    })
+    if (!ok) toast.error('Fehler beim Löschen')
   }
 
   function weitereTermineISO(): string[] {
@@ -548,9 +551,8 @@ export default function VereinPostVerwaltung({ posts: initialPosts, gemeindeId, 
                     </button>
                   )}
                   <button type="button" onClick={() => deletePost(post.id, post.titel)} aria-label={`Beitrag „${post.titel}“ löschen`}
-                    disabled={deleting === post.id}
-                    className="p-1.5 rounded-lg bg-gray-100 hover:bg-red-100 transition-colors disabled:opacity-50">
-                    {deleting === post.id ? <Loader2 aria-hidden="true" className="w-3.5 h-3.5 animate-spin text-gray-400" /> : <Trash2 aria-hidden="true" className="w-3.5 h-3.5 text-gray-500 hover:text-red-500" />}
+                    className="p-1.5 rounded-lg bg-gray-100 hover:bg-red-100 transition-colors">
+                    <Trash2 aria-hidden="true" className="w-3.5 h-3.5 text-gray-500 hover:text-red-500" />
                   </button>
                 </div>
               </div>
