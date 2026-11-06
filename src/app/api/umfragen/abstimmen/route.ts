@@ -11,16 +11,6 @@ export const POST = withAuth(async (req, { user, profile }) => {
   const { umfrageId, antworten } = v.data
   const service = await createServiceClient()
 
-  // Bereits abgestimmt?
-  const { data: existing } = await service
-    .from('umfrage_teilnahmen')
-    .select('user_id')
-    .eq('umfrage_id', umfrageId)
-    .eq('user_id', user.id)
-    .single()
-
-  if (existing) return NextResponse.json({ error: 'Bereits abgestimmt' }, { status: 409 })
-
   // Umfrage aktiv und zur eigenen Gemeinde gehörig?
   const { data: umfrage } = await service
     .from('umfragen')
@@ -36,6 +26,20 @@ export const POST = withAuth(async (req, { user, profile }) => {
     return NextResponse.json({ error: 'Keine Berechtigung' }, { status: 403 })
   }
 
+  // Teilnahme zuerst: unique (umfrage_id, user_id) verhindert so auch bei zwei
+  // gleichzeitigen Anfragen, dass dieselbe Person doppelt abstimmt.
+  const { error: teilnahmeError } = await service
+    .from('umfrage_teilnahmen')
+    .insert({ umfrage_id: umfrageId, user_id: user.id })
+
+  if (teilnahmeError) {
+    if (teilnahmeError.code === '23505') {
+      return NextResponse.json({ error: 'Bereits abgestimmt' }, { status: 409 })
+    }
+    console.error('[umfragen/abstimmen] Teilnahme nicht gespeichert:', teilnahmeError)
+    return NextResponse.json({ error: 'Die Stimme konnte nicht gespeichert werden.' }, { status: 500 })
+  }
+
   // Antworten speichern
   const rows = antworten.map(a => ({
     umfrage_id: umfrageId,
@@ -46,10 +50,12 @@ export const POST = withAuth(async (req, { user, profile }) => {
   }))
 
   const { error: antwortError } = await service.from('umfrage_antworten').insert(rows)
-  if (antwortError) return NextResponse.json({ error: antwortError.message }, { status: 500 })
-
-  // Teilnahme markieren
-  await service.from('umfrage_teilnahmen').insert({ umfrage_id: umfrageId, user_id: user.id })
+  if (antwortError) {
+    console.error('[umfragen/abstimmen] Antworten nicht gespeichert:', antwortError)
+    // Teilnahme zurücknehmen, damit die Person es erneut versuchen kann
+    await service.from('umfrage_teilnahmen').delete().eq('umfrage_id', umfrageId).eq('user_id', user.id)
+    return NextResponse.json({ error: 'Die Stimme konnte nicht gespeichert werden.' }, { status: 500 })
+  }
 
   return NextResponse.json({ success: true })
 })
