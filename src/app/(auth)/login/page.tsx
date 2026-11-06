@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
+import { sichererPfad } from '@/lib/sichererPfad'
 import { ArrowRight, Loader2, Mail, Eye } from 'lucide-react'
 import { Logo } from '@/components/ui'
 import RegisterForm, { type EinladungsInfo } from './RegisterForm'
@@ -57,10 +58,7 @@ export default function LoginPage() {
       if (abgebrochen) return
       if (!user) { setPruefeSession(false); return }
 
-      const nextParam = searchParams.get('next')
-      const nextRaw = nextParam ? decodeURIComponent(nextParam) : null
-      // Gleicher Open-Redirect-Schutz wie in submit(): nur interne Pfade.
-      const nextPath = nextRaw && /^\/(?!\/)/.test(nextRaw) ? nextRaw : null
+      const nextPath = sichererPfad(searchParams.get('next'))
 
       const profile = await supabase
         .from('profiles')
@@ -158,10 +156,7 @@ export default function LoginPage() {
 
   async function submit() {
     setError('')
-    const nextParam = searchParams.get('next')
-    const nextRaw = nextParam ? decodeURIComponent(nextParam) : null
-    // Nur interne Pfade zulassen (Schutz vor Open-Redirect nach Login)
-    const nextPath = nextRaw && /^\/(?!\/)/.test(nextRaw) ? nextRaw : null
+    const nextPath = sichererPfad(searchParams.get('next'))
     setLoading(true)
     try {
       if (mode === 'login') {

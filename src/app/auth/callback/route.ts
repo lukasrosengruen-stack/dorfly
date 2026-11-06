@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { profilAnlegen, type RegistrierungsDaten } from '@/lib/profil-anlegen'
+import { sichererPfad } from '@/lib/sichererPfad'
 import type { Database } from '@/types/supabase'
 import type { User } from '@supabase/supabase-js'
 
@@ -12,7 +13,10 @@ export async function GET(request: NextRequest) {
   const code       = searchParams.get('code')
   const token_hash = searchParams.get('token_hash')
   const type       = searchParams.get('type')
-  const next       = searchParams.get('next') ?? '/home'
+  // Nur interne Pfade: new URL(next, targetOrigin) unten würde eine absolute
+  // Adresse übernehmen und den Nutzer samt frischer Session-Cookies auf eine
+  // fremde Domain schicken.
+  const next       = sichererPfad(searchParams.get('next')) ?? '/home'
 
   const cookieStore = await cookies()
   const pendingCookies: { name: string; value: string; options: Record<string, unknown> }[] = []
