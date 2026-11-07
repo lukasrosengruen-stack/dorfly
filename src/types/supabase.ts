@@ -14,6 +14,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      abfall_versandlaeufe: {
+        Row: {
+          abfuhr_datum: string
+          gestartet_am: string
+        }
+        Insert: {
+          abfuhr_datum: string
+          gestartet_am?: string
+        }
+        Update: {
+          abfuhr_datum?: string
+          gestartet_am?: string
+        }
+        Relationships: []
+      }
       abfallkalender_einstellungen: {
         Row: {
           aktualisiert_am: string

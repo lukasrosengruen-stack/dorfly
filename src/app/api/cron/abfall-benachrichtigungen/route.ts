@@ -1,10 +1,15 @@
 // src/app/api/cron/abfall-benachrichtigungen/route.ts
 /**
- * Täglicher Cronjob: Abfallkalender-Benachrichtigungen
+ * Cronjob: Abfallkalender-Benachrichtigungen am Vorabend um 18 Uhr deutscher Zeit
  *
  * Sendet Push-Notifications und E-Mails an Nutzer, die morgen eine Abfuhr
  * oder eine abonnierte Sammlung (Altpapier/Altkleider/Altglas/Schrott) haben.
- * Wird per Vercel Cron täglich um 18:00 Uhr MEZ aufgerufen (vercel.json).
+ *
+ * Vercel rechnet in UTC, deshalb läuft der Cron stündlich (vercel.json) und
+ * versendet nur im Fenster ab 18 Uhr Europe/Berlin — so stimmt die Uhrzeit in
+ * Sommer- und Winterzeit. Fällt der 18-Uhr-Lauf aus, holt der 19-Uhr-Lauf ihn
+ * nach. Die Sperre in abfall_versandlaeufe sorgt dafür, dass je Abfuhrtag nur
+ * einmal versendet wird, auch wenn Vercel einen Lauf doppelt ausliefert.
  *
  * Hinweis: Die individuelle notificationTime je Nutzer wird gespeichert, aber da
  * der Cron einmal täglich feuert, richtet sich der Versandzeitpunkt nach der
@@ -19,7 +24,11 @@ import { ABFALL_TYP_CONFIG } from '@/lib/icsParser'
 import type { AbfallTypSchluessel } from '@/lib/icsParser'
 import { SAMMLUNG_ART_CONFIG, sammlungPraeferenzSchluessel } from '@/lib/abfallkalenderSammlung'
 import type { SammlungArtSchluessel } from '@/lib/abfallkalenderSammlung'
+import { berlinZeit, naechsterTag } from '@/lib/berlinZeit'
 import { Resend } from 'resend'
+
+/** 18 Uhr ist der Versandzeitpunkt, 19 Uhr nur der Nachholtermin für einen ausgefallenen Lauf. */
+const VERSAND_STUNDEN = new Set([18, 19])
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
@@ -27,17 +36,30 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const service = await createServiceClient()
+  const jetzt = berlinZeit(new Date())
+  if (!VERSAND_STUNDEN.has(jetzt.stunde)) {
+    return NextResponse.json({ ok: true, versendet: 0, nachricht: 'Außerhalb des Versandfensters' })
+  }
 
-  // Morgen-Datum berechnen
-  const morgen = new Date()
-  morgen.setDate(morgen.getDate() + 1)
-  const morgenStr = morgen.toISOString().slice(0, 10) // 'YYYY-MM-DD'
+  // Morgen in deutscher Zeit, nicht in UTC
+  const morgenStr = naechsterTag(jetzt.datum)
   // sammlung_datum ist timestamptz (Datum + Uhrzeit) — exakter String-Vergleich
   // würde nur Mitternacht treffen, daher Bereich [morgen, übermorgen) verwenden.
-  const uebermorgen = new Date(morgen)
-  uebermorgen.setDate(uebermorgen.getDate() + 1)
-  const uebermorgenStr = uebermorgen.toISOString().slice(0, 10)
+  const uebermorgenStr = naechsterTag(morgenStr)
+
+  const service = await createServiceClient()
+
+  // Sperre vor dem Versand: Der Primärschlüssel lässt je Abfuhrtag nur einen Lauf durch.
+  const { error: sperrFehler } = await service
+    .from('abfall_versandlaeufe')
+    .insert({ abfuhr_datum: morgenStr })
+  if (sperrFehler) {
+    if (sperrFehler.code === '23505') {
+      return NextResponse.json({ ok: true, versendet: 0, nachricht: 'Für diesen Tag bereits versendet' })
+    }
+    console.error('[Abfallkalender Cron] Sperre nicht gesetzt, Versand abgebrochen:', sperrFehler)
+    return NextResponse.json({ error: 'Sperre nicht gesetzt' }, { status: 500 })
+  }
 
   // Alle Nutzer mit aktivierten Präferenzen laden
   const { data: praeferenzen, error: praeferenzenError } = await service

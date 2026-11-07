@@ -42,11 +42,19 @@ export async function GET(req: NextRequest) {
         .eq('channel', 'warnung')
         .not('dwd_id', 'is', null) as { data: ExistingPostRow[] | null }
 
-      const existingDwdIds = new Set((existingPosts ?? []).map((p) => p.dwd_id!))
+      const existingByDwdId = new Map((existingPosts ?? []).map((p) => [p.dwd_id!, p]))
 
       // Neue Warnungen anlegen
       for (const alert of activeAlerts) {
-        if (existingDwdIds.has(String(alert.id))) continue
+        const vorhanden = existingByDwdId.get(String(alert.id))
+        if (vorhanden) {
+          // Liefert die API einmal kurz keine Warnungen, deaktiviert der Lauf sie. Taucht
+          // dieselbe Warnung wieder auf, wird sie still reaktiviert statt erneut gepusht.
+          if (!vorhanden.is_active) {
+            await service.from('posts').update({ is_active: true }).eq('id', vorhanden.id)
+          }
+          continue
+        }
 
         const { titel, inhalt } = buildPostContent(alert)
         const { error: insertError } = await service.from('posts').insert({
@@ -65,6 +73,10 @@ export async function GET(req: NextRequest) {
         if (!insertError) {
           await sendPushNotification(gemeinde.slug, titel)
           created++
+        } else if (insertError.code === '23505') {
+          // Ein paralleler Lauf hat die Warnung gerade angelegt (und gepusht):
+          // posts_gemeinde_dwd_id_unique aus Migration 041 verhindert das Duplikat.
+          continue
         } else {
           console.error(`[DWD Cron] Insert-Fehler für Gemeinde ${gemeinde.id}, dwd_id ${alert.id}:`, insertError)
         }

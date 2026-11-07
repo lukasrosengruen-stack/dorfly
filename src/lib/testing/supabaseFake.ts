@@ -33,7 +33,7 @@ export function hatOp(a: Abfrage, op: string): boolean {
 
 const BUILDER_METHODEN = [
   'select', 'insert', 'update', 'delete', 'upsert',
-  'eq', 'neq', 'in', 'is', 'not', 'or', 'ilike', 'gte', 'lte', 'order', 'limit',
+  'eq', 'neq', 'in', 'is', 'not', 'or', 'ilike', 'gte', 'lte', 'lt', 'order', 'limit',
   'single', 'maybeSingle',
 ] as const
 
