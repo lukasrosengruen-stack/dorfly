@@ -21,11 +21,10 @@ interface Props {
   alleVereine?: string[]
   umfragen: UmfrageMitDaten[]
   gewerbeAbonnements?: string[]
-  vereinAbonnements?: string[]
   gemeindeName?: string
 }
 
-export default function FeedClient({ posts: initialPosts, profile, umfragen: initialUmfragen, gewerbeAbonnements = [], vereinAbonnements = [], gemeindeName: gemeindeNameProp }: Props) {
+export default function FeedClient({ posts: initialPosts, profile, umfragen: initialUmfragen, gewerbeAbonnements = [], gemeindeName: gemeindeNameProp }: Props) {
   const router = useRouter()
   const [umfragen, setUmfragen] = useState(initialUmfragen)
 
@@ -54,17 +53,12 @@ export default function FeedClient({ posts: initialPosts, profile, umfragen: ini
 
   // Der Feed ist ein reiner Abo-Feed. Was der Nutzer hier nicht sieht, sieht er
   // gar nicht — Autoren finden ihre eigenen Beiträge im Dashboard, nicht hier.
+  // Nach Abos gefiltert hat schon der Server (lib/feedSichtbarkeit.ts).
   //
   // Diese Liste ist die Basis für zweierlei: den Feed selbst und die
   // Absenderauswahl im Filter-Sheet. Beides muss aus derselben Menge stammen,
   // sonst bietet der Filter Absender an, die im Feed gar nicht vorkommen.
-  const sichtbarePosts = initialPosts.filter(p => {
-    // Gewerbe-Posts nur für Abonnenten
-    if (p.channel === 'gewerbe' && p.org_id && !gewerbeAbonnements.includes(p.org_id)) return false
-    // Verein-Posts: nur für Abonnenten, außer sichtbarkeit === 'alle'
-    if (p.channel === 'verein' && p.org_id && (p as unknown as { sichtbarkeit?: string | null }).sichtbarkeit !== 'alle' && !vereinAbonnements.includes(p.org_id)) return false
-    return true
-  })
+  const sichtbarePosts = initialPosts
 
   // Schlüssel, unter dem der Beitrag im Absender-Filter auftaucht.
   // null = keinem wählbaren Absender zuzuordnen.

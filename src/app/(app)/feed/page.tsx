@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { getGemeinde } from '@/lib/gemeinde'
 import { ladeVereinsnamen, mitVereinsabsender } from '@/lib/absender'
+import { istImFeedSichtbar } from '@/lib/feedSichtbarkeit'
 import FeedClient from './FeedClient'
 
 export const metadata: Metadata = { title: 'Neuigkeiten – Dorfly' }
@@ -64,7 +65,12 @@ export default async function FeedPage() {
       : Promise.resolve({ data: [] }),
   ])
 
-  const posts = postsResult.data ?? []
+  const gewerbeAbonnements = (abonnementsResult.data ?? []).map((a: { gewerbe_id: string }) => a.gewerbe_id)
+  const vereinAbonnements  = (vereinAbonnementsResult.data ?? []).map((a: { verein_id: string }) => a.verein_id)
+
+  // Nur Beiträge an den Browser schicken, die in diesen Feed gehören
+  const abos = { gewerbe: new Set(gewerbeAbonnements), vereine: new Set(vereinAbonnements) }
+  const posts = (postsResult.data ?? []).filter(p => istImFeedSichtbar(p, abos))
 
   const authorIds = [...new Set(posts.map(p => p.author_id).filter((id): id is string => id != null))]
   const { data: authorProfiles } = authorIds.length > 0
@@ -82,9 +88,6 @@ export default async function FeedPage() {
     .map((p: { verein_name: string | null }) => p.verein_name)
     .filter((v): v is string => !!v)
     .filter((v, i, arr) => arr.indexOf(v) === i)
-
-  const gewerbeAbonnements = (abonnementsResult.data ?? []).map((a: { gewerbe_id: string }) => a.gewerbe_id)
-  const vereinAbonnements  = (vereinAbonnementsResult.data ?? []).map((a: { verein_id: string }) => a.verein_id)
 
   const umfragen = umfragenResult.data ?? []
 
@@ -118,7 +121,6 @@ export default async function FeedPage() {
       alleVereine={vereine}
       umfragen={umfragenMitDaten}
       gewerbeAbonnements={gewerbeAbonnements}
-      vereinAbonnements={vereinAbonnements}
       gemeindeName={gemeindeName}
     />
   )

@@ -73,12 +73,14 @@ export const BASIS_SCHEMA = `
   create table public.verein_abonnements (
     id uuid primary key default gen_random_uuid(),
     user_id uuid not null references public.profiles(id) on delete cascade,
-    verein_id uuid not null references public.vereine(id) on delete cascade
+    verein_id uuid not null references public.vereine(id) on delete cascade,
+    unique (user_id, verein_id)
   );
   create table public.gewerbe_abonnements (
     id uuid primary key default gen_random_uuid(),
     user_id uuid not null references public.profiles(id) on delete cascade,
-    gewerbe_id uuid not null references public.organisationen(id) on delete cascade
+    gewerbe_id uuid not null references public.organisationen(id) on delete cascade,
+    unique (user_id, gewerbe_id)
   );
 
   create table public.posts (
