@@ -69,7 +69,7 @@ export default async function FeedPage() {
   const vereinAbonnements  = (vereinAbonnementsResult.data ?? []).map((a: { verein_id: string }) => a.verein_id)
 
   // Nur Beiträge an den Browser schicken, die in diesen Feed gehören
-  const abos = { gewerbe: new Set(gewerbeAbonnements), vereine: new Set(vereinAbonnements) }
+  const abos = isGuest ? null : { gewerbe: new Set(gewerbeAbonnements), vereine: new Set(vereinAbonnements) }
   const posts = (postsResult.data ?? []).filter(p => istImFeedSichtbar(p, abos))
 
   const authorIds = [...new Set(posts.map(p => p.author_id).filter((id): id is string => id != null))]

@@ -19,6 +19,11 @@ describe('istImFeedSichtbar', () => {
     expect(istImFeedSichtbar({ channel: 'verein', org_id: 'chor', sichtbarkeit: null }, ABOS)).toBe(false)
   })
 
+  it('zeigt Gaesten alles, weil sie nichts abonnieren koennen', () => {
+    expect(istImFeedSichtbar({ channel: 'gewerbe', org_id: 'metzger', sichtbarkeit: null }, null)).toBe(true)
+    expect(istImFeedSichtbar({ channel: 'verein', org_id: 'chor', sichtbarkeit: 'abonnenten' }, null)).toBe(true)
+  })
+
   it('zeigt Vereinsbeitraege fuer alle auch Nicht-Abonnenten', () => {
     expect(istImFeedSichtbar({ channel: 'verein', org_id: 'chor', sichtbarkeit: 'alle' }, ABOS)).toBe(true)
   })
