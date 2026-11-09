@@ -1,10 +1,11 @@
 import { createServerClient } from '@supabase/ssr'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { authCookieDomain } from '@/lib/previewUmgebung'
 import type { Database } from '@/types/supabase'
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'
-const COOKIE_DOMAIN = process.env.NODE_ENV === 'production' ? `.${ROOT_DOMAIN}` : undefined
+const COOKIE_DOMAIN = authCookieDomain(ROOT_DOMAIN)
 
 export async function createClient() {
   const cookieStore = await cookies()

@@ -4,6 +4,7 @@ import { useEffect, useState, useId } from 'react'
 import { Search, LogIn, UserPlus, Eye } from 'lucide-react'
 import { Logo } from '@/components/ui'
 import { leseGemeinde, speichereGemeinde } from '@/lib/gemeindeSpeicher'
+import { istPreviewUmgebung } from '@/lib/previewUmgebung'
 
 interface Gemeinde {
   id: string
@@ -42,7 +43,7 @@ export default function GemeindeAuswahl({ gemeinden, rootDomain }: Props) {
     // Muss hier passieren, nicht auf der Zielseite: localStorage ist
     // origin-gebunden, und nur der Apex wird von /start wieder gelesen.
     speichereGemeinde(slug)
-    window.location.href = `https://${slug}.${rootDomain}${pfad}`
+    window.location.href = istPreviewUmgebung() ? pfad : `https://${slug}.${rootDomain}${pfad}`
   }
 
   return (

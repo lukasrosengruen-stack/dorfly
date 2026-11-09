@@ -1,12 +1,13 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { isGuestRoute } from '@/lib/guestRoutes'
+import { authCookieDomain, previewGemeindeSlugFuerHost } from '@/lib/previewUmgebung'
 
 const PUBLIC_ROUTES = ['/login', '/start', '/homepage', '/posts/', '/api/', '/auth/', '/datenschutz', '/impressum', '/nutzungsbedingungen', '/support', '/konto-loeschen']
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'
 // Muss zu lib/supabase/client.ts und server.ts passen — sonst schreibt die
 // Middleware das erneuerte Token auf eine andere Cookie-Domain als der Rest.
-const COOKIE_DOMAIN = process.env.NODE_ENV === 'production' ? `.${ROOT_DOMAIN}` : undefined
+const COOKIE_DOMAIN = authCookieDomain(ROOT_DOMAIN)
 
 function extractSlug(hostname: string): string | null {
   // Port strippen, damit dorfly.de:3000 korrekt als Root-Domain erkannt wird
@@ -22,9 +23,9 @@ function extractSlug(hostname: string): string | null {
     return host.split('.localhost')[0]
   }
 
-  // Vercel Preview-Deployments → kein Slug
+  // Vercel-Adressen → kein Slug, außer im abgesicherten Preview gegen dorfly-dev
   if (host.includes('vercel.app')) {
-    return null
+    return previewGemeindeSlugFuerHost(host)
   }
 
   // Root-Domain (dorfly.de / www.dorfly.de) → kein Slug

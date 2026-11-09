@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { istPreviewUmgebung } from '@/lib/previewUmgebung'
 import GemeindeAuswahl from './_components/GemeindeAuswahl'
 
 export const metadata: Metadata = { title: 'Gemeinde auswählen – Dorfly' }
@@ -35,7 +36,7 @@ export default async function StartPage() {
     // Das Profil ist die verlässlichere Quelle als localStorage: serverseitig
     // gelesen, kann nicht veralten und überlebt ein geleertes Browserdatum.
     if (slug) {
-      redirect(`https://${slug}.${rootDomain}/feed`)
+      redirect(istPreviewUmgebung() ? '/feed' : `https://${slug}.${rootDomain}/feed`)
     }
   }
 

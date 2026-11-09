@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { profilAnlegen, type RegistrierungsDaten } from '@/lib/profil-anlegen'
+import { istPreviewUmgebung } from '@/lib/previewUmgebung'
 import { sichererPfad } from '@/lib/sichererPfad'
 import type { Database } from '@/types/supabase'
 import type { User } from '@supabase/supabase-js'
@@ -112,7 +113,7 @@ export async function GET(request: NextRequest) {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const slug = (profile as any)?.gemeinden?.slug as string | undefined
-    const targetOrigin = slug ? `https://${slug}.${ROOT_DOMAIN}` : origin
+    const targetOrigin = slug && !istPreviewUmgebung() ? `https://${slug}.${ROOT_DOMAIN}` : origin
 
     const response = NextResponse.redirect(new URL(next, targetOrigin))
 

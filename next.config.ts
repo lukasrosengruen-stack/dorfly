@@ -8,6 +8,10 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  // Für lib/previewUmgebung.ts: Der Browser kennt VERCEL_ENV sonst nicht.
+  env: {
+    NEXT_PUBLIC_VERCEL_ENV: process.env.VERCEL_ENV ?? '',
+  },
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }]
   },

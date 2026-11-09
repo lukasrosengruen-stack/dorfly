@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
+import { istPreviewUmgebung } from '@/lib/previewUmgebung'
 import { sichererPfad } from '@/lib/sichererPfad'
 import { ArrowRight, Loader2, Mail, Eye } from 'lucide-react'
 import { Logo } from '@/components/ui'
@@ -76,7 +77,7 @@ export default function LoginPage() {
       // Wie in submit(): wer auf der /login einer fremden Gemeinde landet, muss
       // auf seine eigene Subdomain — sonst bliebe er im falschen Mandanten.
       const slug = (profile?.gemeinden as { slug?: string } | null)?.slug
-      if (slug && window.location.hostname !== `${slug}.${ROOT_DOMAIN}`) {
+      if (slug && !istPreviewUmgebung() && window.location.hostname !== `${slug}.${ROOT_DOMAIN}`) {
         window.location.href = `https://${slug}.${ROOT_DOMAIN}${nextPath ?? '/home'}`
         return
       }
@@ -175,7 +176,7 @@ export default function LoginPage() {
           const res = await fetch('/api/setup-profil', { method: 'POST' })
           if (res.ok) {
             const { slug: gemeindeSlug } = await res.json() as { slug?: string }
-            const targetHost = gemeindeSlug ? `${gemeindeSlug}.dorfly.de` : null
+            const targetHost = gemeindeSlug && !istPreviewUmgebung() ? `${gemeindeSlug}.dorfly.de` : null
             if (targetHost && window.location.hostname !== targetHost) {
               window.location.href = `https://${targetHost}/home`
             } else {
@@ -200,7 +201,7 @@ export default function LoginPage() {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const slug = (profile as any)?.gemeinden?.slug as string | undefined
           const currentHost = window.location.hostname
-          if (slug && currentHost !== `${slug}.dorfly.de`) {
+          if (slug && !istPreviewUmgebung() && currentHost !== `${slug}.dorfly.de`) {
             window.location.href = `https://${slug}.dorfly.de${nextPath ?? '/home'}`
           } else {
             router.push(nextPath ?? '/home')
