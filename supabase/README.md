@@ -46,4 +46,4 @@ Eine bereits gepushte Migration wird nie nachträglich geändert. Korrekturen ko
 - **`supabase/migrations_archive/`** enthält die Migrationen vor der Baseline. Sie werden nicht mehr ausgeführt. Die PGlite-Tests lesen vorerst einzelne Dateien daraus.
 - **`supabase/backups/`** enthält lokale Dumps und ist von Git ausgeschlossen.
 - **Auth-Einstellungen** stehen in `config.toml`, Secrets dort nur als `env(...)`. Sie werden nicht durch Migrationen übertragen.
-- **Preview-Adressen** (`*-dorfly-ug.vercel.app`) stehen nur im Block `[remotes.dorfly-dev]`. Dieser gilt allein für `dorfly-dev`, die Produktion bekommt die Werte aus `[auth]`. Vor jedem `config push` mit `supabase config diff --remote=<ref>` prüfen.
+- **Preview-Adressen** (`*-dorfly-ug.vercel.app`) stehen nur im Block `[remotes.dorfly-dev]`. Dieser gilt allein für `dorfly-dev`. Die Produktion hat mit `[remotes.production]` einen eigenen Block, der ihren Live-Stand festhält (kein `localhost`, SMS-Bestätigung aktiv). Vor jedem `config push` mit `supabase config diff --remote=<ref>` prüfen.

@@ -184,7 +184,8 @@ enable_manual_linking = false
 minimum_password_length = 6
 # Passwords that do not meet the following requirements will be rejected as weak. Supported values
 # are: `letters_digits`, `lower_upper_letters_digits`, `lower_upper_letters_digits_symbols`
-password_requirements = ""
+# Dorfly: Bewusst nicht gesetzt. Remote ist der Wert leer, "" wuerde bei jedem config push als Aenderung gelten.
+# password_requirements = ""
 
 # Configure passkey sign-ins.
 # [auth.passkey]
@@ -426,10 +427,21 @@ enabled = true
 
 # Dorfly: Gilt nur fuer dorfly-dev, ueberschreibt dort die Werte aus [auth] oben.
 # Preview-Adressen gehoeren ausschliesslich in diesen Block, nie nach [auth]:
-# Die Produktion hat keinen eigenen Block und bekommt die Werte aus [auth].
+# Die Produktion hat ihren eigenen Block am Ende der Datei.
 [remotes.dorfly-dev]
 project_id = "vjvnhvwdwxvofwsjcytr"
 
 [remotes.dorfly-dev.auth]
 site_url = "http://localhost:3000"
 additional_redirect_urls = ["https://*-dorfly-ug.vercel.app/**", "http://localhost:3000/**", "http://127.0.0.1:3000/**"]
+
+# Dorfly: Haelt die Produktion auf ihrem Live-Stand. Ein config push darf dort nichts
+# aendern: kein localhost, keine Preview-Adressen, SMS-Bestaetigung bleibt aktiv.
+[remotes.production]
+project_id = "hzptnylfdfibijkgtfhf"
+
+[remotes.production.auth]
+additional_redirect_urls = ["https://*.dorfly.de/**"]
+
+[remotes.production.auth.sms]
+enable_confirmations = true
