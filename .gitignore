@@ -51,3 +51,6 @@ src/types/supabase.ts.tmp
 
 # Supabase-CLI-Cache (Projekt-Verknuepfung, Versionen) — lokal, nicht ins Repo
 supabase/.temp/
+
+# Lokale Sicherungen (db dump) der Produktion — niemals ins Repo
+supabase/backups/
