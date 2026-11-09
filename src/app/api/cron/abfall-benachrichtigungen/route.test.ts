@@ -12,8 +12,9 @@ const NUTZER = '11111111-1111-4111-8111-111111111111'
 const GEMEINDE = '22222222-2222-4222-8222-222222222222'
 
 let service: ReturnType<typeof fakeSupabase>
-let sperreLesen: Antwort | undefined
 let sperreSetzen: Antwort | undefined
+let sperreLoeschen: Antwort | undefined
+let praeferenzenWerfen: boolean
 let praeferenzen: Antwort
 let termine: Antwort
 let gemeinden: Antwort
@@ -34,8 +35,11 @@ vi.mock('resend', () => ({
 }))
 
 function responder(a: Abfrage): Antwort | undefined {
-  if (a.tabelle === 'abfall_versandlaeufe') return hatOp(a, 'insert') ? sperreSetzen : sperreLesen
-  if (a.tabelle === 'abfallkalender_praeferenzen') return praeferenzen
+  if (a.tabelle === 'abfall_versandlaeufe') return hatOp(a, 'insert') ? sperreSetzen : sperreLoeschen
+  if (a.tabelle === 'abfallkalender_praeferenzen') {
+    if (praeferenzenWerfen) throw new Error('unerwartet')
+    return praeferenzen
+  }
   if (a.tabelle === 'abfalltermine') return termine
   if (a.tabelle === 'gemeinden') return gemeinden
   if (a.tabelle === 'profiles') return profile
@@ -61,8 +65,9 @@ beforeEach(() => {
   push.mockClear()
   emailSenden.mockClear()
   service = fakeSupabase(responder)
-  sperreLesen = undefined
   sperreSetzen = undefined
+  sperreLoeschen = undefined
+  praeferenzenWerfen = false
   praeferenzen = { data: [PRAEFERENZ] }
   termine = { data: [{ gemeinde_id: GEMEINDE, typ: 'restmuell' }] }
   gemeinden = { data: [{ id: GEMEINDE, slug: 'ehningen' }] }
@@ -121,29 +126,30 @@ describe('GET /api/cron/abfall-benachrichtigungen', () => {
     expect(push).toHaveBeenCalledOnce()
   })
 
-  it('versendet nicht noch einmal, wenn der Tag schon erledigt ist', async () => {
+  it('versendet nicht noch einmal, wenn der Tag schon gesperrt ist', async () => {
     vi.useFakeTimers({ now: new Date('2026-07-15T16:00:00Z'), toFake: ['Date'] })
-    sperreLesen = { data: { abfuhr_datum: '2026-07-16' } }
+    sperreSetzen = { error: { code: '23505', message: 'duplicate key' } }
 
     const res = await aufrufen()
 
     expect(res.status).toBe(200)
     expect(abfrage('abfallkalender_praeferenzen', 'select')).toBeUndefined()
-    expect(abfrage('abfall_versandlaeufe', 'insert')).toBeUndefined()
+    expect(abfrage('abfall_versandlaeufe', 'delete')).toBeUndefined()
     expect(push).not.toHaveBeenCalled()
   })
 
-  it('versendet nicht, wenn die Sperre nicht gelesen werden kann', async () => {
+  it('versendet nicht, wenn die Sperre nicht gesetzt werden kann', async () => {
     vi.useFakeTimers({ now: new Date('2026-07-15T16:00:00Z'), toFake: ['Date'] })
-    sperreLesen = { error: { code: '42501', message: 'permission denied' } }
+    sperreSetzen = { error: { code: '42501', message: 'permission denied' } }
 
     const res = await aufrufen()
 
     expect(res.status).toBe(500)
+    expect(abfrage('abfall_versandlaeufe', 'delete')).toBeUndefined()
     expect(push).not.toHaveBeenCalled()
   })
 
-  it('setzt die Sperre erst nach dem Versand', async () => {
+  it('setzt die Sperre vor dem Versand und behaelt sie nach Erfolg', async () => {
     vi.useFakeTimers({ now: new Date('2026-07-15T16:00:00Z'), toFake: ['Date'] })
     let sperreBeimVersand: boolean | undefined
     push.mockImplementationOnce(async () => {
@@ -154,94 +160,89 @@ describe('GET /api/cron/abfall-benachrichtigungen', () => {
     const res = await aufrufen()
 
     expect(res.status).toBe(200)
-    expect(sperreBeimVersand).toBe(false)
-    expect(abfrage('abfall_versandlaeufe', 'insert')?.ops).toContainEqual(['insert', [{ abfuhr_datum: '2026-07-16' }]])
+    expect(sperreBeimVersand).toBe(true)
+    expect(abfrage('abfall_versandlaeufe', 'delete')).toBeUndefined()
   })
 
-  it('setzt keine Sperre, wenn die Praeferenzen nicht geladen werden koennen', async () => {
-    vi.useFakeTimers({ now: new Date('2026-07-15T16:00:00Z'), toFake: ['Date'] })
-    praeferenzen = { error: { code: '42501', message: 'permission denied' } }
-
-    const res = await aufrufen()
-
-    expect(res.status).toBe(500)
-    expect(abfrage('abfall_versandlaeufe', 'insert')).toBeUndefined()
-  })
-
-  it('setzt keine Sperre, wenn morgen nichts ansteht', async () => {
+  it('behaelt die Sperre, wenn morgen nichts ansteht', async () => {
     vi.useFakeTimers({ now: new Date('2026-07-15T16:00:00Z'), toFake: ['Date'] })
     termine = { data: [] }
 
     const res = await aufrufen()
 
     expect(res.status).toBe(200)
-    expect(abfrage('abfall_versandlaeufe', 'insert')).toBeUndefined()
+    expect(abfrage('abfall_versandlaeufe', 'delete')).toBeUndefined()
+  })
+
+  function erwarteFreigabe(res: Response) {
+    expect(res.status).toBe(500)
+    expect(abfrage('abfall_versandlaeufe', 'delete')?.ops).toContainEqual(['eq', ['abfuhr_datum', '2026-07-16']])
+  }
+
+  it('gibt die Sperre frei, wenn die Praeferenzen nicht geladen werden koennen', async () => {
+    vi.useFakeTimers({ now: new Date('2026-07-15T16:00:00Z'), toFake: ['Date'] })
+    praeferenzen = { error: { code: '42501', message: 'permission denied' } }
+
+    erwarteFreigabe(await aufrufen())
+  })
+
+  it('gibt die Sperre frei, wenn die Termine nicht geladen werden koennen', async () => {
+    vi.useFakeTimers({ now: new Date('2026-07-15T16:00:00Z'), toFake: ['Date'] })
+    termine = { error: { message: 'kaputt' } }
+
+    erwarteFreigabe(await aufrufen())
+    expect(push).not.toHaveBeenCalled()
   })
 
   it.each([
     ['Gemeinden', () => { gemeinden = { error: { message: 'kaputt' } } }],
     ['Profile', () => { profile = { error: { message: 'kaputt' } } }],
-  ])('versendet nicht und setzt keine Sperre, wenn %s nicht geladen werden koennen', async (_name, vorbereiten) => {
+  ])('versendet nicht und gibt die Sperre frei, wenn %s nicht geladen werden koennen', async (_name, vorbereiten) => {
     vi.useFakeTimers({ now: new Date('2026-07-15T16:00:00Z'), toFake: ['Date'] })
     vorbereiten()
 
-    const res = await aufrufen()
-
-    expect(res.status).toBe(500)
+    erwarteFreigabe(await aufrufen())
     expect(push).not.toHaveBeenCalled()
-    expect(abfrage('abfall_versandlaeufe', 'insert')).toBeUndefined()
   })
 
-  it('setzt keine Sperre, wenn OneSignal den Push ablehnt', async () => {
+  it('gibt die Sperre frei, wenn OneSignal den Push ablehnt', async () => {
     vi.useFakeTimers({ now: new Date('2026-07-15T16:00:00Z'), toFake: ['Date'] })
     push.mockImplementationOnce(async () => new Response('{}', { status: 400 }))
 
-    const res = await aufrufen()
-
-    expect(res.status).toBe(500)
-    expect(abfrage('abfall_versandlaeufe', 'insert')).toBeUndefined()
+    erwarteFreigabe(await aufrufen())
   })
 
-  it('setzt keine Sperre, wenn der Push-Aufruf scheitert', async () => {
+  it('gibt die Sperre frei, wenn der Push-Aufruf scheitert', async () => {
     vi.useFakeTimers({ now: new Date('2026-07-15T16:00:00Z'), toFake: ['Date'] })
     push.mockImplementationOnce(async () => { throw new Error('Netzwerk') })
 
-    const res = await aufrufen()
-
-    expect(res.status).toBe(500)
-    expect(abfrage('abfall_versandlaeufe', 'insert')).toBeUndefined()
+    erwarteFreigabe(await aufrufen())
   })
 
-  it('setzt keine Sperre, wenn Resend die E-Mail ablehnt', async () => {
+  it('gibt die Sperre frei, wenn Resend die E-Mail ablehnt', async () => {
     vi.useFakeTimers({ now: new Date('2026-07-15T16:00:00Z'), toFake: ['Date'] })
     vi.stubEnv('RESEND_API_KEY', 'test')
     praeferenzen = { data: [{ ...PRAEFERENZ, push_aktiviert: false, email_aktiviert: true }] }
     emailSenden.mockImplementationOnce(async () => ({ data: null as unknown as { id: string }, error: { message: 'abgelehnt' } }))
 
-    const res = await aufrufen()
-
+    erwarteFreigabe(await aufrufen())
     expect(emailSenden).toHaveBeenCalledOnce()
-    expect(res.status).toBe(500)
-    expect(abfrage('abfall_versandlaeufe', 'insert')).toBeUndefined()
   })
 
-  it('meldet Erfolg, wenn ein paralleler Lauf die Sperre schon gesetzt hat', async () => {
+  it('gibt die Sperre auch bei einem unerwarteten Fehler frei', async () => {
     vi.useFakeTimers({ now: new Date('2026-07-15T16:00:00Z'), toFake: ['Date'] })
-    sperreSetzen = { error: { code: '23505', message: 'duplicate key' } }
+    praeferenzenWerfen = true
 
-    const res = await aufrufen()
-
-    expect(res.status).toBe(200)
-    expect(push).toHaveBeenCalledOnce()
+    erwarteFreigabe(await aufrufen())
   })
 
-  it('meldet einen Fehler, wenn die Sperre nach dem Versand nicht gesetzt werden kann', async () => {
+  it('bleibt bei 500, wenn die Sperre nicht freigegeben werden kann', async () => {
     vi.useFakeTimers({ now: new Date('2026-07-15T16:00:00Z'), toFake: ['Date'] })
-    sperreSetzen = { error: { code: '42501', message: 'permission denied' } }
+    praeferenzen = { error: { code: '42501', message: 'permission denied' } }
+    sperreLoeschen = { error: { message: 'kaputt' } }
 
     const res = await aufrufen()
 
     expect(res.status).toBe(500)
-    expect(push).toHaveBeenCalledOnce()
   })
 })

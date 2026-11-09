@@ -8,9 +8,10 @@
  * Vercel rechnet in UTC, deshalb läuft der Cron stündlich (vercel.json) und
  * versendet nur im Fenster ab 18 Uhr Europe/Berlin — so stimmt die Uhrzeit in
  * Sommer- und Winterzeit. Fällt der 18-Uhr-Lauf aus, holt der 19-Uhr-Lauf ihn
- * nach. Die Sperre in abfall_versandlaeufe wird erst nach erfolgreichem Versand
- * gesetzt: Scheitert der 18-Uhr-Lauf, darf der 19-Uhr-Lauf es erneut versuchen.
- * Dafür können zwei exakt gleichzeitig laufende Aufrufe beide versenden.
+ * nach. Die Sperre in abfall_versandlaeufe wird vor dem Versand atomar gesetzt
+ * (Primärschlüssel je Abfuhrtag), damit ein doppelt ausgelieferter Lauf nicht
+ * zweimal versendet. Scheitert der Versand, wird sie wieder gelöscht, damit der
+ * 19-Uhr-Lauf es erneut versuchen kann.
  *
  * Hinweis: Die individuelle notificationTime je Nutzer wird gespeichert, aber da
  * der Cron einmal täglich feuert, richtet sich der Versandzeitpunkt nach der
@@ -50,20 +51,42 @@ export async function GET(req: NextRequest) {
 
   const service = await createServiceClient()
 
-  // Nur prüfen, gesetzt wird die Sperre erst nach erfolgreichem Versand.
-  const { data: erledigt, error: sperrFehler } = await service
+  // Sperre vor dem Versand: Der Primärschlüssel lässt je Abfuhrtag nur einen Lauf durch.
+  const { error: sperrFehler } = await service
     .from('abfall_versandlaeufe')
-    .select('abfuhr_datum')
-    .eq('abfuhr_datum', morgenStr)
-    .maybeSingle()
+    .insert({ abfuhr_datum: morgenStr })
   if (sperrFehler) {
-    console.error('[Abfallkalender Cron] Sperre nicht lesbar, Versand abgebrochen:', sperrFehler)
-    return NextResponse.json({ error: 'Sperre nicht lesbar' }, { status: 500 })
-  }
-  if (erledigt) {
-    return NextResponse.json({ ok: true, versendet: 0, nachricht: 'Für diesen Tag bereits versendet' })
+    if (sperrFehler.code === '23505') {
+      return NextResponse.json({ ok: true, versendet: 0, nachricht: 'Für diesen Tag bereits versendet' })
+    }
+    console.error('[Abfallkalender Cron] Sperre nicht gesetzt, Versand abgebrochen:', sperrFehler)
+    return NextResponse.json({ error: 'Sperre nicht gesetzt' }, { status: 500 })
   }
 
+  const antwort = await versenden(service, morgenStr, uebermorgenStr).catch(e => {
+    console.error('[Abfallkalender Cron] Versand abgebrochen:', e)
+    return NextResponse.json({ error: 'Versand abgebrochen' }, { status: 500 })
+  })
+
+  // Fehlgeschlagen: Sperre freigeben, damit der 19-Uhr-Lauf nachholen kann.
+  if (antwort.status >= 500) {
+    const { error: freigabeFehler } = await service
+      .from('abfall_versandlaeufe')
+      .delete()
+      .eq('abfuhr_datum', morgenStr)
+    if (freigabeFehler) {
+      console.error('[Abfallkalender Cron] Sperre nicht freigegeben, kein Nachholen möglich:', freigabeFehler)
+    }
+  }
+
+  return antwort
+}
+
+async function versenden(
+  service: Awaited<ReturnType<typeof createServiceClient>>,
+  morgenStr: string,
+  uebermorgenStr: string,
+): Promise<NextResponse> {
   // Alle Nutzer mit aktivierten Präferenzen laden
   const { data: praeferenzen, error: praeferenzenError } = await service
     .from('abfallkalender_praeferenzen')
@@ -75,7 +98,10 @@ export async function GET(req: NextRequest) {
   }
 
   // Alle morgen anfallenden Termine laden (einmalig, dann per Code filtern)
-  const [{ data: morgenTermine }, { data: morgenSammlungen }] = await Promise.all([
+  const [
+    { data: morgenTermine, error: termineError },
+    { data: morgenSammlungen, error: sammlungenError },
+  ] = await Promise.all([
     service.from('abfalltermine').select('gemeinde_id, typ').eq('datum', morgenStr),
     service
       .from('posts')
@@ -85,6 +111,11 @@ export async function GET(req: NextRequest) {
       .gte('sammlung_datum', morgenStr)
       .lt('sammlung_datum', uebermorgenStr),
   ])
+
+  if (termineError || sammlungenError) {
+    console.error('[Abfallkalender Cron] Termine nicht geladen:', termineError ?? sammlungenError)
+    return NextResponse.json({ error: 'Fehler beim Laden der Termine' }, { status: 500 })
+  }
 
   if ((!morgenTermine || morgenTermine.length === 0) && (!morgenSammlungen || morgenSammlungen.length === 0)) {
     return NextResponse.json({ ok: true, versendet: 0, nachricht: 'Keine Termine morgen' })
@@ -190,17 +221,8 @@ export async function GET(req: NextRequest) {
   }
 
   if (fehlgeschlagen > 0) {
-    console.error(`[Abfallkalender Cron] ${fehlgeschlagen} Zustellungen fehlgeschlagen, Sperre nicht gesetzt`)
+    console.error(`[Abfallkalender Cron] ${fehlgeschlagen} Zustellungen fehlgeschlagen`)
     return NextResponse.json({ error: 'Versand unvollständig', versendet, fehlgeschlagen, morgen: morgenStr }, { status: 500 })
-  }
-
-  const { error: setzFehler } = await service
-    .from('abfall_versandlaeufe')
-    .insert({ abfuhr_datum: morgenStr })
-  // 23505: Ein paralleler Lauf hat die Sperre schon gesetzt, der Tag ist erledigt.
-  if (setzFehler && setzFehler.code !== '23505') {
-    console.error('[Abfallkalender Cron] Versendet, aber Sperre nicht gesetzt:', setzFehler)
-    return NextResponse.json({ error: 'Sperre nicht gesetzt', versendet, morgen: morgenStr }, { status: 500 })
   }
 
   return NextResponse.json({ ok: true, versendet, morgen: morgenStr })
