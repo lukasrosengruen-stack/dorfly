@@ -8,8 +8,9 @@
  * Vercel rechnet in UTC, deshalb läuft der Cron stündlich (vercel.json) und
  * versendet nur im Fenster ab 18 Uhr Europe/Berlin — so stimmt die Uhrzeit in
  * Sommer- und Winterzeit. Fällt der 18-Uhr-Lauf aus, holt der 19-Uhr-Lauf ihn
- * nach. Die Sperre in abfall_versandlaeufe sorgt dafür, dass je Abfuhrtag nur
- * einmal versendet wird, auch wenn Vercel einen Lauf doppelt ausliefert.
+ * nach. Die Sperre in abfall_versandlaeufe wird erst nach erfolgreichem Versand
+ * gesetzt: Scheitert der 18-Uhr-Lauf, darf der 19-Uhr-Lauf es erneut versuchen.
+ * Dafür können zwei exakt gleichzeitig laufende Aufrufe beide versenden.
  *
  * Hinweis: Die individuelle notificationTime je Nutzer wird gespeichert, aber da
  * der Cron einmal täglich feuert, richtet sich der Versandzeitpunkt nach der
@@ -49,16 +50,18 @@ export async function GET(req: NextRequest) {
 
   const service = await createServiceClient()
 
-  // Sperre vor dem Versand: Der Primärschlüssel lässt je Abfuhrtag nur einen Lauf durch.
-  const { error: sperrFehler } = await service
+  // Nur prüfen, gesetzt wird die Sperre erst nach erfolgreichem Versand.
+  const { data: erledigt, error: sperrFehler } = await service
     .from('abfall_versandlaeufe')
-    .insert({ abfuhr_datum: morgenStr })
+    .select('abfuhr_datum')
+    .eq('abfuhr_datum', morgenStr)
+    .maybeSingle()
   if (sperrFehler) {
-    if (sperrFehler.code === '23505') {
-      return NextResponse.json({ ok: true, versendet: 0, nachricht: 'Für diesen Tag bereits versendet' })
-    }
-    console.error('[Abfallkalender Cron] Sperre nicht gesetzt, Versand abgebrochen:', sperrFehler)
-    return NextResponse.json({ error: 'Sperre nicht gesetzt' }, { status: 500 })
+    console.error('[Abfallkalender Cron] Sperre nicht lesbar, Versand abgebrochen:', sperrFehler)
+    return NextResponse.json({ error: 'Sperre nicht lesbar' }, { status: 500 })
+  }
+  if (erledigt) {
+    return NextResponse.json({ ok: true, versendet: 0, nachricht: 'Für diesen Tag bereits versendet' })
   }
 
   // Alle Nutzer mit aktivierten Präferenzen laden
@@ -114,21 +117,27 @@ export async function GET(req: NextRequest) {
 
   // Gemeinde-Slugs für korrekte Notification-URLs laden
   const gemeindeIds = [...new Set(praeferenzen.map(p => p.gemeinde_id))]
-  const { data: gemeinden } = await service
+  const { data: gemeinden, error: gemeindenError } = await service
     .from('gemeinden')
     .select('id, slug')
     .in('id', gemeindeIds)
   const slugByGemeinde = new Map((gemeinden ?? []).map(g => [g.id, g.slug]))
 
   const userIds = praeferenzen.map(p => p.user_id)
-  const { data: profiles } = await service
+  const { data: profiles, error: profilesError } = await service
     .from('profiles')
     .select('id, display_name, email')
     .in('id', userIds)
 
+  if (gemeindenError || profilesError) {
+    console.error('[Abfallkalender Cron] Empfängerdaten nicht geladen:', gemeindenError ?? profilesError)
+    return NextResponse.json({ error: 'Fehler beim Laden der Empfängerdaten' }, { status: 500 })
+  }
+
   const profileMap = new Map((profiles ?? []).map(p => [p.id, p]))
 
   let versendet = 0
+  let fehlgeschlagen = 0
   const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
   for (const pref of praeferenzen) {
@@ -159,12 +168,12 @@ export async function GET(req: NextRequest) {
     if (pref.push_aktiviert) {
       for (const typ of betroffeneTypen) {
         const label = ABFALL_TYP_CONFIG[typ as AbfallTypSchluessel]?.label ?? typ
-        await sendPush(pref.user_id, `Morgen wird ${label} abgeholt. Tonne bitte bis 06:00 Uhr bereitstellen.`, gemeindeSlug)
+        if (!(await sendPush(pref.user_id, `Morgen wird ${label} abgeholt. Tonne bitte bis 06:00 Uhr bereitstellen.`, gemeindeSlug))) fehlgeschlagen++
       }
       for (const s of betroffeneSammlungen) {
         const label = SAMMLUNG_ART_CONFIG[s.art].label
         const zeit = s.uhrzeit ? ` um ${s.uhrzeit} Uhr` : ''
-        await sendPush(pref.user_id, `Morgen findet die ${label}${zeit} statt (organisiert von ${s.organisator}).`, gemeindeSlug)
+        if (!(await sendPush(pref.user_id, `Morgen findet die ${label}${zeit} statt (organisiert von ${s.organisator}).`, gemeindeSlug))) fehlgeschlagen++
       }
     }
 
@@ -173,11 +182,25 @@ export async function GET(req: NextRequest) {
       const email = profileMap.get(pref.user_id)?.email
       const displayName = profileMap.get(pref.user_id)?.display_name ?? 'Hallo'
       if (email) {
-        await sendEmail(resend, email, displayName, alleZeilen)
+        if (!(await sendEmail(resend, email, displayName, alleZeilen))) fehlgeschlagen++
       }
     }
 
     versendet++
+  }
+
+  if (fehlgeschlagen > 0) {
+    console.error(`[Abfallkalender Cron] ${fehlgeschlagen} Zustellungen fehlgeschlagen, Sperre nicht gesetzt`)
+    return NextResponse.json({ error: 'Versand unvollständig', versendet, fehlgeschlagen, morgen: morgenStr }, { status: 500 })
+  }
+
+  const { error: setzFehler } = await service
+    .from('abfall_versandlaeufe')
+    .insert({ abfuhr_datum: morgenStr })
+  // 23505: Ein paralleler Lauf hat die Sperre schon gesetzt, der Tag ist erledigt.
+  if (setzFehler && setzFehler.code !== '23505') {
+    console.error('[Abfallkalender Cron] Versendet, aber Sperre nicht gesetzt:', setzFehler)
+    return NextResponse.json({ error: 'Sperre nicht gesetzt', versendet, morgen: morgenStr }, { status: 500 })
   }
 
   return NextResponse.json({ ok: true, versendet, morgen: morgenStr })
@@ -185,8 +208,8 @@ export async function GET(req: NextRequest) {
 
 // ─── Push über OneSignal (einzelner Nutzer via external_id) ──────────────────
 
-async function sendPush(userId: string, nachricht: string, gemeindeSlug: string) {
-  await fetch('https://onesignal.com/api/v1/notifications', {
+async function sendPush(userId: string, nachricht: string, gemeindeSlug: string): Promise<boolean> {
+  return fetch('https://onesignal.com/api/v1/notifications', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -201,17 +224,26 @@ async function sendPush(userId: string, nachricht: string, gemeindeSlug: string)
       web_url: `https://${gemeindeSlug}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'}/abfallkalender`,
       data: { pfad: '/abfallkalender' },
     }),
-  }).catch(e => console.error('[Abfallkalender Cron] Push-Fehler:', e))
+  }).then(
+    res => {
+      if (!res.ok) console.error('[Abfallkalender Cron] Push abgelehnt, Status:', res.status)
+      return res.ok
+    },
+    e => {
+      console.error('[Abfallkalender Cron] Push-Fehler:', e)
+      return false
+    },
+  )
 }
 
 // ─── E-Mail über Resend ───────────────────────────────────────────────────────
 
-async function sendEmail(resend: Resend, email: string, name: string, zeilen: string[]) {
+async function sendEmail(resend: Resend, email: string, name: string, zeilen: string[]): Promise<boolean> {
   const zeilenHtml = zeilen
     .map(z => `<li><strong>${z}</strong></li>`)
     .join('')
 
-  await resend.emails
+  return resend.emails
     .send({
       from: `Dorfly <noreply@${process.env.RESEND_FROM_DOMAIN ?? 'dorfly.de'}>`,
       to: [email],
@@ -224,5 +256,14 @@ async function sendEmail(resend: Resend, email: string, name: string, zeilen: st
         <p>Dein Dorfly-Team</p>
       `,
     })
-    .catch(e => console.error('[Abfallkalender Cron] E-Mail-Fehler:', e))
+    .then(
+      ({ error }) => {
+        if (error) console.error('[Abfallkalender Cron] E-Mail abgelehnt:', error)
+        return !error
+      },
+      e => {
+        console.error('[Abfallkalender Cron] E-Mail-Fehler:', e)
+        return false
+      },
+    )
 }
