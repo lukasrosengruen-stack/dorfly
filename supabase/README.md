@@ -33,12 +33,12 @@ Eine bereits gepushte Migration wird nie nachträglich geändert. Korrekturen ko
 
 ## Seeds
 
-`seed.sql` enthält erfundene Testdaten: die Gemeinde `testdorf`, je einen Nutzer pro Rolle, Beiträge in allen Status, einen Mangel und eine Frage an den Bürgermeister.
+`seed.sql` enthält erfundene Testdaten für die Gemeinden `testdorf` und `musterhausen`: je ein Login pro Rolle, 40 Einwohner, 8 Gemeinderäte in drei Fraktionen, 3 Vereine und eine Organisation, 3 Gewerbe, Beiträge, Mängel und Fragen in allen Status, eine Umfrage und Abfalltermine. Der Seed ist wiederholbar.
 
 - Lokal läuft es automatisch mit `db start` und `db reset`.
-- In die Entwicklung: `supabase db query --remote=vjvnhvwdwxvofwsjcytr --yes -f supabase/seed.sql`
-- **Niemals gegen die Produktion**, auch nicht mit `db push --include-seed`. Das Skript bricht ab, sobald es eine andere Gemeinde als `testdorf` findet.
-- Die Testnutzer haben kein Passwort. Anmeldung per Magic Link, oder ein Passwort im Dashboard setzen.
+- In die Entwicklung: `npm run db:seed:dev`. Das Skript liest `SEED_TESTPASSWORT` und `SEED_PLUS_ADRESSE` aus der Shell oder aus `.env.seed.local` (von Git ignoriert). Ein anderes Ziel lässt sich nicht angeben.
+- **Niemals gegen die Produktion**, auch nicht mit `db push --include-seed`. Der Seed bricht vor dem ersten Schreiben ab, sobald er eine andere Gemeinde als `testdorf` oder `musterhausen` findet.
+- Lokal per `db reset` haben die Testnutzer kein Passwort. Lokal mit Passwort: `npm run db:seed:dev -- --lokal`.
 
 ## Was zu beachten ist
 

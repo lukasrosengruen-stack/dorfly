@@ -10,6 +10,7 @@
     "test:watch": "vitest",
     "lint": "eslint",
     "db:types": "npx --yes supabase@latest gen types typescript --project-id hzptnylfdfibijkgtfhf --schema public > src/types/supabase.ts.tmp && mv src/types/supabase.ts.tmp src/types/supabase.ts",
+    "db:seed:dev": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file-if-exists=.env.seed.local scripts/seed-dev.mjs",
     "db:types:dev": "npx --yes supabase@latest gen types typescript --project-id vjvnhvwdwxvofwsjcytr --schema public > src/types/supabase.ts.tmp && node -e \"require('fs').renameSync('src/types/supabase.ts.tmp','src/types/supabase.ts')\""
   },
   "dependencies": {
