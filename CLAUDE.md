@@ -84,9 +84,9 @@ create policy "..." on public.meine_tabelle for select using (...);
 | `authenticated` | Alle Tabellen im eingeloggten Bereich |
 | `service_role` | Tabellen die ausschließlich über API-Routen (service client) beschrieben werden — **expliziter GRANT erforderlich** |
 
-Bestehende Grants: [supabase/migrations/012_explicit_grants.sql](supabase/migrations/012_explicit_grants.sql)
+Bestehende Grants: [supabase/migrations/20261109000000_baseline_produktion.sql](supabase/migrations/20261109000000_baseline_produktion.sql) (früher `supabase/migrations_archive/012_explicit_grants.sql`)
 
-> `einladungen`-Tabelle wurde manuell im Dashboard angelegt (keine Migration). Zugriff ausschließlich via `service_role` in API-Routen.
+> `einladungen`-Tabelle ist per Migration angelegt (ursprünglich `010b_einladungen_rollen_log.sql`). Zugriff ausschließlich via `service_role` in API-Routen.
 
 ---
 

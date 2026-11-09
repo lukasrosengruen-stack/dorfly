@@ -40,7 +40,7 @@ create policy "..." on public.meine_tabelle for select using (...);
 
 ### Bestehende Grants
 
-Alle bestehenden Tabellen sind in [supabase/migrations/012_explicit_grants.sql](supabase/migrations/012_explicit_grants.sql) abgedeckt.
+Alle bestehenden Tabellen sind in [supabase/migrations/20261109000000_baseline_produktion.sql](supabase/migrations/20261109000000_baseline_produktion.sql) abgedeckt.
 
 > **Hinweis:** Die `einladungen`-Tabelle wurde manuell im Supabase-Dashboard angelegt und fehlt noch als Migration. Sie wird ausschließlich über `service_role` in API-Routen zugegriffen — kein Client-GRANT nötig.
 

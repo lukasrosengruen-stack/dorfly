@@ -15,7 +15,10 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
 export function migration(datei: string): string {
-  return readFileSync(path.resolve(__dirname, '../../../supabase/migrations', datei), 'utf8')
+  // Vorübergehend das Archiv: PGlite kann die Baseline nicht laden (fehlende
+  // Extensions wie pg_stat_statements/pgcrypto, kein storage.buckets), und die
+  // Tests brauchen ohnehin die einzelnen Altmigrationen.
+  return readFileSync(path.resolve(__dirname, '../../../supabase/migrations_archive', datei), 'utf8')
 }
 
 export const BASIS_SCHEMA = `
