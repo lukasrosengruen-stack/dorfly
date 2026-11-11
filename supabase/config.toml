@@ -446,6 +446,17 @@ pass = "env(RESEND_API_KEY_PREVIEW)"
 admin_email = "noreply@dorfly.de"
 sender_name = "Dorfly Test"
 
+# Storage auf dem Live-Stand von dorfly-dev festhalten, damit ein config push dort nichts aendert.
+[remotes.dorfly-dev.storage.analytics]
+enabled = true
+max_namespaces = 10
+
+[remotes.dorfly-dev.storage.vector]
+enabled = false
+
+[remotes.dorfly-dev.storage.image_transformation]
+enabled = true
+
 # Dorfly: Haelt die Produktion auf ihrem Live-Stand. Ein config push darf dort nichts
 # aendern: kein localhost, keine Preview-Adressen, SMS-Bestaetigung bleibt aktiv.
 [remotes.production]
