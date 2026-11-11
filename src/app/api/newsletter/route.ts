@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
-import { Resend } from 'resend'
+import { mailClient } from '@/lib/mailVersand'
 import { randomUUID } from 'crypto'
 
 export async function POST(req: Request) {
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
     const confirmUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/newsletter/bestaetigen?token=${token}`
 
     if (process.env.RESEND_API_KEY) {
-      const resend = new Resend(process.env.RESEND_API_KEY)
+      const resend = mailClient(process.env.RESEND_API_KEY)
       await resend.emails.send({
         from: 'Dorfly <noreply@dorfly.de>',
         to: email,

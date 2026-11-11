@@ -435,6 +435,17 @@ project_id = "vjvnhvwdwxvofwsjcytr"
 site_url = "http://localhost:3000"
 additional_redirect_urls = ["https://*-dorfly-ug.vercel.app/**", "http://localhost:3000/**", "http://127.0.0.1:3000/**"]
 
+# Auth-Mails von dorfly-dev (Bestaetigung, Passwort-Reset) ueber einen eigenen
+# Resend-Schluessel, getrennt vom Produktionsschluessel. Nur als env(), nie im Klartext.
+[remotes.dorfly-dev.auth.email.smtp]
+enabled = true
+host = "smtp.resend.com"
+port = 465
+user = "resend"
+pass = "env(RESEND_API_KEY_PREVIEW)"
+admin_email = "noreply@dorfly.de"
+sender_name = "Dorfly Test"
+
 # Dorfly: Haelt die Produktion auf ihrem Live-Stand. Ein config push darf dort nichts
 # aendern: kein localhost, keine Preview-Adressen, SMS-Bestaetigung bleibt aktiv.
 [remotes.production]

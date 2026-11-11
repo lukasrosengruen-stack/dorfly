@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { fetchDwdAlerts, filterActiveAlerts, buildPostContent } from '@/features/warnmeldungen/dwd'
 import { SEVERITY_MAP } from '@/features/warnmeldungen/types'
+import { ONESIGNAL_NOTIFICATIONS_URL, oneSignalHeaders, pushKonfig } from '@/lib/pushKonfig'
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
@@ -99,14 +100,18 @@ export async function GET(req: NextRequest) {
 }
 
 async function sendPushNotification(gemeindeSlug: string, titel: string) {
-  await fetch('https://onesignal.com/api/v1/notifications', {
+  // Push ist Nebenwirkung: Die Warnung ist schon gespeichert, der Lauf gilt auch ohne Push als erfolgreich.
+  const push = pushKonfig()
+  if (push.status === 'testumgebung') return
+  if (push.status === 'fehlt') {
+    console.error('[DWD Cron] OneSignal-Umgebungsvariablen fehlen — Push übersprungen')
+    return
+  }
+  await fetch(ONESIGNAL_NOTIFICATIONS_URL, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Key ${process.env.ONESIGNAL_REST_API_KEY}`,
-    },
+    headers: oneSignalHeaders(push),
     body: JSON.stringify({
-      app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID,
+      app_id: push.appId,
       filters: [{ field: 'tag', key: 'gemeinde_slug', relation: '=', value: gemeindeSlug }],
       headings: { de: 'DWD-Warnung', en: 'DWD-Warnung' },
       contents: { de: titel, en: titel },

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { withAuth } from '@/lib/api'
 import { validate, notificationSendSchema } from '@/lib/validations'
 import { createClient } from '@/lib/supabase/server'
+import { ONESIGNAL_NOTIFICATIONS_URL, oneSignalHeaders, pushKonfig } from '@/lib/pushKonfig'
 
 export const POST = withAuth(
   async (req, { profile }) => {
@@ -16,14 +17,21 @@ export const POST = withAuth(
       ? await supabase.from('gemeinden').select('slug').eq('id', profile.gemeinde_id).single()
       : { data: null }
 
-    const res = await fetch('https://onesignal.com/api/v1/notifications', {
+    const push = pushKonfig()
+    if (push.status === 'testumgebung') {
+      console.info('[notifications/send] Testumgebung: Push nicht verschickt')
+      return NextResponse.json({ ok: true, verschickt: false, grund: 'testumgebung' })
+    }
+    if (push.status === 'fehlt') {
+      console.error('[notifications/send] OneSignal-Umgebungsvariablen fehlen')
+      return NextResponse.json({ error: 'Push nicht konfiguriert' }, { status: 500 })
+    }
+
+    const res = await fetch(ONESIGNAL_NOTIFICATIONS_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Key ${process.env.ONESIGNAL_REST_API_KEY}`,
-      },
+      headers: oneSignalHeaders(push),
       body: JSON.stringify({
-        app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID,
+        app_id: push.appId,
         filters: [
           { field: 'tag', key: 'gemeinde_slug', relation: '=', value: gemeinde?.slug ?? '' },
         ],

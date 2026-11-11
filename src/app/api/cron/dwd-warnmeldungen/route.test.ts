@@ -60,6 +60,10 @@ function updates() {
 
 beforeEach(() => {
   vi.stubEnv('CRON_SECRET', 'geheim')
+  vi.stubEnv('VERCEL_ENV', 'production')
+  vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://produktion.supabase.co')
+  vi.stubEnv('NEXT_PUBLIC_ONESIGNAL_APP_ID', 'app-test')
+  vi.stubEnv('ONESIGNAL_REST_API_KEY', 'key-test')
   vi.stubGlobal('fetch', push)
   push.mockClear()
   service = fakeSupabase(responder)
@@ -89,6 +93,17 @@ describe('GET /api/cron/dwd-warnmeldungen', () => {
 
     expect((await res.json()).created).toBe(1)
     expect(push).toHaveBeenCalledOnce()
+  })
+
+  it('legt in der Testumgebung die Warnung an, pusht aber nicht', async () => {
+    vi.stubEnv('VERCEL_ENV', 'preview')
+    dwd.alerts = [warnung(1)]
+
+    const res = await aufrufen()
+
+    expect(res.status).toBe(200)
+    expect((await res.json()).created).toBe(1)
+    expect(push).not.toHaveBeenCalled()
   })
 
   it('pusht eine bereits angelegte Warnung beim naechsten Lauf nicht erneut', async () => {

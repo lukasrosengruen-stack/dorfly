@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
-import { Resend } from 'resend'
+import { mailClient } from '@/lib/mailVersand'
+import { ONESIGNAL_NOTIFICATIONS_URL, oneSignalHeaders, pushKonfig } from '@/lib/pushKonfig'
 
 export async function POST() {
   const client = await createClient()
@@ -10,17 +11,17 @@ export async function POST() {
   const results: Record<string, string> = {}
 
   // ── Push via OneSignal ────────────────────────────────────────────────────
-  if (!process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || !process.env.ONESIGNAL_REST_API_KEY) {
+  const push = pushKonfig()
+  if (push.status === 'testumgebung') {
+    results.push = 'ÜBERSPRUNGEN: In der Testumgebung wird nicht gepusht'
+  } else if (push.status === 'fehlt') {
     results.push = 'FEHLER: OneSignal-Umgebungsvariablen fehlen'
   } else {
-    const pushRes = await fetch('https://onesignal.com/api/v1/notifications', {
+    const pushRes = await fetch(ONESIGNAL_NOTIFICATIONS_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Key ${process.env.ONESIGNAL_REST_API_KEY}`,
-      },
+      headers: oneSignalHeaders(push),
       body: JSON.stringify({
-        app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID,
+        app_id: push.appId,
         include_aliases: { external_id: [user.id] },
         target_channel: 'push',
         headings: { de: 'Test-Benachrichtigung', en: 'Test-Benachrichtigung' },
@@ -38,7 +39,7 @@ export async function POST() {
   } else if (!process.env.RESEND_API_KEY) {
     results.email = 'FEHLER: RESEND_API_KEY fehlt'
   } else {
-    const resend = new Resend(process.env.RESEND_API_KEY)
+    const resend = mailClient(process.env.RESEND_API_KEY)
     const service = await createServiceClient()
     const { data: profile } = await service
       .from('profiles')

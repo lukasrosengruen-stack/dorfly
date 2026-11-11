@@ -27,7 +27,8 @@ import type { AbfallTypSchluessel } from '@/lib/icsParser'
 import { SAMMLUNG_ART_CONFIG, sammlungPraeferenzSchluessel } from '@/lib/abfallkalenderSammlung'
 import type { SammlungArtSchluessel } from '@/lib/abfallkalenderSammlung'
 import { berlinZeit, naechsterTag } from '@/lib/berlinZeit'
-import { Resend } from 'resend'
+import { mailClient, type MailClient } from '@/lib/mailVersand'
+import { ONESIGNAL_NOTIFICATIONS_URL, oneSignalHeaders, pushKonfig } from '@/lib/pushKonfig'
 
 /** 18 Uhr ist der Versandzeitpunkt, 19 Uhr nur der Nachholtermin für einen ausgefallenen Lauf. */
 const VERSAND_STUNDEN = new Set([18, 19])
@@ -169,7 +170,7 @@ async function versenden(
 
   let versendet = 0
   let fehlgeschlagen = 0
-  const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
+  const resend = process.env.RESEND_API_KEY ? mailClient(process.env.RESEND_API_KEY) : null
 
   for (const pref of praeferenzen) {
     const termineGemeinde = termineByGemeinde.get(pref.gemeinde_id) ?? []
@@ -231,14 +232,18 @@ async function versenden(
 // ─── Push über OneSignal (einzelner Nutzer via external_id) ──────────────────
 
 async function sendPush(userId: string, nachricht: string, gemeindeSlug: string): Promise<boolean> {
-  return fetch('https://onesignal.com/api/v1/notifications', {
+  const push = pushKonfig()
+  // Testumgebung: bewusst kein Versand, der Lauf zählt als erfolgreich.
+  if (push.status === 'testumgebung') return true
+  if (push.status === 'fehlt') {
+    console.error('[Abfallkalender Cron] OneSignal-Umgebungsvariablen fehlen')
+    return false
+  }
+  return fetch(ONESIGNAL_NOTIFICATIONS_URL, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Key ${process.env.ONESIGNAL_REST_API_KEY}`,
-    },
+    headers: oneSignalHeaders(push),
     body: JSON.stringify({
-      app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID,
+      app_id: push.appId,
       include_aliases: { external_id: [userId] },
       target_channel: 'push',
       headings: { de: 'Abfuhr-Erinnerung', en: 'Abfuhr-Erinnerung' },
@@ -260,7 +265,7 @@ async function sendPush(userId: string, nachricht: string, gemeindeSlug: string)
 
 // ─── E-Mail über Resend ───────────────────────────────────────────────────────
 
-async function sendEmail(resend: Resend, email: string, name: string, zeilen: string[]): Promise<boolean> {
+async function sendEmail(resend: MailClient,email: string, name: string, zeilen: string[]): Promise<boolean> {
   const zeilenHtml = zeilen
     .map(z => `<li><strong>${z}</strong></li>`)
     .join('')

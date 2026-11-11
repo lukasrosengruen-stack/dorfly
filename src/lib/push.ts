@@ -7,7 +7,9 @@
  * still. Ein eigener Schalter ist deshalb nicht noetig.
  */
 
-const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'
+import { ONESIGNAL_NOTIFICATIONS_URL, oneSignalHeaders, pushKonfig } from '@/lib/pushKonfig'
+
+const ROOT_DOMAIN =process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'
 
 interface PushParams {
   /** Supabase-User-ID des Empfaengers. */
@@ -27,7 +29,12 @@ interface PushParams {
  * scheitern lassen. Der Rueckgabewert sagt, ob OneSignal angenommen hat.
  */
 export async function sendePushAnNutzer(params: PushParams): Promise<boolean> {
-  if (!process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || !process.env.ONESIGNAL_REST_API_KEY) {
+  const konfig = pushKonfig()
+  if (konfig.status === 'testumgebung') {
+    console.info('[push] Testumgebung: Push nicht verschickt')
+    return false
+  }
+  if (konfig.status === 'fehlt') {
     console.error('[push] OneSignal-Umgebungsvariablen fehlen — Push übersprungen')
     return false
   }
@@ -35,14 +42,11 @@ export async function sendePushAnNutzer(params: PushParams): Promise<boolean> {
   const pfad = params.pfad.startsWith('/') ? params.pfad : `/${params.pfad}`
 
   try {
-    const res = await fetch('https://onesignal.com/api/v1/notifications', {
+    const res = await fetch(ONESIGNAL_NOTIFICATIONS_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Key ${process.env.ONESIGNAL_REST_API_KEY}`,
-      },
+      headers: oneSignalHeaders(konfig),
       body: JSON.stringify({
-        app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID,
+        app_id: konfig.appId,
         include_aliases: { external_id: [params.userId] },
         target_channel: 'push',
         headings: { de: params.titel, en: params.titel },

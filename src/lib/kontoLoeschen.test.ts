@@ -85,6 +85,15 @@ describe('loescheKonto', () => {
     expect(rpc).not.toHaveBeenCalled()
   })
 
+  it('überspringt OneSignal in der Testumgebung und löscht trotzdem', async () => {
+    const { service, aufrufe } = erzeugeService({ pfade: [] })
+    const fetchFn = vi.fn(async () => new Response(null, { status: 200 }))
+    const ergebnis = await loescheKonto(USER, { service, oneSignal: 'testumgebung', fetch: fetchFn as unknown as typeof fetch })
+    expect(ergebnis).toEqual({ ok: true, dateien: 0 })
+    expect(fetchFn).not.toHaveBeenCalled()
+    expect(aufrufe).toContain('rpc:konto_loeschen')
+  })
+
   it('bricht ab, wenn OneSignal scheitert — Datenbank bleibt unberührt', async () => {
     const { service, rpc } = erzeugeService()
     const fehler = vi.fn(async () => new Response(null, { status: 503 })) as unknown as typeof fetch

@@ -1,5 +1,5 @@
-import { Resend } from 'resend'
 import { kuerzeFrage } from '@/lib/frageBenachrichtigung'
+import { mailClient } from '@/lib/mailVersand'
 import { escapeHtml, istVereinsrolle, willkommensMail } from '@/lib/willkommensMail'
 
 const FROM = `Dorfly <noreply@${process.env.RESEND_FROM_DOMAIN ?? 'dorfly.de'}>`
@@ -13,8 +13,9 @@ const ROLLEN_LABEL: Record<string, string> = {
   gemeinderat: 'Gemeinderat/rätin',
 }
 
+// In Preview und dorfly-dev nur an die Erlaubnisliste, siehe src/lib/mailVersand.ts
 function resend() {
-  return new Resend(process.env.RESEND_API_KEY)
+  return mailClient()
 }
 
 /** „die Gemeindeverwaltung X“ oder ein übergebener Absender wie „der Verein „TSV““. */

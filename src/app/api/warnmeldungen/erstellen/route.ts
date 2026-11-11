@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { warnmeldungSchema } from '@/app/(admin)/dashboard/warnmeldungen/schema'
+import { ONESIGNAL_NOTIFICATIONS_URL, oneSignalHeaders, pushKonfig } from '@/lib/pushKonfig'
 
 export async function POST(req: Request) {
   const supabase = await createClient()
@@ -47,7 +48,16 @@ export async function POST(req: Request) {
 
   let pushWarning: string | undefined
 
-  if (parsed.data.sendPush) {
+  const push = pushKonfig()
+  if (parsed.data.sendPush && push.status === 'fehlt') {
+    console.error('[Warnmeldung] OneSignal-Umgebungsvariablen fehlen — Push übersprungen')
+    pushWarning = 'Push nicht konfiguriert'
+  }
+  if (parsed.data.sendPush && push.status === 'testumgebung') {
+    console.info('[Warnmeldung] Testumgebung: Push nicht verschickt')
+  }
+
+  if (parsed.data.sendPush && push.status === 'an') {
     const { data: gemeinde } = await service
       .from('gemeinden')
       .select('slug')
@@ -59,14 +69,11 @@ export async function POST(req: Request) {
       const controller = new AbortController()
       const tid = setTimeout(() => controller.abort(), 5000)
       try {
-        const pushRes = await fetch('https://onesignal.com/api/v1/notifications', {
+        const pushRes = await fetch(ONESIGNAL_NOTIFICATIONS_URL, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Key ${process.env.ONESIGNAL_REST_API_KEY}`,
-          },
+          headers: oneSignalHeaders(push),
           body: JSON.stringify({
-            app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID,
+            app_id: push.appId,
             filters: [{ field: 'tag', key: 'gemeinde_slug', relation: '=', value: gemeinde.slug }],
             headings: { de: 'Warnmeldung', en: 'Warnmeldung' },
             contents: { de: parsed.data.titel, en: parsed.data.titel },

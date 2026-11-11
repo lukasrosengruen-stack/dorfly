@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { Resend } from 'resend'
+import { mailClient } from '@/lib/mailVersand'
 import { createServiceClient } from '@/lib/supabase/server'
 
 function escapeHtml(str: string): string {
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
 
     if (process.env.RESEND_API_KEY) {
       try {
-        const resend = new Resend(process.env.RESEND_API_KEY)
+        const resend = mailClient(process.env.RESEND_API_KEY)
         await resend.emails.send({
           from: 'Dorfly Demo <noreply@dorfly.de>',
           to: process.env.DEMO_REQUEST_EMAIL || 'hallo@dorfly.de',

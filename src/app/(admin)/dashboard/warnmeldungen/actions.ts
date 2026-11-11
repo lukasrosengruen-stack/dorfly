@@ -3,6 +3,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { ONESIGNAL_NOTIFICATIONS_URL, oneSignalHeaders, pushKonfig } from '@/lib/pushKonfig'
 import { warnmeldungSchema, type WarnmeldungFormValues } from './schema'
 
 export async function createWarnmeldungAction(values: WarnmeldungFormValues): Promise<{ success?: boolean; error?: string }> {
@@ -42,7 +43,13 @@ export async function createWarnmeldungAction(values: WarnmeldungFormValues): Pr
       return { error: `Fehler beim Erstellen: ${insertError.message}` }
     }
 
-    if (parsed.data.sendPush) {
+    const push = pushKonfig()
+    if (parsed.data.sendPush && push.status !== 'an') {
+      if (push.status === 'fehlt') console.error('[Warnmeldung] OneSignal-Umgebungsvariablen fehlen — Push übersprungen')
+      else console.info('[Warnmeldung] Testumgebung: Push nicht verschickt')
+    }
+
+    if (parsed.data.sendPush && push.status === 'an') {
       const { data: gemeinde } = await service
         .from('gemeinden')
         .select('slug')
@@ -52,14 +59,11 @@ export async function createWarnmeldungAction(values: WarnmeldungFormValues): Pr
       if (gemeinde) {
         const controller = new AbortController()
         const tid = setTimeout(() => controller.abort(), 5000)
-        await fetch('https://onesignal.com/api/v1/notifications', {
+        await fetch(ONESIGNAL_NOTIFICATIONS_URL, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Key ${process.env.ONESIGNAL_REST_API_KEY}`,
-          },
+          headers: oneSignalHeaders(push),
           body: JSON.stringify({
-            app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID,
+            app_id: push.appId,
             filters: [{ field: 'tag', key: 'gemeinde_slug', relation: '=', value: gemeinde.slug }],
             headings: { de: 'Warnmeldung', en: 'Warnmeldung' },
             contents: { de: parsed.data.titel, en: parsed.data.titel },

@@ -35,6 +35,19 @@ export function istPreview({ vercelEnv, supabaseUrl }: Umgebung): boolean {
   return vercelEnv === 'preview' && hostVon(supabaseUrl) === DEV_SUPABASE_HOST
 }
 
+/**
+ * Versandsperre für Mail und Push. Anders als istPreview() ist das eine Sperre,
+ * keine Freischaltung, deshalb greift sie schon bei einem der beiden Merkmale:
+ * Preview-Deployment ODER dorfly-dev als Datenbank (auch lokal).
+ *
+ * VERCEL_ENV=production schaltet sie immer ab. In der Produktion verhält sich
+ * der Versand damit unter keinen Umständen anders als vorher.
+ */
+export function istVersandGesperrt({ vercelEnv, supabaseUrl }: Umgebung): boolean {
+  if (vercelEnv === 'production') return false
+  return vercelEnv === 'preview' || hostVon(supabaseUrl) === DEV_SUPABASE_HOST
+}
+
 export function previewGemeindeSlug(host: string, umgebung: Umgebung): string | null {
   if (!istPreview(umgebung)) return null
   const ohnePort = host.replace(/:\d+$/, '')
@@ -54,6 +67,10 @@ function aktuelleUmgebung(): Umgebung {
 
 export function istPreviewUmgebung(): boolean {
   return istPreview(aktuelleUmgebung())
+}
+
+export function istVersandGesperrtAktuell(): boolean {
+  return istVersandGesperrt(aktuelleUmgebung())
 }
 
 export function previewGemeindeSlugFuerHost(host: string): string | null {

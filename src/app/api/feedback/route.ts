@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { Resend } from 'resend'
+import { mailClient } from '@/lib/mailVersand'
 import { createClient } from '@/lib/supabase/server'
 import { isFeatureAktiv } from '@/lib/features'
 
@@ -66,7 +66,7 @@ export async function POST(req: Request) {
   const safeEmail = email ? escapeHtml(String(email)) : null
 
   try {
-    const resend = new Resend(process.env.RESEND_API_KEY)
+    const resend = mailClient(process.env.RESEND_API_KEY)
     await resend.emails.send({
       from: 'Dorfly Feedback <noreply@dorfly.de>',
       to: process.env.FEEDBACK_EMAIL || 'hallo@dorfly.de',

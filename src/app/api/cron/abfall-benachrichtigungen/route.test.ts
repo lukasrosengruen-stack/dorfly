@@ -61,6 +61,10 @@ function abfrage(tabelle: string, op: string) {
 
 beforeEach(() => {
   vi.stubEnv('CRON_SECRET', 'geheim')
+  vi.stubEnv('VERCEL_ENV', 'production')
+  vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://produktion.supabase.co')
+  vi.stubEnv('NEXT_PUBLIC_ONESIGNAL_APP_ID', 'app-test')
+  vi.stubEnv('ONESIGNAL_REST_API_KEY', 'key-test')
   vi.stubGlobal('fetch', push)
   push.mockClear()
   emailSenden.mockClear()
@@ -234,6 +238,54 @@ describe('GET /api/cron/abfall-benachrichtigungen', () => {
     praeferenzenWerfen = true
 
     erwarteFreigabe(await aufrufen())
+  })
+
+  it('meldet in der Produktion einen Fehler, wenn die OneSignal-Variablen fehlen', async () => {
+    vi.useFakeTimers({ now: new Date('2026-07-15T16:00:00Z'), toFake: ['Date'] })
+    vi.stubEnv('ONESIGNAL_REST_API_KEY', '')
+
+    erwarteFreigabe(await aufrufen())
+    expect(push).not.toHaveBeenCalled()
+  })
+
+  describe('in der Testumgebung', () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ now: new Date('2026-07-15T16:00:00Z'), toFake: ['Date'] })
+      vi.stubEnv('VERCEL_ENV', 'preview')
+    })
+
+    it('pusht nie und meldet trotzdem Erfolg, auch mit gesetzten Variablen', async () => {
+      const res = await aufrufen()
+
+      expect(res.status).toBe(200)
+      expect(push).not.toHaveBeenCalled()
+      expect(abfrage('abfall_versandlaeufe', 'delete')).toBeUndefined()
+    })
+
+    it('meldet auch ohne OneSignal-Variablen Erfolg', async () => {
+      vi.stubEnv('NEXT_PUBLIC_ONESIGNAL_APP_ID', '')
+      vi.stubEnv('ONESIGNAL_REST_API_KEY', '')
+
+      expect((await aufrufen()).status).toBe(200)
+      expect(push).not.toHaveBeenCalled()
+    })
+
+    it('schickt keine Mail an Adressen ausserhalb der Erlaubnisliste', async () => {
+      vi.stubEnv('RESEND_API_KEY', 'test')
+      praeferenzen = { data: [{ ...PRAEFERENZ, push_aktiviert: false, email_aktiviert: true }] }
+
+      expect((await aufrufen()).status).toBe(200)
+      expect(emailSenden).not.toHaveBeenCalled()
+    })
+
+    it('schickt die Mail an eine erlaubte Testadresse', async () => {
+      vi.stubEnv('RESEND_API_KEY', 'test')
+      praeferenzen = { data: [{ ...PRAEFERENZ, push_aktiviert: false, email_aktiviert: true }] }
+      profile = { data: [{ id: NUTZER, display_name: 'Lukas', email: 'lukas.rosengruen+testdorf@dorfly.de' }] }
+
+      expect((await aufrufen()).status).toBe(200)
+      expect(emailSenden).toHaveBeenCalledWith(expect.objectContaining({ to: ['lukas.rosengruen+testdorf@dorfly.de'] }), undefined)
+    })
   })
 
   it('bleibt bei 500, wenn die Sperre nicht freigegeben werden kann', async () => {

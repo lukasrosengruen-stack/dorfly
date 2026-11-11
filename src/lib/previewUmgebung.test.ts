@@ -3,6 +3,8 @@ import {
   authCookieDomain,
   istPreview,
   istPreviewUmgebung,
+  istVersandGesperrt,
+  istVersandGesperrtAktuell,
   previewGemeindeSlug,
   previewGemeindeSlugFuerHost,
 } from './previewUmgebung'
@@ -45,6 +47,35 @@ describe('previewGemeindeSlug', () => {
   }
 })
 
+describe('istVersandGesperrt', () => {
+  // Production nie gesperrt, egal welche Datenbank
+  for (const supabaseUrl of [PROD_URL, DEV_URL, undefined, '', 'keine-url']) {
+    it(`Production mit Supabase-URL ${String(supabaseUrl)}: nicht gesperrt`, () => {
+      expect(istVersandGesperrt({ vercelEnv: 'production', supabaseUrl })).toBe(false)
+    })
+  }
+
+  for (const supabaseUrl of [PROD_URL, DEV_URL, undefined]) {
+    it(`Preview mit Supabase-URL ${String(supabaseUrl)}: gesperrt`, () => {
+      expect(istVersandGesperrt({ vercelEnv: 'preview', supabaseUrl })).toBe(true)
+    })
+  }
+
+  for (const vercelEnv of [undefined, '', 'development']) {
+    it(`VERCEL_ENV=${String(vercelEnv)} mit dorfly-dev: gesperrt`, () => {
+      expect(istVersandGesperrt({ vercelEnv, supabaseUrl: DEV_URL })).toBe(true)
+    })
+
+    it(`VERCEL_ENV=${String(vercelEnv)} mit Produktionsdatenbank: nicht gesperrt (wie bisher)`, () => {
+      expect(istVersandGesperrt({ vercelEnv, supabaseUrl: PROD_URL })).toBe(false)
+    })
+  }
+
+  it('erkennt dorfly-dev nicht an einer bloß ähnlichen URL', () => {
+    expect(istVersandGesperrt({ vercelEnv: undefined, supabaseUrl: 'https://vjvnhvwdwxvofwsjcytr.supabase.co.evil.de' })).toBe(false)
+  })
+})
+
 describe('Umgebungsvariablen', () => {
   afterEach(() => vi.unstubAllEnvs())
 
@@ -55,9 +86,10 @@ describe('Umgebungsvariablen', () => {
     vi.stubEnv('NODE_ENV', 'production')
   }
 
-  it('Production: keine Ausnahme, Cookie-Domain unverändert', () => {
+  it('Production: keine Ausnahme, Cookie-Domain unverändert, Versand frei', () => {
     stub('production', PROD_URL)
     expect(istPreviewUmgebung()).toBe(false)
+    expect(istVersandGesperrtAktuell()).toBe(false)
     expect(previewGemeindeSlugFuerHost(PREVIEW_HOST)).toBeNull()
     expect(authCookieDomain('dorfly.de')).toBe('.dorfly.de')
   })
@@ -77,6 +109,7 @@ describe('Umgebungsvariablen', () => {
   it('Preview mit dorfly-dev: Ausnahme aktiv, keine Cookie-Domain', () => {
     stub('preview', DEV_URL)
     expect(istPreviewUmgebung()).toBe(true)
+    expect(istVersandGesperrtAktuell()).toBe(true)
     expect(previewGemeindeSlugFuerHost(PREVIEW_HOST)).toBe('testdorf')
     expect(authCookieDomain('dorfly.de')).toBeUndefined()
   })
@@ -86,6 +119,7 @@ describe('Umgebungsvariablen', () => {
     vi.stubEnv('NEXT_PUBLIC_VERCEL_ENV', 'preview')
     expect(istPreview({ vercelEnv: process.env.NEXT_PUBLIC_VERCEL_ENV, supabaseUrl: DEV_URL })).toBe(true)
     expect(istPreviewUmgebung()).toBe(true)
+    expect(istVersandGesperrtAktuell()).toBe(true)
   })
 
   it('Lokal: keine Ausnahme und keine Cookie-Domain', () => {

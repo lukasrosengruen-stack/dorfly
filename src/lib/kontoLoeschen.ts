@@ -41,8 +41,11 @@ export interface OneSignalKonfig {
 
 interface Abhaengigkeiten {
   service: SupabaseClient<Database>
-  /** null, wenn die Umgebungsvariablen fehlen — dann wird nicht gelöscht. */
-  oneSignal: OneSignalKonfig | null
+  /**
+   * null, wenn die Umgebungsvariablen fehlen — dann wird nicht gelöscht.
+   * 'testumgebung': Dort wird nie gepusht, der Schritt entfällt.
+   */
+  oneSignal: OneSignalKonfig | 'testumgebung' | null
   fetch?: typeof fetch
 }
 
@@ -75,8 +78,10 @@ export async function loescheKonto(userId: string, deps: Abhaengigkeiten): Promi
   if (!deps.oneSignal) {
     return { ok: false, schritt: 'onesignal', fehler: 'OneSignal-Umgebungsvariablen fehlen' }
   }
-  const oneSignalFehler = await loescheOneSignalNutzer(userId, deps.oneSignal, deps.fetch)
-  if (oneSignalFehler) return { ok: false, schritt: 'onesignal', fehler: oneSignalFehler }
+  if (deps.oneSignal !== 'testumgebung') {
+    const oneSignalFehler = await loescheOneSignalNutzer(userId, deps.oneSignal, deps.fetch)
+    if (oneSignalFehler) return { ok: false, schritt: 'onesignal', fehler: oneSignalFehler }
+  }
 
   // 2. Dateien im Storage
   const { data: pfade, error: pfadFehler } = await service.rpc('konto_dateipfade', { p_user_id: userId })

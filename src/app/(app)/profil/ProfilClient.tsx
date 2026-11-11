@@ -7,6 +7,7 @@ import { Profile } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
 import { abmelden } from '@/lib/abmelden'
 import { oneSignalAbmelden } from '@/lib/oneSignalAbmelden'
+import { istVersandGesperrtAktuell } from '@/lib/previewUmgebung'
 import { ZurueckButton } from '@/components/ui'
 import { updateProfil } from '@/app/actions/profil'
 import { useRouter } from 'next/navigation'
@@ -100,6 +101,11 @@ export default function ProfilClient({ profile, email, gemeindeSlug }: { profile
   }
 
   async function enablePush() {
+    // Preview und dorfly-dev: dort wird nie gepusht, siehe src/lib/pushKonfig.ts
+    if (istVersandGesperrtAktuell()) {
+      toast.info('In der Testumgebung sind Push-Benachrichtigungen abgeschaltet.')
+      return
+    }
     setPushLoading(true)
 
     if (Capacitor.isNativePlatform()) {
