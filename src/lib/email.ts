@@ -1,6 +1,7 @@
 import { kuerzeFrage } from '@/lib/frageBenachrichtigung'
 import { mailClient } from '@/lib/mailVersand'
 import { escapeHtml, istVereinsrolle, willkommensMail } from '@/lib/willkommensMail'
+import { buergerWillkommensMail, type BuergerWillkommensDaten } from '@/lib/buergerWillkommensMail'
 
 const FROM = `Dorfly <noreply@${process.env.RESEND_FROM_DOMAIN ?? 'dorfly.de'}>`
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'dorfly.de'
@@ -21,6 +22,11 @@ function resend() {
 /** „die Gemeindeverwaltung X“ oder ein übergebener Absender wie „der Verein „TSV““. */
 function absenderHtml(gemeindeName: string, absender?: string | null): string {
   return absender ? escapeHtml(absender) : `die Gemeindeverwaltung <strong>${gemeindeName}</strong>`
+}
+
+export async function sendeBuergerWillkommensEmail(params: BuergerWillkommensDaten & { to: string }) {
+  const { betreff, html } = buergerWillkommensMail(params)
+  return resend().emails.send({ from: FROM, to: [params.to], subject: betreff, html })
 }
 
 export async function sendeEinladungsEmail(params: {

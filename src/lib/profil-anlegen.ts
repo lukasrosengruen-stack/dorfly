@@ -1,5 +1,8 @@
+import { after } from 'next/server'
 import { createServiceClient, createClient } from '@/lib/supabase/server'
 import { getGemeindeSlug } from '@/lib/gemeinde'
+import { getFeatures } from '@/lib/features'
+import { sendeBuergerWillkommensEmail } from '@/lib/email'
 import type { UserRole } from '@/types/database'
 
 export interface RegistrierungsDaten {
@@ -120,6 +123,34 @@ export async function profilAnlegen(userId: string, daten: RegistrierungsDaten =
     } else {
       throw error
     }
+  }
+
+  // Erst jetzt steht fest, dass das Profil neu ist. Vereins- und Gewerbe-Teams haben
+  // ihre eigene Willkommensmail bekommen. Versand nach der Antwort, damit die
+  // Registrierung nicht auf den Mailserver wartet.
+  if (rolle === 'buerger' && email && gemeindeId) {
+    const zielGemeinde = gemeindeId
+    after(async () => {
+      try {
+        const { data: gemeinde } = await serviceClient
+          .from('gemeinden')
+          .select('name, slug, features')
+          .eq('id', zielGemeinde)
+          .single()
+        if (!gemeinde) return
+        const { error: mailFehler } = await sendeBuergerWillkommensEmail({
+          to: email,
+          vorname: vorname || null,
+          hatName: Boolean(vorname || nachname),
+          gemeindeName: gemeinde.name,
+          gemeindeSlug: gemeinde.slug,
+          features: getFeatures(gemeinde),
+        })
+        if (mailFehler) console.error('[profilAnlegen] Willkommensmail fehlgeschlagen:', { userId, fehler: mailFehler.message })
+      } catch (e) {
+        console.error('[profilAnlegen] Willkommensmail fehlgeschlagen:', { userId, fehler: e })
+      }
+    })
   }
 
   if (einladungId && einladungDetails) {

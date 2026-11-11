@@ -23,10 +23,10 @@ export function escapeHtml(text: string): string {
 }
 
 // Dieselben Links wie die Badges auf der Landingpage (src/app/homepage/page.tsx)
-const APP_STORE = 'https://apps.apple.com/de/app/dorfly/id6791239032'
-const PLAY_STORE = 'https://play.google.com/store/apps/details?id=de.dorfly.app'
+export const APP_STORE = 'https://apps.apple.com/de/app/dorfly/id6791239032'
+export const PLAY_STORE = 'https://play.google.com/store/apps/details?id=de.dorfly.app'
 // Mails kommen von noreply@ — Rückmeldungen an die Adresse der Support-Seite
-const KONTAKT = 'hallo@dorfly.de'
+export const KONTAKT = 'hallo@dorfly.de'
 
 // ihr: Nominativ („Ihr Verein erreicht …“), fuer: Akkusativ („für Ihren Verein“)
 const ART: Record<Vereinsrolle, { ihr: string; fuer: string; profil: string; verzeichnis: string }> = {
